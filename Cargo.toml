@@ -26,6 +26,7 @@ include = [
 ]
 
 [dependencies]
+deribit-base = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 chrono = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
@@ -62,6 +63,8 @@ members = [
 
 [workspace.dependencies]
 deribit-fix=  { path = "." }
+deribit-base = { path = "../deribit-base" }
+#deribit-base = "0.1"
 tokio = { version = "1.45", features = ["rt", "rt-multi-thread", "macros", "time", "signal"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"

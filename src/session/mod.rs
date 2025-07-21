@@ -1,18 +1,17 @@
 //! FIX session management
 
 use crate::model::message::FixMessage;
-use crate::model::order::{OrderSide, OrderType, TimeInForce};
 use crate::model::types::MsgType;
-use crate::prelude::{NewOrderRequest, Position};
 use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
     message::MessageBuilder,
-    utils::{generate_nonce, generate_timestamp},
 };
 use base64::prelude::*;
 use chrono::Utc;
+use deribit_base::prelude::*;
+use deribit_base::utils::{generate_nonce, generate_timestamp};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -394,9 +393,10 @@ impl Session {
     /// Receive and process a FIX message from the connection
     pub async fn receive_and_process_message(&mut self) -> Result<Option<FixMessage>> {
         let message = {
-            let conn_arc = self.connection.as_ref().ok_or_else(|| {
-                DeribitFixError::Session("No connection available".to_string())
-            })?;
+            let conn_arc = self
+                .connection
+                .as_ref()
+                .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
             let mut conn = conn_arc.lock().await;
             conn.receive_message().await?
         };

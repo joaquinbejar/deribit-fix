@@ -1,13 +1,12 @@
 //! Deribit FIX client implementation
 
-use crate::model::order::NewOrderRequest;
-use crate::model::position::Position;
 use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
     session::Session,
 };
+use deribit_base::prelude::{NewOrderRequest, Position};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;

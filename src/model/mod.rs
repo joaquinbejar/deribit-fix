@@ -6,8 +6,6 @@
 pub mod currency;
 pub mod instrument;
 pub mod message;
-pub mod order;
-pub mod position;
 pub mod stream;
 pub mod tags;
 pub mod types;

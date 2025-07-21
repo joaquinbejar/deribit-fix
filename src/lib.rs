@@ -64,7 +64,6 @@ pub mod error;
 pub mod message;
 pub mod model;
 pub mod session;
-pub mod utils;
 
 pub use client::DeribitFixClient;
 pub use config::DeribitFixConfig;
@@ -79,8 +78,5 @@ pub mod prelude {
         client::DeribitFixClient,
         config::DeribitFixConfig,
         error::{DeribitFixError, Result},
-        model::order::{NewOrderRequest, OrderSide, OrderType, TimeInForce},
-        model::position::Position,
-        utils::setup_logger,
     };
 }

@@ -2,10 +2,6 @@
 <img src="https://raw.githubusercontent.com/joaquinbejar/deribit-fix/refs/heads/main/doc/images/logo.png" alt="deribit-fix" style="width: 80%; height: 80%;">
 </div>
 
-# Deribit FIX Framework
-
-A comprehensive FIX protocol client framework for Deribit cryptocurrency exchange. This library provides a reusable foundation for building trading applications that connect to Deribit using the FIX protocol.
-
 [![Dual License](https://img.shields.io/badge/license-MIT-blue)](./LICENSE)
 [![Crates.io](https://img.shields.io/crates/v/deribit-fix.svg)](https://crates.io/crates/deribit-fix)
 [![Downloads](https://img.shields.io/crates/d/deribit-fix.svg)](https://crates.io/crates/deribit-fix)
@@ -18,46 +14,54 @@ A comprehensive FIX protocol client framework for Deribit cryptocurrency exchang
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/deribit-fix)
 [![Wiki](https://img.shields.io/badge/wiki-latest-blue.svg)](https://deepwiki.com/joaquinbejar/deribit-fix)
 
-## Overview
+## Deribit FIX Framework
 
-Deribit FIX API is based on FIX version 4.4 with some tags from version 5.0 and custom tags. This framework implements the complete Deribit FIX specification, providing a robust and type-safe interface for cryptocurrency derivatives trading.
+A comprehensive FIX protocol client framework for Deribit cryptocurrency exchange.
+This library provides a reusable foundation for building trading applications
+that connect to Deribit using the FIX protocol.
 
-### Supported Environments
+### Overview
+
+Deribit FIX API is based on FIX version 4.4 with some tags from version 5.0 and custom tags.
+This framework implements the complete Deribit FIX specification, providing a robust
+and type-safe interface for cryptocurrency derivatives trading.
+
+#### Supported Environments
 - **Production**: `www.deribit.com:9880` (raw TCP) / `www.deribit.com:9883` (SSL)
 - **Test**: `test.deribit.com:9881` (raw TCP) / `test.deribit.com:9883` (SSL)
 
-## Features
+### Key Features
 
-### Core FIX Protocol Support
+#### Core FIX Protocol Support
 - **Session Management**: Logon(A), Logout(5), Heartbeat(0), Test Request(1)
 - **Message Sequencing**: Resend Request(2), Sequence Reset(4)
 - **Error Handling**: Reject(3) messages with proper error codes
 
-### Trading Operations
+#### Trading Operations
 - **Order Management**: New Order Single(D), Order Cancel Request(F), Order Cancel/Replace Request(G)
 - **Mass Operations**: Order Mass Cancel Request(q), Order Mass Status Request(AF)
 - **Execution Reports**: Real-time order status updates and fill notifications
 - **Position Management**: Request For Positions(AN), Position Report(AP)
 
-### Market Data
+#### Market Data
 - **Real-time Data**: Market Data Request(V), Market Data Snapshot/Full Refresh(W)
 - **Incremental Updates**: Market Data Incremental Refresh(X)
 - **Security Information**: Security List Request(x), Security Definition Request(c)
 - **Instrument Status**: Security Status Request(e), Security Status(f)
 
-### Advanced Features
+#### Advanced Features
 - **Market Making**: Mass Quote(i), Quote Request(R), Quote Cancel(Z)
 - **RFQ System**: RFQ Request(AH), Quote Status Report(AI)
 - **Risk Management**: MMProtection Limits(MM), MMProtection Reset(MZ)
 - **Trade Reporting**: TradeCaptureReportRequest(AD), TradeCaptureReport(AE)
 
-### Authentication & Security
+#### Authentication & Security
 - **Secure Authentication**: SHA256-based authentication with nonce
 - **Application Registration**: Support for registered applications with DeribitAppSig
 - **Cancel on Disconnect**: Automatic order cancellation on connection loss
 - **User Management**: User Request(BE), User Response(BF)
 
-## Technical Features
+### Technical Features
 
 - **Async/Await**: Full async support with Tokio runtime
 - **Connection Management**: Automatic reconnection with configurable backoff
@@ -66,7 +70,6 @@ Deribit FIX API is based on FIX version 4.4 with some tags from version 5.0 and 
 - **Error Handling**: Detailed error types with context
 - **Logging**: Configurable logging with tracing support
 - **Testing**: Comprehensive test suite with mock server support
-
 
 
 ## Contribution and Contact

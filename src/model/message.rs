@@ -9,7 +9,9 @@ use crate::model::types::MsgType;
 /// FIX message representation
 #[derive(Debug, Clone)]
 pub struct FixMessage {
+    /// FIX message fields as (tag, value) pairs
     pub fields: Vec<(u32, String)>,
+    /// Raw message string
     pub raw_message: String,
 }
 
@@ -64,7 +66,7 @@ impl FixMessage {
 
     /// Get message type
     pub fn msg_type(&self) -> Option<MsgType> {
-        self.get_field(35).and_then(|s| MsgType::from_str(s))
+        self.get_field(35).and_then(|s| s.parse().ok())
     }
 
     /// Get sender company ID

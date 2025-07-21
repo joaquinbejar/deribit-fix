@@ -5,6 +5,7 @@
 ******************************************************************************/
 use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 
 /// FIX message type identifiers
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -143,53 +144,57 @@ impl MsgType {
             MsgType::MmProtectionReset => "MZ",
         }
     }
+}
 
-    /// Parse from FIX message type string
-    pub fn from_str(s: &str) -> Option<Self> {
+/// Error type for parsing MsgType from string
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ParseMsgTypeError(pub String);
+
+impl std::fmt::Display for ParseMsgTypeError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Unknown message type: {}", self.0)
+    }
+}
+
+impl std::error::Error for ParseMsgTypeError {}
+
+impl FromStr for MsgType {
+    type Err = ParseMsgTypeError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "0" => Some(MsgType::Heartbeat),
-            "1" => Some(MsgType::TestRequest),
-            "2" => Some(MsgType::ResendRequest),
-            "3" => Some(MsgType::Reject),
-            "4" => Some(MsgType::SequenceReset),
-            "5" => Some(MsgType::Logout),
-            "8" => Some(MsgType::ExecutionReport),
-            "9" => Some(MsgType::OrderCancelReject),
-            "A" => Some(MsgType::Logon),
-            "D" => Some(MsgType::NewOrderSingle),
-            "F" => Some(MsgType::OrderCancelRequest),
-            "G" => Some(MsgType::OrderCancelReplaceRequest),
-            "R" => Some(MsgType::QuoteRequest),
-            "V" => Some(MsgType::MarketDataRequest),
-            "W" => Some(MsgType::MarketDataSnapshotFullRefresh),
-            "X" => Some(MsgType::MarketDataIncrementalRefresh),
-            "Y" => Some(MsgType::MarketDataRequestReject),
-            "Z" => Some(MsgType::QuoteCancel),
-            "b" => Some(MsgType::MassQuoteAcknowledgement),
-            "c" => Some(MsgType::SecurityDefinitionRequest),
-            "d" => Some(MsgType::SecurityDefinition),
-            "e" => Some(MsgType::SecurityStatusRequest),
-            "f" => Some(MsgType::SecurityStatus),
-            "i" => Some(MsgType::MassQuote),
-            "q" => Some(MsgType::OrderMassCancelRequest),
-            "r" => Some(MsgType::OrderMassCancelReport),
-            "x" => Some(MsgType::SecurityListRequest),
-            "y" => Some(MsgType::SecurityList),
-            "AI" => Some(MsgType::QuoteStatusReport),
-            "AH" => Some(MsgType::RfqRequest),
-            "AG" => Some(MsgType::QuoteRequestReject),
-            "AD" => Some(MsgType::TradeCaptureReportRequest),
-            "AE" => Some(MsgType::TradeCaptureReport),
-            "AQ" => Some(MsgType::TradeCaptureReportRequestAck),
-            "AF" => Some(MsgType::OrderMassStatusRequest),
-            "AN" => Some(MsgType::RequestForPositions),
-            "AP" => Some(MsgType::PositionReport),
-            "BE" => Some(MsgType::UserRequest),
-            "BF" => Some(MsgType::UserResponse),
-            "MM" => Some(MsgType::MmProtectionLimits),
-            "MR" => Some(MsgType::MmProtectionLimitsResult),
-            "MZ" => Some(MsgType::MmProtectionReset),
-            _ => None,
+            "0" => Ok(MsgType::Heartbeat),
+            "1" => Ok(MsgType::TestRequest),
+            "2" => Ok(MsgType::ResendRequest),
+            "3" => Ok(MsgType::Reject),
+            "4" => Ok(MsgType::SequenceReset),
+            "5" => Ok(MsgType::Logout),
+            "8" => Ok(MsgType::ExecutionReport),
+            "9" => Ok(MsgType::OrderCancelReject),
+            "A" => Ok(MsgType::Logon),
+            "D" => Ok(MsgType::NewOrderSingle),
+            "F" => Ok(MsgType::OrderCancelRequest),
+            "G" => Ok(MsgType::OrderCancelReplaceRequest),
+            "R" => Ok(MsgType::QuoteRequest),
+            "V" => Ok(MsgType::MarketDataRequest),
+            "W" => Ok(MsgType::MarketDataSnapshotFullRefresh),
+            "X" => Ok(MsgType::MarketDataIncrementalRefresh),
+            "Y" => Ok(MsgType::MarketDataRequestReject),
+            "Z" => Ok(MsgType::QuoteCancel),
+            "b" => Ok(MsgType::MassQuoteAcknowledgement),
+            "c" => Ok(MsgType::SecurityDefinitionRequest),
+            "d" => Ok(MsgType::SecurityDefinition),
+            "e" => Ok(MsgType::SecurityStatusRequest),
+            "f" => Ok(MsgType::SecurityStatus),
+            "i" => Ok(MsgType::MassQuote),
+            "q" => Ok(MsgType::OrderMassCancelRequest),
+            "r" => Ok(MsgType::OrderMassCancelReport),
+            "x" => Ok(MsgType::SecurityListRequest),
+            "y" => Ok(MsgType::SecurityList),
+            "MM" => Ok(MsgType::MmProtectionLimits),
+            "MR" => Ok(MsgType::MmProtectionLimitsResult),
+            "MZ" => Ok(MsgType::MmProtectionReset),
+            _ => Err(ParseMsgTypeError(s.to_string())),
         }
     }
 }
@@ -197,49 +202,83 @@ impl MsgType {
 /// Execution type enumeration
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ExecType {
+    /// New order
     New,
+    /// Order done for day
     DoneForDay,
+    /// Order canceled
     Canceled,
+    /// Order replaced
     Replaced,
+    /// Pending cancel
     PendingCancel,
+    /// Order stopped
     Stopped,
+    /// Order rejected
     Rejected,
+    /// Order suspended
     Suspended,
+    /// Pending new order
     PendingNew,
+    /// Calculated
     Calculated,
+    /// Order expired
     Expired,
+    /// Order restated
     Restated,
+    /// Pending replace
     PendingReplace,
+    /// Trade execution
     Trade,
+    /// Trade correction
     TradeCorrect,
+    /// Trade cancellation
     TradeCancel,
+    /// Order status update
     OrderStatus,
 }
 
 /// Market data entry type
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MDEntryType {
+    /// Bid price
     Bid,
+    /// Offer/ask price
     Offer,
+    /// Trade price
     Trade,
+    /// Index value
     IndexValue,
+    /// Opening price
     OpeningPrice,
+    /// Closing price
     ClosingPrice,
+    /// Settlement price
     SettlementPrice,
+    /// Trading session high price
     TradingSessionHighPrice,
+    /// Trading session low price
     TradingSessionLowPrice,
+    /// Trading session VWAP price
     TradingSessionVWAPPrice,
+    /// Order imbalance
     Imbalance,
+    /// Trade volume
     TradeVolume,
+    /// Open interest
     OpenInterest,
 }
 
 /// Security type enumeration
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SecurityType {
+    /// Future contract
     Future,
+    /// Option contract
     Option,
+    /// Spot trading
     Spot,
+    /// Index instrument
     Index,
 }
 

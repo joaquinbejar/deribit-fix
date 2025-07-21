@@ -14,6 +14,7 @@ pub enum DeribitFixError {
     Authentication(String),
     /// Message parsing errors
     MessageParsing(String),
+    /// Message construction errors
     MessageConstruction(String),
     /// Session management errors
     Session(String),

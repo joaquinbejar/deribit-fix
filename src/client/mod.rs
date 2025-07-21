@@ -13,6 +13,7 @@ use tracing::info;
 
 /// Main Deribit FIX client
 pub struct DeribitFixClient {
+    /// Client configuration
     pub config: DeribitFixConfig,
     connection: Option<Arc<Mutex<Connection>>>,
     session: Option<Arc<Mutex<Session>>>,

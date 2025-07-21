@@ -59,9 +59,11 @@
 pub mod client;
 pub mod config;
 pub mod connection;
+/// FIX protocol constants
 pub mod constants;
 pub mod error;
 pub mod message;
+/// FIX message models and data structures
 pub mod model;
 pub mod session;
 
@@ -72,7 +74,6 @@ pub use model::*;
 
 /// Re-export commonly used types for convenience
 pub mod prelude {
-    //! Convenience re-exports for common types and traits
 
     pub use crate::{
         client::DeribitFixClient,

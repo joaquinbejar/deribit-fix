@@ -20,9 +20,13 @@ use tracing::{debug, info};
 /// FIX session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SessionState {
+    /// Session is disconnected
     Disconnected,
+    /// Logon message sent, waiting for response
     LogonSent,
+    /// Session is logged on and active
     LoggedOn,
+    /// Logout message sent, waiting for confirmation
     LogoutSent,
 }
 

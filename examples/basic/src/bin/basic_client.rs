@@ -1,9 +1,8 @@
 //! Basic example of using the Deribit FIX client
 
-use deribit_fix::{client::{DeribitFixClient, NewOrderRequest, OrderSide, OrderType, TimeInForce}, error::Result, DeribitFixConfig};
 use tokio::time::{sleep, Duration};
 use tracing::{info, error};
-use deribit_fix::prelude::setup_logger;
+use deribit_fix::prelude::*;
 
 #[tokio::main]
 async fn main() -> Result<()> {

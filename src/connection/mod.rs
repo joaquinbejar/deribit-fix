@@ -1,47 +1,17 @@
 //! Connection management for Deribit FIX client
 
+use crate::model::stream::Stream;
 use crate::{
     config::DeribitFixConfig,
     error::{DeribitFixError, Result},
-    message::FixMessage,
 };
-
 use tokio::{
-    io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
     time::timeout,
 };
-use tokio_native_tls::{TlsConnector, TlsStream};
+use tokio_native_tls::TlsConnector;
 use tracing::{debug, info};
-
-/// Connection wrapper for both TCP and TLS streams
-pub enum Stream {
-    Tcp(TcpStream),
-    Tls(TlsStream<TcpStream>),
-}
-
-impl Stream {
-    async fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        match self {
-            Stream::Tcp(stream) => stream.read(buf).await,
-            Stream::Tls(stream) => stream.read(buf).await,
-        }
-    }
-
-    async fn write_all(&mut self, buf: &[u8]) -> std::io::Result<()> {
-        match self {
-            Stream::Tcp(stream) => stream.write_all(buf).await,
-            Stream::Tls(stream) => stream.write_all(buf).await,
-        }
-    }
-
-    async fn flush(&mut self) -> std::io::Result<()> {
-        match self {
-            Stream::Tcp(stream) => stream.flush().await,
-            Stream::Tls(stream) => stream.flush().await,
-        }
-    }
-}
+use crate::model::message::FixMessage;
 
 /// TCP/TLS connection to Deribit FIX server
 pub struct Connection {
@@ -71,12 +41,14 @@ impl Connection {
     /// Connect using raw TCP
     async fn connect_tcp(config: &DeribitFixConfig) -> Result<Stream> {
         info!("Connecting to {}:{} via TCP", config.host, config.port);
-        
+
         let addr = format!("{}:{}", config.host, config.port);
         let stream = timeout(config.connection_timeout, TcpStream::connect(&addr))
             .await
             .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {}", addr)))?
-            .map_err(|e| DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e)))?;
+            .map_err(|e| {
+                DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e))
+            })?;
 
         info!("Successfully connected via TCP");
         Ok(Stream::Tcp(stream))
@@ -85,18 +57,19 @@ impl Connection {
     /// Connect using TLS
     async fn connect_tls(config: &DeribitFixConfig) -> Result<Stream> {
         info!("Connecting to {}:{} via TLS", config.host, config.port);
-        
+
         let addr = format!("{}:{}", config.host, config.port);
         let tcp_stream = timeout(config.connection_timeout, TcpStream::connect(&addr))
             .await
             .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {}", addr)))?
-            .map_err(|e| DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e)))?;
+            .map_err(|e| {
+                DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e))
+            })?;
 
-        let connector = TlsConnector::from(
-            native_tls::TlsConnector::builder()
-                .build()
-                .map_err(|e| DeribitFixError::Connection(format!("TLS connector creation failed: {}", e)))?
-        );
+        let connector =
+            TlsConnector::from(native_tls::TlsConnector::builder().build().map_err(|e| {
+                DeribitFixError::Connection(format!("TLS connector creation failed: {}", e))
+            })?);
 
         let tls_stream = connector
             .connect(&config.host, tcp_stream)
@@ -110,7 +83,9 @@ impl Connection {
     /// Send a FIX message
     pub async fn send_message(&mut self, message: &FixMessage) -> Result<()> {
         if !self.connected {
-            return Err(DeribitFixError::Connection("Connection is closed".to_string()));
+            return Err(DeribitFixError::Connection(
+                "Connection is closed".to_string(),
+            ));
         }
 
         let raw_message = message.to_string();
@@ -132,15 +107,20 @@ impl Connection {
     /// Receive a FIX message
     pub async fn receive_message(&mut self) -> Result<Option<FixMessage>> {
         if !self.connected {
-            return Err(DeribitFixError::Connection("Connection is closed".to_string()));
+            return Err(DeribitFixError::Connection(
+                "Connection is closed".to_string(),
+            ));
         }
 
         // Read data into buffer
         let mut temp_buffer = [0u8; 4096];
-        let bytes_read = self.stream
+        debug!("Waiting to read from stream...");
+        let bytes_read = self
+            .stream
             .read(&mut temp_buffer)
             .await
             .map_err(|e| DeribitFixError::Io(e))?;
+        debug!("Read {} bytes from stream", bytes_read);
 
         if bytes_read == 0 {
             // Connection closed by peer
@@ -152,7 +132,6 @@ impl Connection {
 
         // Try to parse a complete FIX message
         if let Some(message) = self.try_parse_message()? {
-            debug!("Received FIX message: {}", message);
             return Ok(Some(message));
         }
 
@@ -163,10 +142,10 @@ impl Connection {
     fn try_parse_message(&mut self) -> Result<Option<FixMessage>> {
         // Look for SOH (Start of Header) character which separates FIX fields
         const SOH: u8 = 0x01;
-        
+
         // Find the end of a complete message
         let mut msg_end = None;
-        
+
         for (i, window) in self.buffer.windows(3).enumerate() {
             if window == b"10=" {
                 // Look for SOH after checksum (3 digits)
@@ -179,10 +158,9 @@ impl Connection {
 
         if let Some(end_pos) = msg_end {
             let message_bytes = self.buffer.drain(..end_pos).collect::<Vec<u8>>();
-            let message_str = String::from_utf8(message_bytes)
-                .map_err(|e| DeribitFixError::MessageParsing(format!("Invalid UTF-8: {}", e)))?;
-            
-            let message = FixMessage::parse(&message_str)?;
+            let response = String::from_utf8_lossy(&message_bytes).to_string();
+            debug!("Received FIX message: {}", response);
+            let message = FixMessage::parse(&response)?;
             return Ok(Some(message));
         }
 
@@ -204,7 +182,7 @@ impl Connection {
     /// Reconnect to the server
     pub async fn reconnect(&mut self) -> Result<()> {
         info!("Attempting to reconnect...");
-        
+
         let stream = if self.config.use_ssl {
             Self::connect_tls(&self.config).await?
         } else {

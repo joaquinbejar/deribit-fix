@@ -14,6 +14,7 @@ pub enum DeribitFixError {
     Authentication(String),
     /// Message parsing errors
     MessageParsing(String),
+    MessageConstruction(String),
     /// Session management errors
     Session(String),
     /// Network I/O errors
@@ -38,6 +39,7 @@ impl fmt::Display for DeribitFixError {
             DeribitFixError::Connection(msg) => write!(f, "Connection error: {}", msg),
             DeribitFixError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
             DeribitFixError::MessageParsing(msg) => write!(f, "Message parsing error: {}", msg),
+            DeribitFixError::MessageConstruction(msg) => write!(f, "Message construction error: {}", msg),
             DeribitFixError::Session(msg) => write!(f, "Session error: {}", msg),
             DeribitFixError::Io(err) => write!(f, "I/O error: {}", err),
             DeribitFixError::Json(err) => write!(f, "JSON error: {}", err),

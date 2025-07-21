@@ -1,5 +1,6 @@
 //! Utility functions for the Deribit FIX framework
 pub(crate) mod logger;
+pub mod display;
 
 use chrono::{DateTime, Utc};
 use base64::prelude::*;
@@ -7,6 +8,7 @@ use rand::{rng, Rng};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use crate::model::order::{OrderSide, OrderType, TimeInForce};
 
 /// Setup logging with configurable level
 pub fn setup_logger() {
@@ -117,30 +119,30 @@ pub fn generate_request_id(prefix: &str) -> String {
 }
 
 /// Convert side enum to FIX side value
-pub fn side_to_fix(side: crate::client::OrderSide) -> &'static str {
+pub fn side_to_fix(side: OrderSide) -> &'static str {
     match side {
-        crate::client::OrderSide::Buy => "1",
-        crate::client::OrderSide::Sell => "2",
+        OrderSide::Buy => "1",
+        OrderSide::Sell => "2",
     }
 }
 
 /// Convert order type enum to FIX order type value
-pub fn order_type_to_fix(order_type: crate::client::OrderType) -> &'static str {
+pub fn order_type_to_fix(order_type: OrderType) -> &'static str {
     match order_type {
-        crate::client::OrderType::Market => "1",
-        crate::client::OrderType::Limit => "2",
-        crate::client::OrderType::Stop => "3",
-        crate::client::OrderType::StopLimit => "4",
+        OrderType::Market => "1",
+        OrderType::Limit => "2",
+        OrderType::Stop => "3",
+        OrderType::StopLimit => "4",
     }
 }
 
 /// Convert time in force enum to FIX time in force value
-pub fn time_in_force_to_fix(tif: crate::client::TimeInForce) -> &'static str {
+pub fn time_in_force_to_fix(tif: TimeInForce) -> &'static str {
     match tif {
-        crate::client::TimeInForce::Day => "0",
-        crate::client::TimeInForce::GoodTillCancel => "1",
-        crate::client::TimeInForce::ImmediateOrCancel => "3",
-        crate::client::TimeInForce::FillOrKill => "4",
+        TimeInForce::Day => "0",
+        TimeInForce::GoodTillCancel => "1",
+        TimeInForce::ImmediateOrCancel => "3",
+        TimeInForce::FillOrKill => "4",
     }
 }
 

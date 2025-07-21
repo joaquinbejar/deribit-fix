@@ -1,12 +1,14 @@
 //! FIX session management
 
+use crate::model::message::FixMessage;
+use crate::model::order::{OrderSide, OrderType, TimeInForce};
+use crate::model::types::MsgType;
+use crate::prelude::{NewOrderRequest, Position};
 use crate::{
-    client::{NewOrderRequest, OrderSide, OrderType, Position, TimeInForce},
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
-    message::{MessageBuilder},
-    types::MsgType,
+    message::MessageBuilder,
     utils::{generate_nonce, generate_timestamp},
 };
 use base64::prelude::*;
@@ -54,7 +56,9 @@ impl Session {
 
     /// Perform FIX logon
     pub async fn logon(&mut self) -> Result<()> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         info!("Initiating FIX logon");
@@ -64,10 +68,10 @@ impl Session {
         let timestamp = generate_timestamp();
         let nonce = generate_nonce(32);
         let raw_data = format!("{}.{}", timestamp, nonce);
-        
+
         // Calculate password hash
         let password_hash = self.calculate_password_hash(&raw_data)?;
-        
+
         // Build logon message
         let mut builder = MessageBuilder::new()
             .msg_type(MsgType::Logon)
@@ -97,19 +101,21 @@ impl Session {
         }
 
         let logon_message = builder.build()?;
-        
+
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&logon_message).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         info!("Logon message sent");
         Ok(())
     }
 
     /// Perform FIX logout
     pub async fn logout(&mut self) -> Result<()> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         info!("Initiating FIX logout");
@@ -125,17 +131,19 @@ impl Session {
 
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&logout_message).await?;
-        
+
         self.outgoing_seq_num += 1;
         self.state = SessionState::Disconnected;
-        
+
         info!("Logout message sent");
         Ok(())
     }
 
     /// Send a heartbeat message
     pub async fn send_heartbeat(&mut self, test_req_id: Option<String>) -> Result<()> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         let mut builder = MessageBuilder::new()
@@ -150,26 +158,29 @@ impl Session {
         }
 
         let heartbeat_message = builder.build()?;
-        
+
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&heartbeat_message).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         debug!("Heartbeat sent");
         Ok(())
     }
 
     /// Send a new order
     pub async fn send_new_order(&mut self, order: NewOrderRequest) -> Result<String> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         if self.state != SessionState::LoggedOn {
             return Err(DeribitFixError::Session("Not logged on".to_string()));
         }
 
-        let client_order_id = order.client_order_id
+        let client_order_id = order
+            .client_order_id
             .unwrap_or_else(|| format!("ORDER_{}", generate_timestamp()));
 
         let mut builder = MessageBuilder::new()
@@ -180,23 +191,38 @@ impl Session {
             .sending_time(Utc::now())
             .field(11, client_order_id.clone()) // ClOrdID
             .field(55, order.symbol) // Symbol
-            .field(54, match order.side { // Side
-                OrderSide::Buy => "1",
-                OrderSide::Sell => "2",
-            }.to_string())
+            .field(
+                54,
+                match order.side {
+                    // Side
+                    OrderSide::Buy => "1",
+                    OrderSide::Sell => "2",
+                }
+                .to_string(),
+            )
             .field(38, order.quantity.to_string()) // OrderQty
-            .field(40, match order.order_type { // OrdType
-                OrderType::Market => "1",
-                OrderType::Limit => "2",
-                OrderType::Stop => "3",
-                OrderType::StopLimit => "4",
-            }.to_string())
-            .field(59, match order.time_in_force { // TimeInForce
-                TimeInForce::Day => "0",
-                TimeInForce::GoodTillCancel => "1",
-                TimeInForce::ImmediateOrCancel => "3",
-                TimeInForce::FillOrKill => "4",
-            }.to_string());
+            .field(
+                40,
+                match order.order_type {
+                    // OrdType
+                    OrderType::Market => "1",
+                    OrderType::Limit => "2",
+                    OrderType::Stop => "3",
+                    OrderType::StopLimit => "4",
+                }
+                .to_string(),
+            )
+            .field(
+                59,
+                match order.time_in_force {
+                    // TimeInForce
+                    TimeInForce::Day => "0",
+                    TimeInForce::GoodTillCancel => "1",
+                    TimeInForce::ImmediateOrCancel => "3",
+                    TimeInForce::FillOrKill => "4",
+                }
+                .to_string(),
+            );
 
         // Add price for limit orders
         if let Some(price) = order.price {
@@ -204,19 +230,21 @@ impl Session {
         }
 
         let order_message = builder.build()?;
-        
+
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&order_message).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         info!("New order sent: {}", client_order_id);
         Ok(client_order_id)
     }
 
     /// Cancel an order
     pub async fn cancel_order(&mut self, order_id: String) -> Result<()> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         if self.state != SessionState::LoggedOn {
@@ -235,16 +263,18 @@ impl Session {
 
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&cancel_message).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         info!("Order cancel request sent");
         Ok(())
     }
 
     /// Subscribe to market data
     pub async fn subscribe_market_data(&mut self, symbol: String) -> Result<()> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         if self.state != SessionState::LoggedOn {
@@ -266,16 +296,18 @@ impl Session {
 
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&md_request).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         info!("Market data subscription sent");
         Ok(())
     }
 
     /// Request positions
     pub async fn request_positions(&mut self) -> Result<Vec<Position>> {
-        let connection = self.connection.as_ref()
+        let connection = self
+            .connection
+            .as_ref()
             .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
 
         if self.state != SessionState::LoggedOn {
@@ -294,11 +326,11 @@ impl Session {
 
         let mut conn_guard = connection.lock().await;
         conn_guard.send_message(&pos_request).await?;
-        
+
         self.outgoing_seq_num += 1;
-        
+
         info!("Position request sent");
-        
+
         // TODO: Implement position response parsing
         Ok(vec![])
     }
@@ -329,5 +361,34 @@ impl Session {
     /// Set session state (for testing)
     pub fn set_state(&mut self, state: SessionState) {
         self.state = state;
+    }
+
+    /// Receive and process a FIX message from the connection
+    pub async fn receive_and_process_message(&mut self) -> Result<Option<FixMessage>> {
+        let conn_arc = self
+            .connection
+            .as_ref()
+            .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
+        let mut conn = conn_arc.lock().await;
+
+        match conn.receive_message().await {
+            Ok(Some(message)) => {
+                self.incoming_seq_num += 1;
+
+                // Handle Logon confirmation
+                if message.msg_type() == Some(MsgType::Logon) {
+                    self.state = SessionState::LoggedOn;
+                    info!("Session state changed to LoggedOn");
+                }
+
+                Ok(Some(message))
+            }
+            Ok(None) => {
+                // Connection closed
+                self.state = SessionState::Disconnected;
+                Ok(None)
+            }
+            Err(e) => Err(e),
+        }
     }
 }

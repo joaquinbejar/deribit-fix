@@ -3,11 +3,13 @@ use std::sync::Once;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
+#[allow(dead_code)]
 static INIT: Once = Once::new();
 /// Sets up the logger for the application.
 ///
 /// The logger level is determined by the `LOGLEVEL` environment variable.
 /// If the variable is not set, it defaults to `INFO`.
+#[allow(dead_code)]
 pub fn setup_logger() {
     INIT.call_once(|| {
         let log_level = env::var("LOGLEVEL")

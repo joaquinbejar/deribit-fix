@@ -52,9 +52,26 @@ async fn main() -> Result<()> {
         Ok(_) => {
             info!("✅ Successfully connected and logged in to Deribit FIX server!");
             
-            // Keep the connection alive for a bit to see if we receive any messages
-            info!("Keeping connection alive for 30 seconds to monitor messages...");
-            sleep(Duration::from_secs(30)).await;
+            // Wait for logon confirmation
+            info!("Waiting for logon confirmation...");
+            let mut logged_on = false;
+            for _ in 0..100 { // Wait for max 10 seconds
+                if let Some(state) = client.get_session_state().await {
+                    if state == deribit_fix::session::SessionState::LoggedOn {
+                        logged_on = true;
+                        break;
+                    }
+                }
+                sleep(Duration::from_millis(100)).await;
+            }
+
+            if logged_on {
+                info!("✅ Logon confirmed by server!");
+            } else {
+                error!("❌ Timed out waiting for logon confirmation from server.");
+                client.disconnect().await?;
+                return Err(DeribitFixError::Timeout("Logon confirmation timeout".to_string()));
+            }
             
             // Test if we're still connected
             if client.is_connected() {

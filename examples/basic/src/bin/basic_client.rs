@@ -1,10 +1,6 @@
 //! Basic example of using the Deribit FIX client
 
-use deribit_fix::{
-    client::{DeribitFixClient, NewOrderRequest, OrderSide, OrderType, TimeInForce},
-    config::Config,
-    error::Result,
-};
+use deribit_fix::{client::{DeribitFixClient, NewOrderRequest, OrderSide, OrderType, TimeInForce}, error::Result, DeribitFixConfig};
 use tokio::time::{sleep, Duration};
 use tracing::{info, error};
 use deribit_fix::prelude::setup_logger;
@@ -15,10 +11,7 @@ async fn main() -> Result<()> {
     setup_logger();
 
     // Create configuration for test environment
-    let config = Config::new(
-        "your_username".to_string(),
-        "your_password".to_string(),
-    )
+    let config = DeribitFixConfig::default()
     .with_heartbeat_interval(30)
     .with_cancel_on_disconnect(true)
     .with_logging(true, "info".to_string());

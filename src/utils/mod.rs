@@ -5,6 +5,32 @@ use chrono::{DateTime, Utc};
 use base64::prelude::*;
 use rand::{rng, Rng};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tracing::{debug, error, info, warn};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+
+/// Setup logging with configurable level
+pub fn setup_logger() {
+    let log_level = std::env::var("DERIBIT_LOG_LEVEL")
+        .unwrap_or_else(|_| "info".to_string())
+        .to_lowercase();
+    
+    let level = match log_level.as_str() {
+        "trace" => tracing::Level::TRACE,
+        "debug" => tracing::Level::DEBUG,
+        "info" => tracing::Level::INFO,
+        "warn" => tracing::Level::WARN,
+        "error" => tracing::Level::ERROR,
+        _ => tracing::Level::INFO,
+    };
+    
+    tracing_subscriber::registry()
+        .with(
+            tracing_subscriber::EnvFilter::try_from_default_env()
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(level.to_string()))
+        )
+        .with(tracing_subscriber::fmt::layer())
+        .init();
+}
 
 /// Generate a cryptographically secure random nonce
 pub fn generate_nonce(length: usize) -> String {

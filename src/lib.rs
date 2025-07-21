@@ -65,19 +65,21 @@ pub mod message;
 pub mod session;
 pub mod types;
 pub mod utils;
+pub mod constants;
 
 pub use client::DeribitFixClient;
-pub use config::Config;
+pub use config::DeribitFixConfig;
 pub use error::{DeribitFixError, Result};
 pub use types::*;
 
 /// Re-export commonly used types for convenience
 pub mod prelude {
+    //! Convenience re-exports for common types and traits
+    
     pub use crate::{
-        client::DeribitFixClient,
-        config::Config,
+        client::{DeribitFixClient, NewOrderRequest, OrderSide, OrderType, TimeInForce, Position},
+        config::DeribitFixConfig,
         error::{DeribitFixError, Result},
-        types::*,
-        utils::logger::setup_logger,
+        utils::setup_logger,
     };
 }

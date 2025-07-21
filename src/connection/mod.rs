@@ -1,7 +1,7 @@
 //! Connection management for Deribit FIX client
 
 use crate::{
-    config::Config,
+    config::DeribitFixConfig,
     error::{DeribitFixError, Result},
     message::FixMessage,
 };
@@ -46,14 +46,14 @@ impl Stream {
 /// TCP/TLS connection to Deribit FIX server
 pub struct Connection {
     stream: Stream,
-    config: Config,
+    config: DeribitFixConfig,
     buffer: Vec<u8>,
     connected: bool,
 }
 
 impl Connection {
     /// Create a new connection to the Deribit FIX server
-    pub async fn new(config: &Config) -> Result<Self> {
+    pub async fn new(config: &DeribitFixConfig) -> Result<Self> {
         let stream = if config.use_ssl {
             Self::connect_tls(config).await?
         } else {
@@ -69,7 +69,7 @@ impl Connection {
     }
 
     /// Connect using raw TCP
-    async fn connect_tcp(config: &Config) -> Result<Stream> {
+    async fn connect_tcp(config: &DeribitFixConfig) -> Result<Stream> {
         info!("Connecting to {}:{} via TCP", config.host, config.port);
         
         let addr = format!("{}:{}", config.host, config.port);
@@ -83,7 +83,7 @@ impl Connection {
     }
 
     /// Connect using TLS
-    async fn connect_tls(config: &Config) -> Result<Stream> {
+    async fn connect_tls(config: &DeribitFixConfig) -> Result<Stream> {
         info!("Connecting to {}:{} via TLS", config.host, config.port);
         
         let addr = format!("{}:{}", config.host, config.port);

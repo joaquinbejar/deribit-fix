@@ -1,7 +1,7 @@
 //! Deribit FIX client implementation
 
 use crate::{
-    config::Config,
+    config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
     message::{FixMessage, MessageBuilder},
@@ -12,16 +12,63 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, warn};
 
+/// Order side enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OrderSide {
+    Buy,
+    Sell,
+}
+
+/// Order type enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum OrderType {
+    Market,
+    Limit,
+    Stop,
+    StopLimit,
+}
+
+/// Time in force enumeration
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TimeInForce {
+    Day,
+    GoodTillCancel,
+    ImmediateOrCancel,
+    FillOrKill,
+}
+
+/// New order request structure
+#[derive(Debug, Clone)]
+pub struct NewOrderRequest {
+    pub symbol: String,
+    pub side: OrderSide,
+    pub order_type: OrderType,
+    pub quantity: f64,
+    pub price: Option<f64>,
+    pub time_in_force: TimeInForce,
+    pub client_order_id: Option<String>,
+}
+
+/// Position information
+#[derive(Debug, Clone)]
+pub struct Position {
+    pub symbol: String,
+    pub quantity: f64,
+    pub average_price: f64,
+    pub unrealized_pnl: f64,
+    pub realized_pnl: f64,
+}
+
 /// Main Deribit FIX client
 pub struct DeribitFixClient {
-    config: Config,
+    pub config: DeribitFixConfig,
     connection: Option<Arc<Mutex<Connection>>>,
     session: Option<Arc<Mutex<Session>>>,
 }
 
 impl DeribitFixClient {
     /// Create a new Deribit FIX client
-    pub async fn new(config: Config) -> Result<Self> {
+    pub async fn new(config: DeribitFixConfig) -> Result<Self> {
         config.validate()?;
         
         Ok(Self {
@@ -120,51 +167,4 @@ impl DeribitFixClient {
         let mut session_guard = session.lock().await;
         session_guard.request_positions().await
     }
-}
-
-/// New order request parameters
-#[derive(Debug, Clone)]
-pub struct NewOrderRequest {
-    pub symbol: String,
-    pub side: OrderSide,
-    pub order_type: OrderType,
-    pub quantity: f64,
-    pub price: Option<f64>,
-    pub time_in_force: TimeInForce,
-    pub client_order_id: Option<String>,
-}
-
-/// Order side enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OrderSide {
-    Buy,
-    Sell,
-}
-
-/// Order type enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum OrderType {
-    Market,
-    Limit,
-    Stop,
-    StopLimit,
-}
-
-/// Time in force enumeration
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum TimeInForce {
-    Day,
-    GoodTillCancel,
-    ImmediateOrCancel,
-    FillOrKill,
-}
-
-/// Position information
-#[derive(Debug, Clone)]
-pub struct Position {
-    pub symbol: String,
-    pub quantity: f64,
-    pub average_price: f64,
-    pub unrealized_pnl: f64,
-    pub realized_pnl: f64,
 }

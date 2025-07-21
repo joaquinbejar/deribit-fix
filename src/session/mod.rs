@@ -2,7 +2,7 @@
 
 use crate::{
     client::{NewOrderRequest, OrderSide, OrderType, Position, TimeInForce},
-    config::Config,
+    config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
     message::{FixMessage, MessageBuilder},
@@ -27,7 +27,7 @@ pub enum SessionState {
 
 /// FIX session manager
 pub struct Session {
-    config: Config,
+    config: DeribitFixConfig,
     connection: Option<Arc<Mutex<Connection>>>,
     state: SessionState,
     outgoing_seq_num: u32,
@@ -36,7 +36,7 @@ pub struct Session {
 
 impl Session {
     /// Create a new FIX session
-    pub fn new(config: &Config) -> Result<Self> {
+    pub fn new(config: &DeribitFixConfig) -> Result<Self> {
         Ok(Self {
             config: config.clone(),
             connection: None,

@@ -32,14 +32,12 @@ impl FixMessage {
                     fields.push((tag, value.to_string()));
                 } else {
                     return Err(DeribitFixError::MessageParsing(format!(
-                        "Invalid tag: {}",
-                        tag_str
+                        "Invalid tag: {tag_str}"
                     )));
                 }
             } else {
                 return Err(DeribitFixError::MessageParsing(format!(
-                    "Invalid field: {}",
-                    part
+                    "Invalid field: {part}"
                 )));
             }
         }

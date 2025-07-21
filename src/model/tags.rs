@@ -1,8 +1,8 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 21/7/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 21/7/25
+******************************************************************************/
 
 /// FIX field tags commonly used in Deribit
 /// BeginString (8)

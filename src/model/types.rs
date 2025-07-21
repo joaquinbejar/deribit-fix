@@ -1,10 +1,10 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 21/7/25
- ******************************************************************************/
-use serde::{Deserialize, Serialize};
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 21/7/25
+******************************************************************************/
 use crate::{impl_json_debug_pretty, impl_json_display};
+use serde::{Deserialize, Serialize};
 
 /// FIX message type identifiers
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -243,15 +243,5 @@ pub enum SecurityType {
     Index,
 }
 
-impl_json_debug_pretty!(
-    MsgType,
-    ExecType,
-    MDEntryType,
-    SecurityType
-);
-impl_json_display!(
-    MsgType,
-    ExecType,
-    MDEntryType,
-    SecurityType
-);
+impl_json_debug_pretty!(MsgType, ExecType, MDEntryType, SecurityType);
+impl_json_display!(MsgType, ExecType, MDEntryType, SecurityType);

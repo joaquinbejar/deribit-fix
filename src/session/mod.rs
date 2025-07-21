@@ -67,7 +67,7 @@ impl Session {
         // Generate authentication data
         let timestamp = generate_timestamp();
         let nonce = generate_nonce(32);
-        let raw_data = format!("{}.{}", timestamp, nonce);
+        let raw_data = format!("{timestamp}.{nonce}");
 
         // Calculate password hash
         let password_hash = self.calculate_password_hash(&raw_data)?;

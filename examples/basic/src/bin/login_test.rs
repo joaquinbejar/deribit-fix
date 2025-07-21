@@ -1,12 +1,12 @@
 //! Login test example for Deribit FIX API
-//! 
+//!
 //! This example demonstrates how to perform a proper login to the Deribit FIX API
 //! according to their documentation. It includes proper authentication with SHA256
 //! hashing and nonce generation.
 
 use deribit_fix::prelude::*;
-use tokio::time::{sleep, Duration};
-use tracing::{info, error, warn};
+use tokio::time::{Duration, sleep};
+use tracing::{error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -46,16 +46,17 @@ async fn main() -> Result<()> {
     let mut client = DeribitFixClient::new(config).await?;
 
     info!("Attempting to connect to Deribit FIX server...");
-    
+
     // Connect to the server - this will automatically perform login
     match client.connect().await {
         Ok(_) => {
             info!("✅ Successfully connected and logged in to Deribit FIX server!");
-            
+
             // Wait for logon confirmation
             info!("Waiting for logon confirmation...");
             let mut logged_on = false;
-            for _ in 0..100 { // Wait for max 10 seconds
+            for _ in 0..100 {
+                // Wait for max 10 seconds
                 if let Some(state) = client.get_session_state().await {
                     if state == deribit_fix::session::SessionState::LoggedOn {
                         logged_on = true;
@@ -70,16 +71,18 @@ async fn main() -> Result<()> {
             } else {
                 error!("❌ Timed out waiting for logon confirmation from server.");
                 client.disconnect().await?;
-                return Err(DeribitFixError::Timeout("Logon confirmation timeout".to_string()));
+                return Err(DeribitFixError::Timeout(
+                    "Logon confirmation timeout".to_string(),
+                ));
             }
-            
+
             // Test if we're still connected
             if client.is_connected() {
                 info!("✅ Connection is still active");
             } else {
                 warn!("⚠️ Connection appears to have been lost");
             }
-            
+
             // Gracefully disconnect
             info!("Disconnecting...");
             client.disconnect().await?;

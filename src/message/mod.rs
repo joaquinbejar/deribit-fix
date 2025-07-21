@@ -1,11 +1,9 @@
 //! FIX message parsing and construction
 
-use crate::{
-    error::{DeribitFixError, Result},
-};
-use chrono::{DateTime, Utc};
+use crate::error::{DeribitFixError, Result};
 use crate::model::message::FixMessage;
 use crate::model::types::MsgType;
+use chrono::{DateTime, Utc};
 
 /// Builder for constructing FIX messages
 pub struct MessageBuilder {
@@ -16,10 +14,10 @@ impl MessageBuilder {
     /// Create a new message builder
     pub fn new() -> Self {
         let mut message = FixMessage::new();
-        
+
         // Set standard fields
         message.set_field(8, "FIX.4.4".to_string()); // BeginString
-        
+
         Self { message }
     }
 
@@ -63,28 +61,36 @@ impl MessageBuilder {
     /// Build the message
     pub fn build(mut self) -> Result<FixMessage> {
         // Isolate body fields and calculate body content string
-        let body_content: String = self.message.fields
+        let body_content: String = self
+            .message
+            .fields
             .iter()
             .filter(|(t, _)| *t != 8 && *t != 9 && *t != 10)
-            .map(|(tag, value)| format!("{}={}\x01", tag, value))
+            .map(|(tag, value)| format!("{tag}={value}\x01"))
             .collect();
 
         // Calculate body length
         let body_length = body_content.len();
 
         // Get BeginString
-        let begin_string = self.message.get_field(8)
-            .ok_or_else(|| DeribitFixError::MessageConstruction("Missing BeginString (8)".to_string()))?;
+        let begin_string = self.message.get_field(8).ok_or_else(|| {
+            DeribitFixError::MessageConstruction("Missing BeginString (8)".to_string())
+        })?;
 
         // Construct header
-        let header = format!("8={}\x019={}\x01", begin_string, body_length);
+        let header = format!("8={begin_string}\x019={body_length}\x01");
 
         // Combine for checksum calculation
-        let message_for_checksum = format!("{}{}", header, body_content);
+        let message_for_checksum = format!("{header}{body_content}");
 
         // Calculate and append checksum
-        let checksum = message_for_checksum.as_bytes().iter().map(|&b| b as u32).sum::<u32>() % 256;
-        self.message.raw_message = format!("{}10={:03}\x01", message_for_checksum, checksum);
+        let checksum = message_for_checksum
+            .as_bytes()
+            .iter()
+            .map(|&b| b as u32)
+            .sum::<u32>()
+            % 256;
+        self.message.raw_message = format!("{message_for_checksum}10={checksum:03}\x01");
 
         Ok(self.message)
     }

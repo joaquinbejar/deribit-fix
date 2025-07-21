@@ -1,17 +1,14 @@
 //! Connection management for Deribit FIX client
 
+use crate::model::message::FixMessage;
 use crate::model::stream::Stream;
 use crate::{
     config::DeribitFixConfig,
     error::{DeribitFixError, Result},
 };
-use tokio::{
-    net::TcpStream,
-    time::timeout,
-};
+use tokio::{net::TcpStream, time::timeout};
 use tokio_native_tls::TlsConnector;
 use tracing::{debug, info};
-use crate::model::message::FixMessage;
 
 /// TCP/TLS connection to Deribit FIX server
 pub struct Connection {
@@ -45,9 +42,9 @@ impl Connection {
         let addr = format!("{}:{}", config.host, config.port);
         let stream = timeout(config.connection_timeout, TcpStream::connect(&addr))
             .await
-            .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {}", addr)))?
+            .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {addr}")))?
             .map_err(|e| {
-                DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e))
+                DeribitFixError::Connection(format!("Failed to connect to {addr}: {e}"))
             })?;
 
         info!("Successfully connected via TCP");
@@ -61,20 +58,20 @@ impl Connection {
         let addr = format!("{}:{}", config.host, config.port);
         let tcp_stream = timeout(config.connection_timeout, TcpStream::connect(&addr))
             .await
-            .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {}", addr)))?
+            .map_err(|_| DeribitFixError::Timeout(format!("Connection timeout to {addr}")))?
             .map_err(|e| {
-                DeribitFixError::Connection(format!("Failed to connect to {}: {}", addr, e))
+                DeribitFixError::Connection(format!("Failed to connect to {addr}: {e}"))
             })?;
 
         let connector =
             TlsConnector::from(native_tls::TlsConnector::builder().build().map_err(|e| {
-                DeribitFixError::Connection(format!("TLS connector creation failed: {}", e))
+                DeribitFixError::Connection(format!("TLS connector creation failed: {e}"))
             })?);
 
         let tls_stream = connector
             .connect(&config.host, tcp_stream)
             .await
-            .map_err(|e| DeribitFixError::Connection(format!("TLS handshake failed: {}", e)))?;
+            .map_err(|e| DeribitFixError::Connection(format!("TLS handshake failed: {e}")))?;
 
         info!("Successfully connected via TLS");
         Ok(Stream::Tls(tls_stream))
@@ -94,12 +91,9 @@ impl Connection {
         self.stream
             .write_all(raw_message.as_bytes())
             .await
-            .map_err(|e| DeribitFixError::Io(e))?;
+            .map_err(DeribitFixError::Io)?;
 
-        self.stream
-            .flush()
-            .await
-            .map_err(|e| DeribitFixError::Io(e))?;
+        self.stream.flush().await.map_err(DeribitFixError::Io)?;
 
         Ok(())
     }
@@ -119,7 +113,7 @@ impl Connection {
             .stream
             .read(&mut temp_buffer)
             .await
-            .map_err(|e| DeribitFixError::Io(e))?;
+            .map_err(DeribitFixError::Io)?;
         debug!("Read {} bytes from stream", bytes_read);
 
         if bytes_read == 0 {

@@ -1,8 +1,8 @@
 //! Basic example of using the Deribit FIX client
 
-use tokio::time::{sleep, Duration};
-use tracing::{info, error};
 use deribit_fix::prelude::*;
+use tokio::time::{Duration, sleep};
+use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -11,9 +11,9 @@ async fn main() -> Result<()> {
 
     // Create configuration for test environment
     let config = DeribitFixConfig::default()
-    .with_heartbeat_interval(30)
-    .with_cancel_on_disconnect(true)
-    .with_logging(true, "info".to_string());
+        .with_heartbeat_interval(30)
+        .with_cancel_on_disconnect(true)
+        .with_logging(true, "info".to_string());
 
     // Validate configuration
     if let Err(e) = config.validate() {
@@ -22,12 +22,12 @@ async fn main() -> Result<()> {
     }
 
     info!("Creating Deribit FIX client...");
-    
+
     // Create the client
     let mut client = DeribitFixClient::new(config).await?;
 
     info!("Connecting to Deribit FIX server...");
-    
+
     // Connect to the server
     client.connect().await?;
 
@@ -35,7 +35,10 @@ async fn main() -> Result<()> {
 
     // Example: Subscribe to market data
     info!("Subscribing to BTC-PERPETUAL market data...");
-    if let Err(e) = client.subscribe_market_data("BTC-PERPETUAL".to_string()).await {
+    if let Err(e) = client
+        .subscribe_market_data("BTC-PERPETUAL".to_string())
+        .await
+    {
         error!("Failed to subscribe to market data: {}", e);
     }
 
@@ -54,10 +57,10 @@ async fn main() -> Result<()> {
     match client.send_order(order_request).await {
         Ok(order_id) => {
             info!("Order sent successfully with ID: {}", order_id);
-            
+
             // Wait a bit, then cancel the order
             sleep(Duration::from_secs(5)).await;
-            
+
             info!("Cancelling order: {}", order_id);
             if let Err(e) = client.cancel_order(order_id).await {
                 error!("Failed to cancel order: {}", e);
@@ -74,8 +77,10 @@ async fn main() -> Result<()> {
         Ok(positions) => {
             info!("Retrieved {} positions", positions.len());
             for position in positions {
-                info!("Position: {} - Qty: {}, Avg Price: {}", 
-                      position.symbol, position.quantity, position.average_price);
+                info!(
+                    "Position: {} - Qty: {}, Avg Price: {}",
+                    position.symbol, position.quantity, position.average_price
+                );
             }
         }
         Err(e) => {

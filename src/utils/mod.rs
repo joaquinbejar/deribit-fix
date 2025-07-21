@@ -1,21 +1,21 @@
 //! Utility functions for the Deribit FIX framework
-pub(crate) mod logger;
 pub mod display;
+pub(crate) mod logger;
 
-use chrono::{DateTime, Utc};
 use base64::prelude::*;
-use rand::{rng, Rng};
+use chrono::{DateTime, Utc};
+use rand::{Rng, rng};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use crate::model::order::{OrderSide, OrderType, TimeInForce};
+use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Setup logging with configurable level
 pub fn setup_logger() {
     let log_level = std::env::var("DERIBIT_LOG_LEVEL")
         .unwrap_or_else(|_| "info".to_string())
         .to_lowercase();
-    
+
     let level = match log_level.as_str() {
         "trace" => tracing::Level::TRACE,
         "debug" => tracing::Level::DEBUG,
@@ -24,11 +24,11 @@ pub fn setup_logger() {
         "error" => tracing::Level::ERROR,
         _ => tracing::Level::INFO,
     };
-    
+
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(level.to_string()))
+                .unwrap_or_else(|_| tracing_subscriber::EnvFilter::new(level.to_string())),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
@@ -56,7 +56,7 @@ pub fn format_fix_time(time: DateTime<Utc>) -> String {
 
 /// Parse a FIX time string to DateTime
 pub fn parse_fix_time(time_str: &str) -> Result<DateTime<Utc>, chrono::ParseError> {
-    DateTime::parse_from_str(&format!("{}+00:00", time_str), "%Y%m%d-%H:%M:%S%.3f%z")
+    DateTime::parse_from_str(&format!("{time_str}+00:00"), "%Y%m%d-%H:%M:%S%.3f%z")
         .map(|dt| dt.with_timezone(&Utc))
 }
 
@@ -71,7 +71,7 @@ pub fn validate_checksum(message: &str) -> bool {
     if let Some(checksum_pos) = message.rfind("10=") {
         let message_without_checksum = &message[..checksum_pos];
         let expected_checksum = calculate_checksum(message_without_checksum);
-        
+
         if let Some(checksum_str) = message[checksum_pos + 3..].split('\x01').next() {
             if let Ok(actual_checksum) = checksum_str.parse::<u8>() {
                 return expected_checksum == actual_checksum;
@@ -88,12 +88,12 @@ pub fn generate_client_order_id(prefix: &str) -> String {
 
 /// Convert price to FIX decimal format
 pub fn format_price(price: f64, precision: usize) -> String {
-    format!("{:.precision$}", price, precision = precision)
+    format!("{price:.precision$}")
 }
 
 /// Convert quantity to FIX decimal format
 pub fn format_quantity(quantity: f64, precision: usize) -> String {
-    format!("{:.precision$}", quantity, precision = precision)
+    format!("{quantity:.precision$}")
 }
 
 /// Parse FIX decimal string to f64
@@ -115,7 +115,7 @@ pub fn unescape_fix_value(value: &str) -> String {
 pub fn generate_request_id(prefix: &str) -> String {
     let mut rng = rng();
     let random_part: u32 = rng.random();
-    format!("{}_{}", prefix, random_part)
+    format!("{prefix}_{random_part}")
 }
 
 /// Convert side enum to FIX side value
@@ -153,18 +153,18 @@ pub fn validate_instrument_name(instrument: &str) -> bool {
     if instrument.is_empty() {
         return false;
     }
-    
+
     // Must contain at least one dash
     if !instrument.contains('-') {
         return false;
     }
-    
+
     // Must start with a valid currency
     let valid_currencies = ["BTC", "ETH", "USD", "USDC"];
-    let starts_with_valid_currency = valid_currencies.iter()
-        .any(|&currency| instrument.starts_with(currency));
-    
-    starts_with_valid_currency
+
+    valid_currencies
+        .iter()
+        .any(|&currency| instrument.starts_with(currency))
 }
 
 /// Extract currency from instrument name
@@ -184,15 +184,15 @@ pub fn format_deribit_instrument(
     option_type: Option<&str>,
 ) -> String {
     let mut instrument = currency.to_string();
-    
+
     if let Some(exp) = expiry {
         instrument.push('-');
         instrument.push_str(exp);
-        
+
         if let Some(strike_price) = strike {
             instrument.push('-');
             instrument.push_str(&strike_price.to_string());
-            
+
             if let Some(opt_type) = option_type {
                 instrument.push('-');
                 instrument.push_str(opt_type);
@@ -202,7 +202,7 @@ pub fn format_deribit_instrument(
         // Perpetual contract
         instrument.push_str("-PERPETUAL");
     }
-    
+
     instrument
 }
 
@@ -214,7 +214,7 @@ mod tests {
     fn test_generate_nonce() {
         let nonce1 = generate_nonce(32);
         let nonce2 = generate_nonce(32);
-        
+
         assert_ne!(nonce1, nonce2);
         assert!(!nonce1.is_empty());
         assert!(!nonce2.is_empty());
@@ -224,7 +224,7 @@ mod tests {
     fn test_checksum_calculation() {
         let message = "8=FIX.4.4\x019=61\x0135=A\x0149=CLIENT\x0156=DERIBITSERVER\x0134=1\x01";
         let checksum = calculate_checksum(message);
-        assert!(checksum <= 255); 
+        assert!(checksum <= 255);
     }
 
     #[test]
@@ -238,8 +238,14 @@ mod tests {
 
     #[test]
     fn test_currency_extraction() {
-        assert_eq!(extract_currency_from_instrument("BTC-PERPETUAL"), Some("BTC"));
-        assert_eq!(extract_currency_from_instrument("ETH-25DEC20-600-C"), Some("ETH"));
+        assert_eq!(
+            extract_currency_from_instrument("BTC-PERPETUAL"),
+            Some("BTC")
+        );
+        assert_eq!(
+            extract_currency_from_instrument("ETH-25DEC20-600-C"),
+            Some("ETH")
+        );
         assert_eq!(extract_currency_from_instrument("INVALID"), None);
     }
 

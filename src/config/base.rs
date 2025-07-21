@@ -1,16 +1,21 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 21/7/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 21/7/25
+******************************************************************************/
 
+use crate::config::utils::{get_env_optional, get_env_or_default};
+use crate::constants::{
+    DEFAULT_CONNECTION_TIMEOUT_SECS, DEFAULT_HEARTBEAT_INTERVAL, DEFAULT_LOG_LEVEL,
+    DEFAULT_PROD_HOST, DEFAULT_PROD_PORT, DEFAULT_RECONNECT_ATTEMPTS, DEFAULT_RECONNECT_DELAY_SECS,
+    DEFAULT_SENDER_COMP_ID, DEFAULT_SSL_PORT, DEFAULT_TARGET_COMP_ID, DEFAULT_TEST_HOST,
+    DEFAULT_TEST_PORT,
+};
 use crate::error::{DeribitFixError, Result};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use std::{fmt::Debug, time::Duration};
-use tracing::{debug};
-use crate::config::utils::{get_env_optional, get_env_or_default};
-use crate::constants::{DEFAULT_CONNECTION_TIMEOUT_SECS, DEFAULT_HEARTBEAT_INTERVAL, DEFAULT_LOG_LEVEL, DEFAULT_PROD_HOST, DEFAULT_PROD_PORT, DEFAULT_RECONNECT_ATTEMPTS, DEFAULT_RECONNECT_DELAY_SECS, DEFAULT_SENDER_COMP_ID, DEFAULT_SSL_PORT, DEFAULT_TARGET_COMP_ID, DEFAULT_TEST_HOST, DEFAULT_TEST_PORT};
+use tracing::debug;
 
 /// Configuration for the Deribit FIX client
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,12 +74,10 @@ impl DeribitFixConfig {
             } else {
                 (DEFAULT_TEST_HOST, DEFAULT_TEST_PORT)
             }
+        } else if use_ssl {
+            (DEFAULT_PROD_HOST, DEFAULT_SSL_PORT)
         } else {
-            if use_ssl {
-                (DEFAULT_PROD_HOST, DEFAULT_SSL_PORT)
-            } else {
-                (DEFAULT_PROD_HOST, DEFAULT_PROD_PORT)
-            }
+            (DEFAULT_PROD_HOST, DEFAULT_PROD_PORT)
         };
 
         Self {
@@ -84,14 +87,32 @@ impl DeribitFixConfig {
             port: get_env_or_default("DERIBIT_PORT", default_port),
             use_ssl,
             test_mode,
-            heartbeat_interval: get_env_or_default("DERIBIT_HEARTBEAT_INTERVAL", DEFAULT_HEARTBEAT_INTERVAL),
-            connection_timeout: Duration::from_secs(get_env_or_default("DERIBIT_CONNECTION_TIMEOUT", DEFAULT_CONNECTION_TIMEOUT_SECS)),
-            reconnect_attempts: get_env_or_default("DERIBIT_RECONNECT_ATTEMPTS", DEFAULT_RECONNECT_ATTEMPTS),
-            reconnect_delay: Duration::from_secs(get_env_or_default("DERIBIT_RECONNECT_DELAY", DEFAULT_RECONNECT_DELAY_SECS)),
+            heartbeat_interval: get_env_or_default(
+                "DERIBIT_HEARTBEAT_INTERVAL",
+                DEFAULT_HEARTBEAT_INTERVAL,
+            ),
+            connection_timeout: Duration::from_secs(get_env_or_default(
+                "DERIBIT_CONNECTION_TIMEOUT",
+                DEFAULT_CONNECTION_TIMEOUT_SECS,
+            )),
+            reconnect_attempts: get_env_or_default(
+                "DERIBIT_RECONNECT_ATTEMPTS",
+                DEFAULT_RECONNECT_ATTEMPTS,
+            ),
+            reconnect_delay: Duration::from_secs(get_env_or_default(
+                "DERIBIT_RECONNECT_DELAY",
+                DEFAULT_RECONNECT_DELAY_SECS,
+            )),
             enable_logging: get_env_or_default("DERIBIT_ENABLE_LOGGING", true),
             log_level: get_env_or_default("DERIBIT_LOG_LEVEL", DEFAULT_LOG_LEVEL.to_string()),
-            sender_comp_id: get_env_or_default("DERIBIT_SENDER_COMP_ID", DEFAULT_SENDER_COMP_ID.to_string()),
-            target_comp_id: get_env_or_default("DERIBIT_TARGET_COMP_ID", DEFAULT_TARGET_COMP_ID.to_string()),
+            sender_comp_id: get_env_or_default(
+                "DERIBIT_SENDER_COMP_ID",
+                DEFAULT_SENDER_COMP_ID.to_string(),
+            ),
+            target_comp_id: get_env_or_default(
+                "DERIBIT_TARGET_COMP_ID",
+                DEFAULT_TARGET_COMP_ID.to_string(),
+            ),
             cancel_on_disconnect: get_env_or_default("DERIBIT_CANCEL_ON_DISCONNECT", false),
             app_id: get_env_optional("DERIBIT_APP_ID"),
             app_secret: get_env_optional("DERIBIT_APP_SECRET"),
@@ -209,11 +230,15 @@ impl DeribitFixConfig {
     /// Validate the configuration
     pub fn validate(&self) -> Result<()> {
         if self.username.is_empty() {
-            return Err(DeribitFixError::Config("Username cannot be empty".to_string()));
+            return Err(DeribitFixError::Config(
+                "Username cannot be empty".to_string(),
+            ));
         }
 
         if self.password.is_empty() {
-            return Err(DeribitFixError::Config("Password cannot be empty".to_string()));
+            return Err(DeribitFixError::Config(
+                "Password cannot be empty".to_string(),
+            ));
         }
 
         if self.host.is_empty() {
@@ -221,28 +246,40 @@ impl DeribitFixConfig {
         }
 
         if self.port == 0 {
-            return Err(DeribitFixError::Config("Port must be greater than 0".to_string()));
+            return Err(DeribitFixError::Config(
+                "Port must be greater than 0".to_string(),
+            ));
         }
 
         if self.heartbeat_interval == 0 {
-            return Err(DeribitFixError::Config("Heartbeat interval must be greater than 0".to_string()));
+            return Err(DeribitFixError::Config(
+                "Heartbeat interval must be greater than 0".to_string(),
+            ));
         }
 
         if self.sender_comp_id.is_empty() {
-            return Err(DeribitFixError::Config("Sender company ID cannot be empty".to_string()));
+            return Err(DeribitFixError::Config(
+                "Sender company ID cannot be empty".to_string(),
+            ));
         }
 
         if self.target_comp_id.is_empty() {
-            return Err(DeribitFixError::Config("Target company ID cannot be empty".to_string()));
+            return Err(DeribitFixError::Config(
+                "Target company ID cannot be empty".to_string(),
+            ));
         }
 
         // Validate app credentials if provided
         if self.app_id.is_some() && self.app_secret.is_none() {
-            return Err(DeribitFixError::Config("Application secret is required when app ID is provided".to_string()));
+            return Err(DeribitFixError::Config(
+                "Application secret is required when app ID is provided".to_string(),
+            ));
         }
 
         if self.app_secret.is_some() && self.app_id.is_none() {
-            return Err(DeribitFixError::Config("Application ID is required when app secret is provided".to_string()));
+            return Err(DeribitFixError::Config(
+                "Application ID is required when app secret is provided".to_string(),
+            ));
         }
 
         Ok(())

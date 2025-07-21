@@ -1,8 +1,8 @@
 /******************************************************************************
-    Author: Joaquín Béjar García
-    Email: jb@taunais.com 
-    Date: 21/7/25
- ******************************************************************************/
+   Author: Joaquín Béjar García
+   Email: jb@taunais.com
+   Date: 21/7/25
+******************************************************************************/
 
 // Default configuration constants
 pub(crate) const DEFAULT_TEST_HOST: &str = "test.deribit.com";

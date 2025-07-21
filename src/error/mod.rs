@@ -36,18 +36,20 @@ pub enum DeribitFixError {
 impl fmt::Display for DeribitFixError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            DeribitFixError::Connection(msg) => write!(f, "Connection error: {}", msg),
-            DeribitFixError::Authentication(msg) => write!(f, "Authentication error: {}", msg),
-            DeribitFixError::MessageParsing(msg) => write!(f, "Message parsing error: {}", msg),
-            DeribitFixError::MessageConstruction(msg) => write!(f, "Message construction error: {}", msg),
-            DeribitFixError::Session(msg) => write!(f, "Session error: {}", msg),
-            DeribitFixError::Io(err) => write!(f, "I/O error: {}", err),
-            DeribitFixError::Json(err) => write!(f, "JSON error: {}", err),
-            DeribitFixError::Http(err) => write!(f, "HTTP error: {}", err),
-            DeribitFixError::Config(msg) => write!(f, "Configuration error: {}", msg),
-            DeribitFixError::Timeout(msg) => write!(f, "Timeout error: {}", msg),
-            DeribitFixError::Protocol(msg) => write!(f, "Protocol error: {}", msg),
-            DeribitFixError::Generic(msg) => write!(f, "Error: {}", msg),
+            DeribitFixError::Connection(msg) => write!(f, "Connection error: {msg}"),
+            DeribitFixError::Authentication(msg) => write!(f, "Authentication error: {msg}"),
+            DeribitFixError::MessageParsing(msg) => write!(f, "Message parsing error: {msg}"),
+            DeribitFixError::MessageConstruction(msg) => {
+                write!(f, "Message construction error: {msg}")
+            }
+            DeribitFixError::Session(msg) => write!(f, "Session error: {msg}"),
+            DeribitFixError::Io(err) => write!(f, "I/O error: {err}"),
+            DeribitFixError::Json(err) => write!(f, "JSON error: {err}"),
+            DeribitFixError::Http(err) => write!(f, "HTTP error: {err}"),
+            DeribitFixError::Config(msg) => write!(f, "Configuration error: {msg}"),
+            DeribitFixError::Timeout(msg) => write!(f, "Timeout error: {msg}"),
+            DeribitFixError::Protocol(msg) => write!(f, "Protocol error: {msg}"),
+            DeribitFixError::Generic(msg) => write!(f, "Error: {msg}"),
         }
     }
 }

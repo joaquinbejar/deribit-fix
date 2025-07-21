@@ -1,6 +1,7 @@
 //! Basic example of using the Deribit FIX client
 
 use deribit_base::prelude::*;
+use deribit_base::utils::setup_logger;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};
@@ -45,7 +46,7 @@ async fn main() -> Result<()> {
 
     // Example: Send a limit order
     info!("Sending a test limit order...");
-    let order_request = NewOrderRequest {
+    let order_request = fix::NewOrderRequest {
         symbol: "BTC-PERPETUAL".to_string(),
         side: OrderSide::Buy,
         order_type: OrderType::Limit,

@@ -4,13 +4,12 @@ use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
-    message::{FixMessage, MessageBuilder},
     session::Session,
-    types::*,
 };
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{info};
+use uuid::Uuid;
 
 /// Order side enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -87,7 +86,7 @@ impl DeribitFixClient {
         self.connection = Some(Arc::new(Mutex::new(connection)));
 
         // Create session
-        let session = Session::new(&self.config)?;
+        let session = Session::new(&self.config, self.connection.as_ref().unwrap().clone())?;
         self.session = Some(Arc::new(Mutex::new(session)));
 
         // Perform logon

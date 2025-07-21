@@ -5,14 +5,14 @@ use crate::{
     error::{DeribitFixError, Result},
     message::FixMessage,
 };
-use std::time::Duration;
+
 use tokio::{
     io::{AsyncReadExt, AsyncWriteExt},
     net::TcpStream,
     time::timeout,
 };
 use tokio_native_tls::{TlsConnector, TlsStream};
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info};
 
 /// Connection wrapper for both TCP and TLS streams
 pub enum Stream {

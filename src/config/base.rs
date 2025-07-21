@@ -7,8 +7,8 @@
 use crate::error::{DeribitFixError, Result};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use std::{env, fmt::Debug, str::FromStr, time::Duration};
-use tracing::{debug, error};
+use std::{fmt::Debug, time::Duration};
+use tracing::{debug};
 use crate::config::utils::{get_env_optional, get_env_or_default};
 use crate::constants::{DEFAULT_CONNECTION_TIMEOUT_SECS, DEFAULT_HEARTBEAT_INTERVAL, DEFAULT_LOG_LEVEL, DEFAULT_PROD_HOST, DEFAULT_PROD_PORT, DEFAULT_RECONNECT_ATTEMPTS, DEFAULT_RECONNECT_DELAY_SECS, DEFAULT_SENDER_COMP_ID, DEFAULT_SSL_PORT, DEFAULT_TARGET_COMP_ID, DEFAULT_TEST_HOST, DEFAULT_TEST_PORT};
 

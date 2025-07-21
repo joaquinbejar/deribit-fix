@@ -5,7 +5,7 @@ use chrono::{DateTime, Utc};
 use base64::prelude::*;
 use rand::{rng, Rng};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tracing::{debug, error, info, warn};
+
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 /// Setup logging with configurable level

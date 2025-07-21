@@ -5,7 +5,7 @@ use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
-    message::{FixMessage, MessageBuilder},
+    message::{MessageBuilder},
     types::MsgType,
     utils::{generate_nonce, generate_timestamp},
 };
@@ -14,7 +14,7 @@ use chrono::Utc;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, error, info, warn};
+use tracing::{debug, info};
 
 /// FIX session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -36,13 +36,14 @@ pub struct Session {
 
 impl Session {
     /// Create a new FIX session
-    pub fn new(config: &DeribitFixConfig) -> Result<Self> {
+    pub fn new(config: &DeribitFixConfig, connection: Arc<Mutex<Connection>>) -> Result<Self> {
+        info!("Creating new FIX session");
         Ok(Self {
             config: config.clone(),
-            connection: None,
             state: SessionState::Disconnected,
             outgoing_seq_num: 1,
             incoming_seq_num: 1,
+            connection: Some(connection),
         })
     }
 

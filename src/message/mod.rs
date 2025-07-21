@@ -6,7 +6,7 @@ use crate::{
 };
 use chrono::{DateTime, Utc};
 use std::collections::HashMap;
-use tracing::{debug, warn};
+use tracing::{warn};
 
 /// FIX message representation
 #[derive(Debug, Clone)]

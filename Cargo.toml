@@ -43,6 +43,7 @@ once_cell = { workspace = true }
 lazy_static = { workspace = true }
 rand = { workspace = true }
 nanoid = { workspace = true }
+uuid = { workspace = true, features = ["v4", "serde"] }
 # Additional dependencies for FIX framework
 base64 = { workspace = true }
 sha2 =  { workspace = true }
@@ -97,3 +98,4 @@ base64 = "0.22"
 sha2 = "0.10"
 tokio-native-tls = "0.3"
 native-tls = "0.2"
+uuid = { version = "1.8", features = ["v4", "serde"] }

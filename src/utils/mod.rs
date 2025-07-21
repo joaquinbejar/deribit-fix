@@ -224,7 +224,7 @@ mod tests {
     fn test_checksum_calculation() {
         let message = "8=FIX.4.4\x019=61\x0135=A\x0149=CLIENT\x0156=DERIBITSERVER\x0134=1\x01";
         let checksum = calculate_checksum(message);
-        assert!(checksum <= 255);
+        assert_eq!(checksum, 169);
     }
 
     #[test]

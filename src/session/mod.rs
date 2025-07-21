@@ -363,32 +363,50 @@ impl Session {
         self.state = state;
     }
 
+    async fn process_message(&mut self, message: &FixMessage) -> Result<()> {
+        self.incoming_seq_num += 1;
+
+        match message.msg_type() {
+            Some(MsgType::Logon) => {
+                self.state = SessionState::LoggedOn;
+                info!("Session state changed to LoggedOn");
+            }
+            Some(MsgType::Heartbeat) => {
+                debug!("Heartbeat received");
+            }
+            Some(MsgType::TestRequest) => {
+                if let Some(test_req_id) = message.get_field(112) {
+                    info!("TestRequest received, sending Heartbeat");
+                    self.send_heartbeat(Some(test_req_id.to_string())).await?;
+                } else {
+                    return Err(DeribitFixError::MessageConstruction(
+                        "TestRequest received without TestReqID".to_string(),
+                    ));
+                }
+            }
+            _ => {
+                // Other message types are handled by the client application
+            }
+        }
+        Ok(())
+    }
+
     /// Receive and process a FIX message from the connection
     pub async fn receive_and_process_message(&mut self) -> Result<Option<FixMessage>> {
-        let conn_arc = self
-            .connection
-            .as_ref()
-            .ok_or_else(|| DeribitFixError::Session("No connection available".to_string()))?;
-        let mut conn = conn_arc.lock().await;
+        let message = {
+            let conn_arc = self.connection.as_ref().ok_or_else(|| {
+                DeribitFixError::Session("No connection available".to_string())
+            })?;
+            let mut conn = conn_arc.lock().await;
+            conn.receive_message().await?
+        };
 
-        match conn.receive_message().await {
-            Ok(Some(message)) => {
-                self.incoming_seq_num += 1;
-
-                // Handle Logon confirmation
-                if message.msg_type() == Some(MsgType::Logon) {
-                    self.state = SessionState::LoggedOn;
-                    info!("Session state changed to LoggedOn");
-                }
-
-                Ok(Some(message))
-            }
-            Ok(None) => {
-                // Connection closed
-                self.state = SessionState::Disconnected;
-                Ok(None)
-            }
-            Err(e) => Err(e),
+        if let Some(msg) = message.as_ref() {
+            self.process_message(msg).await?;
+            Ok(Some(msg.clone()))
+        } else {
+            self.state = SessionState::Disconnected;
+            Ok(None)
         }
     }
 }

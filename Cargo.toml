@@ -30,18 +30,15 @@ deribit-base = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 chrono = { workspace = true, features = ["serde"] }
 tracing = { workspace = true }
-tracing-subscriber = { workspace = true, features = ["env-filter"] }
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
 dotenv = { workspace = true }
-rand = { workspace = true }
 base64 = { workspace = true }
 sha2 =  { workspace = true }
-hex = "0.4"
 tokio-native-tls =  { workspace = true }
 native-tls =  { workspace = true }
-
+rand = { workspace = true }
 
 [[test]]
 name = "unit_tests"
@@ -64,12 +61,11 @@ members = [
 
 [workspace.dependencies]
 deribit-fix=  { path = "." }
-deribit-base = { path = "../deribit-base" }
-#deribit-base = "0.1"
+#deribit-base = { path = "../deribit-base" }
+deribit-base = "0.1.1"
 tokio = { version = "1.45", features = ["rt", "rt-multi-thread", "macros", "time", "signal"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
-tracing-subscriber = "0.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 reqwest = { version = "0.12", features = ["json"] }

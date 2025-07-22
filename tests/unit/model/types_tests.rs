@@ -182,10 +182,7 @@ mod tests {
     /// Test position-related message types
     #[test]
     fn test_msg_type_positions() {
-        let position_types = vec![
-            MsgType::RequestForPositions,
-            MsgType::PositionReport,
-        ];
+        let position_types = vec![MsgType::RequestForPositions, MsgType::PositionReport];
 
         for msg_type in position_types {
             assert_eq!(msg_type, msg_type);
@@ -197,10 +194,7 @@ mod tests {
     /// Test user-related message types
     #[test]
     fn test_msg_type_user() {
-        let user_types = vec![
-            MsgType::UserRequest,
-            MsgType::UserResponse,
-        ];
+        let user_types = vec![MsgType::UserRequest, MsgType::UserResponse];
 
         for msg_type in user_types {
             assert_eq!(msg_type, msg_type);
@@ -325,25 +319,16 @@ mod tests {
     /// Test MsgType FromStr with invalid inputs
     #[test]
     fn test_msg_type_from_str_invalid() {
-        let invalid_inputs = vec![
-            "INVALID",
-            "99",
-            "ZZ",
-            "",
-            "a",
-            "B",
-            "10",
-            "XX",
-        ];
+        let invalid_inputs = vec!["INVALID", "99", "ZZ", "", "a", "B", "10", "XX"];
 
         for invalid_input in invalid_inputs {
             let result = MsgType::from_str(invalid_input);
             assert!(result.is_err(), "Should fail to parse '{invalid_input}'");
-            
+
             match result {
                 Err(ParseMsgTypeError(msg)) => {
                     assert_eq!(msg, invalid_input);
-                },
+                }
                 _ => panic!("Expected ParseMsgTypeError"),
             }
         }
@@ -356,7 +341,7 @@ mod tests {
         let display_str = format!("{error}");
         assert!(display_str.contains("Unknown message type"));
         assert!(display_str.contains("INVALID"));
-        
+
         let debug_str = format!("{error:?}");
         assert!(debug_str.contains("ParseMsgTypeError"));
         assert!(debug_str.contains("INVALID"));
@@ -421,8 +406,10 @@ mod tests {
         for original_type in all_types {
             let str_repr = original_type.as_str();
             let parsed_type = MsgType::from_str(str_repr).unwrap();
-            assert_eq!(original_type, parsed_type, 
-                "Round-trip failed for {original_type:?} -> '{str_repr}' -> {parsed_type:?}");
+            assert_eq!(
+                original_type, parsed_type,
+                "Round-trip failed for {original_type:?} -> '{str_repr}' -> {parsed_type:?}"
+            );
         }
     }
 
@@ -433,7 +420,7 @@ mod tests {
         assert_eq!(MsgType::Heartbeat, MsgType::Heartbeat);
         assert_eq!(MsgType::Logon, MsgType::Logon);
         assert_eq!(MsgType::NewOrderSingle, MsgType::NewOrderSingle);
-        
+
         // Test inequality
         assert_ne!(MsgType::Heartbeat, MsgType::TestRequest);
         assert_ne!(MsgType::Logon, MsgType::Logout);
@@ -446,13 +433,11 @@ mod tests {
         let original = MsgType::ExecutionReport;
         let cloned = original;
         let copied = original;
-        
+
         assert_eq!(original, cloned);
         assert_eq!(original, copied);
         assert_eq!(cloned, copied);
     }
-
-
 
     #[test]
     fn test_msg_type_trading() {

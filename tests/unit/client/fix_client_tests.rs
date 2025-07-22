@@ -1,9 +1,9 @@
 // Unit tests for FixClient functionality
 
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use deribit_fix::client::DeribitFixClient;
 use deribit_fix::config::DeribitFixConfig;
 use deribit_fix::error::DeribitFixError;
-use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use std::time::Duration;
 
 #[cfg(test)]
@@ -57,12 +57,18 @@ mod tests {
     #[tokio::test]
     async fn test_client_creation_valid_config() {
         let config = DeribitFixConfig::new()
-            .with_credentials("test_client_id".to_string(), "test_access_secret".to_string())
+            .with_credentials(
+                "test_client_id".to_string(),
+                "test_access_secret".to_string(),
+            )
             .with_endpoint("test.deribit.com".to_string(), 9881);
-        
+
         let result = DeribitFixClient::new(config).await;
-        assert!(result.is_ok(), "Client creation should succeed with valid config");
-        
+        assert!(
+            result.is_ok(),
+            "Client creation should succeed with valid config"
+        );
+
         let client = result.unwrap();
         assert!(!client.config.username.is_empty());
         assert!(!client.config.password.is_empty());
@@ -75,12 +81,15 @@ mod tests {
     async fn test_client_creation_invalid_config() {
         let config = DeribitFixConfig::new()
             .with_credentials("".to_string(), "test_access_secret".to_string()); // Empty username
-        
+
         let result = DeribitFixClient::new(config).await;
-        assert!(result.is_err(), "Client creation should fail with invalid config");
-        
+        assert!(
+            result.is_err(),
+            "Client creation should fail with invalid config"
+        );
+
         match result {
-            Err(DeribitFixError::Config(_)) => {}, // Expected error type
+            Err(DeribitFixError::Config(_)) => {} // Expected error type
             _ => panic!("Expected Configuration error"),
         }
     }
@@ -88,26 +97,36 @@ mod tests {
     /// Test client connection state when not connected
     #[tokio::test]
     async fn test_client_not_connected_state() {
-        let config = DeribitFixConfig::new()
-            .with_credentials("test_client_id".to_string(), "test_access_secret".to_string());
-        
+        let config = DeribitFixConfig::new().with_credentials(
+            "test_client_id".to_string(),
+            "test_access_secret".to_string(),
+        );
+
         let client = DeribitFixClient::new(config).await.unwrap();
-        
+
         // Client should not be connected initially
-        assert!(!client.is_connected(), "Client should not be connected initially");
-        
+        assert!(
+            !client.is_connected(),
+            "Client should not be connected initially"
+        );
+
         // Session state should be None when not connected
-        assert!(client.get_session_state().is_none(), "Session state should be None when not connected");
+        assert!(
+            client.get_session_state().is_none(),
+            "Session state should be None when not connected"
+        );
     }
 
     /// Test client operations when not connected (should return errors)
     #[tokio::test]
     async fn test_client_operations_not_connected() {
-        let config = DeribitFixConfig::new()
-            .with_credentials("test_client_id".to_string(), "test_access_secret".to_string());
-        
+        let config = DeribitFixConfig::new().with_credentials(
+            "test_client_id".to_string(),
+            "test_access_secret".to_string(),
+        );
+
         let client = DeribitFixClient::new(config).await.unwrap();
-        
+
         // Test send_order when not connected
         let order = NewOrderRequest {
             instrument_name: "BTC-PERPETUAL".to_string(),
@@ -127,53 +146,82 @@ mod tests {
             reject_post_only: None,
             valid_until: None,
         };
-        
+
         let result = client.send_order(order).await;
         assert!(result.is_err(), "send_order should fail when not connected");
         match result {
             Err(DeribitFixError::Session(msg)) => {
-                assert!(msg.contains("Not connected"), "Error should mention not connected");
-            },
+                assert!(
+                    msg.contains("Not connected"),
+                    "Error should mention not connected"
+                );
+            }
             _ => panic!("Expected Session error"),
         }
-        
+
         // Test cancel_order when not connected
         let result = client.cancel_order("test_order_1".to_string()).await;
-        assert!(result.is_err(), "cancel_order should fail when not connected");
+        assert!(
+            result.is_err(),
+            "cancel_order should fail when not connected"
+        );
         match result {
             Err(DeribitFixError::Session(msg)) => {
-                assert!(msg.contains("Not connected"), "Error should mention not connected");
-            },
+                assert!(
+                    msg.contains("Not connected"),
+                    "Error should mention not connected"
+                );
+            }
             _ => panic!("Expected Session error"),
         }
-        
+
         // Test subscribe_market_data when not connected
-        let result = client.subscribe_market_data("BTC-PERPETUAL".to_string()).await;
-        assert!(result.is_err(), "subscribe_market_data should fail when not connected");
+        let result = client
+            .subscribe_market_data("BTC-PERPETUAL".to_string())
+            .await;
+        assert!(
+            result.is_err(),
+            "subscribe_market_data should fail when not connected"
+        );
         match result {
             Err(DeribitFixError::Session(msg)) => {
-                assert!(msg.contains("Not connected"), "Error should mention not connected");
-            },
+                assert!(
+                    msg.contains("Not connected"),
+                    "Error should mention not connected"
+                );
+            }
             _ => panic!("Expected Session error"),
         }
-        
+
         // Test get_positions when not connected
         let result = client.get_positions().await;
-        assert!(result.is_err(), "get_positions should fail when not connected");
+        assert!(
+            result.is_err(),
+            "get_positions should fail when not connected"
+        );
         match result {
             Err(DeribitFixError::Session(msg)) => {
-                assert!(msg.contains("Not connected"), "Error should mention not connected");
-            },
+                assert!(
+                    msg.contains("Not connected"),
+                    "Error should mention not connected"
+                );
+            }
             _ => panic!("Expected Session error"),
         }
-        
+
         // Test receive_message when not connected
         let result = client.receive_message().await;
-        assert!(result.is_err(), "receive_message should fail when not connected");
+        assert!(
+            result.is_err(),
+            "receive_message should fail when not connected"
+        );
         match result {
             Err(DeribitFixError::Session(msg)) => {
-                assert!(msg.contains("Not connected"), "Error should mention not connected");
-            },
+                assert!(
+                    msg.contains("Not connected"),
+                    "Error should mention not connected"
+                );
+            }
             _ => panic!("Expected Session error"),
         }
     }
@@ -182,26 +230,32 @@ mod tests {
     #[test]
     fn test_config_validation_edge_cases() {
         // Test with whitespace-only username (current validation only checks empty, so this will pass)
-        let config = DeribitFixConfig::new()
-            .with_credentials("   ".to_string(), "test_pass".to_string());
+        let config =
+            DeribitFixConfig::new().with_credentials("   ".to_string(), "test_pass".to_string());
         let result = config.validate();
         // Current implementation only checks is_empty(), not whitespace-only
-        assert!(result.is_ok(), "Whitespace-only username currently passes validation");
-        
+        assert!(
+            result.is_ok(),
+            "Whitespace-only username currently passes validation"
+        );
+
         // Test with whitespace-only password (current validation only checks empty, so this will pass)
-        let config = DeribitFixConfig::new()
-            .with_credentials("test_user".to_string(), "   ".to_string());
+        let config =
+            DeribitFixConfig::new().with_credentials("test_user".to_string(), "   ".to_string());
         let result = config.validate();
         // Current implementation only checks is_empty(), not whitespace-only
-        assert!(result.is_ok(), "Whitespace-only password currently passes validation");
-        
+        assert!(
+            result.is_ok(),
+            "Whitespace-only password currently passes validation"
+        );
+
         // Test with invalid port (0)
         let config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string())
             .with_endpoint("test.deribit.com".to_string(), 0);
         let result = config.validate();
         assert!(result.is_err(), "Should fail with port 0");
-        
+
         // Test with invalid port (too high)
         let config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string())
@@ -209,7 +263,7 @@ mod tests {
         let result = config.validate();
         // This should actually pass since 65535 is a valid port, so let's change the test
         assert!(result.is_ok(), "Port 65535 should be valid");
-        
+
         // Test with empty host
         let mut config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string());
@@ -228,7 +282,7 @@ mod tests {
             .with_heartbeat_interval(60)
             .with_connection_timeout(Duration::from_secs(10))
             .with_session_ids("TESTCLIENT".to_string(), "TESTSERVER".to_string());
-        
+
         assert_eq!(config.username, "test_client");
         assert_eq!(config.password, "test_secret");
         assert_eq!(config.host, "custom.host.com");
@@ -248,16 +302,16 @@ mod tests {
             .with_credentials("test".to_string(), "test".to_string())
             .with_endpoint("test.example.com".to_string(), 9881)
             .with_ssl(false);
-        
+
         let url = config.connection_url();
         assert_eq!(url, "test.example.com:9881");
-        
+
         // Test HTTPS URL
         let config = DeribitFixConfig::new()
             .with_credentials("test".to_string(), "test".to_string())
             .with_endpoint("secure.example.com".to_string(), 9883)
             .with_ssl(true);
-        
+
         let url = config.connection_url();
         assert_eq!(url, "secure.example.com:9883");
     }
@@ -274,11 +328,14 @@ mod tests {
             DeribitFixError::Config("Config error".to_string()),
             DeribitFixError::Timeout("Timeout error".to_string()),
         ];
-        
+
         for error in errors {
             let display_str = format!("{error}");
             assert!(!display_str.is_empty(), "Error display should not be empty");
-            assert!(display_str.contains("error"), "Error display should contain 'error'");
+            assert!(
+                display_str.contains("error"),
+                "Error display should contain 'error'"
+            );
         }
     }
 
@@ -303,7 +360,7 @@ mod tests {
             reject_post_only: None,
             valid_until: None,
         };
-        
+
         assert_eq!(order.instrument_name, "BTC-PERPETUAL");
         assert!(matches!(order.side, OrderSide::Buy));
         assert!(matches!(order.order_type, OrderType::Limit));
@@ -337,11 +394,11 @@ mod tests {
             reject_post_only: None,
             valid_until: None,
         };
-        
+
         assert!(matches!(market_buy.order_type, OrderType::Market));
         assert!(matches!(market_buy.side, OrderSide::Buy));
         assert_eq!(market_buy.price, None);
-        
+
         // Test Limit Sell order
         let limit_sell = NewOrderRequest {
             instrument_name: "BTC-PERPETUAL".to_string(),
@@ -361,7 +418,7 @@ mod tests {
             reject_post_only: None,
             valid_until: None,
         };
-        
+
         assert!(matches!(limit_sell.order_type, OrderType::Limit));
         assert!(matches!(limit_sell.side, OrderSide::Sell));
         assert_eq!(limit_sell.price, Some(55000.0));

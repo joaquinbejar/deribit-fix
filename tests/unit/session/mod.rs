@@ -1,4 +1,4 @@
 // Unit tests for session module
 
-mod fix_session_tests;
 mod auth_tests;
+mod fix_session_tests;

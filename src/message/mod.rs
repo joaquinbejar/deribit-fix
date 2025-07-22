@@ -9,4 +9,8 @@ pub mod admin;
 /// Message builder implementation
 pub mod builder;
 
+/// Security List Request and Security List messages
+pub mod security_list;
+
 pub use builder::*;
+pub use security_list::*;

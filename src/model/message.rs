@@ -8,7 +8,7 @@ use crate::model::types::MsgType;
 use std::str::FromStr;
 
 /// FIX message representation
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct FixMessage {
     /// FIX message fields as (tag, value) pairs
     pub fields: Vec<(u32, String)>,
@@ -136,5 +136,55 @@ impl Default for FixMessage {
 impl std::fmt::Display for FixMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.raw_message)
+    }
+}
+
+impl std::fmt::Debug for FixMessage {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        // Create a readable version by replacing SOH (\x01) with " | "
+        let mut readable_message = self.raw_message.replace('\x01', " | ");
+        // Remove trailing separator if present
+        if readable_message.ends_with(" | ") {
+            readable_message.truncate(readable_message.len() - 3);
+        }
+
+        // Get common FIX field names for better readability
+        let mut field_descriptions = Vec::new();
+        for (tag, value) in &self.fields {
+            let field_name = match *tag {
+                8 => "BeginString",
+                9 => "BodyLength",
+                35 => "MsgType",
+                49 => "SenderCompID",
+                56 => "TargetCompID",
+                34 => "MsgSeqNum",
+                52 => "SendingTime",
+                10 => "CheckSum",
+                11 => "ClOrdID",
+                37 => "OrderID",
+                38 => "OrderQty",
+                39 => "OrdStatus",
+                40 => "OrdType",
+                44 => "Price",
+                54 => "Side",
+                55 => "Symbol",
+                59 => "TimeInForce",
+                95 => "SecureDataLen",
+                96 => "SecureData",
+                98 => "EncryptMethod",
+                108 => "HeartBtInt",
+                553 => "Username",
+                554 => "Password",
+                584 => "MassStatusReqID",
+                585 => "MassStatusReqType",
+                _ => "Unknown",
+            };
+            field_descriptions.push(format!("{field_name}({tag})={value}"));
+        }
+
+        f.debug_struct("FixMessage")
+            .field("fields", &field_descriptions)
+            .field("readable_message", &readable_message)
+            .finish()
     }
 }

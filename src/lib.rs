@@ -81,6 +81,7 @@ pub mod prelude {
         config::DeribitFixConfig,
         error::{DeribitFixError, Result},
         message::admin::*,
+        message::market_data::*,
         message::security_list::*,
         model::*,
     };

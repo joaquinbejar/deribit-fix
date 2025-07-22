@@ -7,6 +7,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased]
 
 ### Added
+- **Market Data FIX Messages**: Complete implementation of Market Data Request (MsgType='V'), Market Data Request Reject (MsgType='Y'), Market Data Snapshot/Full Refresh (MsgType='W'), and Market Data Incremental Refresh (MsgType='X') messages
+- New `message::market_data` module with comprehensive FIX protocol support for market data operations
+- Market Data Request message with all Deribit-specific fields and subscription options
+- Market Data Request Reject message with detailed rejection reasons
+- Market Data Snapshot/Full Refresh message for order book and trade data
+- Market Data Incremental Refresh message for real-time updates
+- Six new enums with FIX protocol conversions:
+  - `MdSubscriptionRequestType` (Snapshot, SnapshotPlusUpdates, Unsubscribe)
+  - `MdUpdateType` (FullRefresh, IncrementalRefresh)
+  - `MdEntryType` (Bid, Offer, Trade, IndexValue, SettlementPrice)
+  - `MdUpdateAction` (New, Change, Delete)
+  - `MdReqRejReason` (UnknownSymbol, InsufficientPermissions, etc.)
+- Supporting structures: `MdEntry` for market data entries
+- 9 comprehensive unit tests covering all Market Data functionality
 - **Security List FIX Messages**: Complete implementation of Security List Request (MsgType='x') and Security List (MsgType='y') messages
 - New `message::security_list` module with comprehensive FIX protocol support
 - Security List Request message with all Deribit-specific fields and filters
@@ -28,7 +42,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Authentication tests validate compliance with official Deribit FIX API specification
 
 ### Changed
-- **MsgType enum**: Added SecurityListRequest ('x') and SecurityList ('y') message types
+- **MsgType enum**: Added Market Data message types (V, W, X, Y) and Security List message types (x, y)
+- **Module exports**: Added market_data module to message module and lib.rs prelude
 - **Module exports**: Added security_list module to message module and lib.rs prelude
 - **Code formatting**: Applied clippy suggestions for inline format arguments
 - Code formatting improvements across multiple files for better readability
@@ -36,6 +51,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Enhanced debug logging in authentication methods
 
 ### Fixed
+- **Market Data compilation errors**: Resolved MessageBuilder usage and enum naming conflicts
+- Fixed MessageBuilder constructor to use `new().msg_type()` pattern instead of `new(MsgType)`
+- Renamed `SubscriptionRequestType` to `MdSubscriptionRequestType` to avoid naming conflicts
+- Fixed return type conversions from `FixMessage` to `String` using `build()?.to_string()`
+- Resolved ambiguous glob re-exports between market_data and security_list modules
 - **Security List compilation errors**: Resolved all type conversion and import issues
 - Fixed enum to string conversions using explicit `i32::from(enum).to_string()`
 - Corrected boolean to string conversions with explicit `.to_string()` calls

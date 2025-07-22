@@ -6,7 +6,7 @@ use crate::{
     error::{DeribitFixError, Result},
     session::Session,
 };
-use deribit_base::prelude::{Position, fix::NewOrderRequest};
+use deribit_base::prelude::{NewOrderRequest, Position};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;

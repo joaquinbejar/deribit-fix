@@ -10,7 +10,7 @@ use crate::{
 };
 use base64::prelude::*;
 use chrono::Utc;
-use deribit_base::prelude::{fix::NewOrderRequest, *};
+use deribit_base::prelude::*;
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;
@@ -192,7 +192,7 @@ impl Session {
             .msg_seq_num(self.outgoing_seq_num)
             .sending_time(Utc::now())
             .field(11, client_order_id.clone()) // ClOrdID
-            .field(55, order.symbol) // Symbol
+            .field(55, order.instrument_name.clone()) // Symbol
             .field(
                 54,
                 match order.side {
@@ -202,7 +202,7 @@ impl Session {
                 }
                 .to_string(),
             )
-            .field(38, order.quantity.to_string()) // OrderQty
+            .field(38, order.amount.to_string()) // OrderQty
             .field(
                 40,
                 match order.order_type {

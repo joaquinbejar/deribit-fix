@@ -13,7 +13,7 @@ use tracing::{error, info, warn};
 async fn main() -> Result<()> {
     // Setup logging with debug level to see all messages
     unsafe {
-        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
+        std::env::set_var("LOGLEVEL", "debug");
     }
     setup_logger();
 

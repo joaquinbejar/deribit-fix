@@ -70,6 +70,7 @@ pub mod session;
 pub use client::DeribitFixClient;
 pub use config::DeribitFixConfig;
 pub use error::{DeribitFixError, Result};
+pub use message::admin::*;
 pub use model::*;
 
 /// Re-export commonly used types for convenience
@@ -79,5 +80,7 @@ pub mod prelude {
         client::DeribitFixClient,
         config::DeribitFixConfig,
         error::{DeribitFixError, Result},
+        message::admin::*,
+        model::*,
     };
 }

@@ -7,6 +7,10 @@ use tracing::{error, info};
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    // Setup logging with debug level to see all messages
+    unsafe {
+        std::env::set_var("LOGLEVEL", "debug");
+    }
     // Initialize logging
     setup_logger();
 
@@ -45,15 +49,8 @@ async fn main() -> Result<()> {
 
     // Example: Send a limit order
     info!("Sending a test limit order...");
-    let order_request = fix::NewOrderRequest {
-        symbol: "BTC-PERPETUAL".to_string(),
-        side: OrderSide::Buy,
-        order_type: OrderType::Limit,
-        quantity: 10.0,
-        price: Some(50000.0),
-        time_in_force: TimeInForce::GoodTillCancel,
-        client_order_id: None,
-    };
+    let order_request = NewOrderRequest::limit_buy("BTC-PERPETUAL".to_string(), 10.0, 50000.0)
+        .with_label("test_order_123".to_string());
 
     match client.send_order(order_request).await {
         Ok(order_id) => {

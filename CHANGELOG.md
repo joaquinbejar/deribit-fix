@@ -7,6 +7,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 ## [Unreleased]
 
 ### Added
+- **Order Management FIX Messages**: Complete implementation of New Order Single (MsgType='D'), Order Cancel Request (MsgType='F'), Order Cancel Reject (MsgType='9'), Order Mass Cancel Request (MsgType='q'), Order Mass Cancel Report (MsgType='r'), and Order Mass Status Request (MsgType='AF') messages
+- New `message::orders` module with comprehensive FIX protocol support for order management operations
+- New Order Single message with all order types (Market, Limit, Stop, MarketLimit) and optional fields (DeribitLabel, PostOnly, ReduceOnly, MaxShow)
+- Order Cancel Request message with multiple identification methods (ClOrdId, OrigClOrdId, DeribitLabel)
+- Order Cancel Reject message with comprehensive rejection reasons and error handling
+- Order Mass Cancel Request/Report messages for bulk cancellation operations with validation
+- Order Mass Status Request message for bulk status queries with proper filtering
+- Eight new enums with FIX protocol conversions:
+  - `OrderSide` (Buy, Sell)
+  - `OrderType` (Market, Limit, Stop, StopLimit, MarketLimit)
+  - `TimeInForce` (GoodTillDay, GoodTillCancelled, ImmediateOrCancel, FillOrKill)
+  - `OrderStatus` (New, PartiallyFilled, Filled, Cancelled, etc.)
+  - `OrderRejectReason` (18 comprehensive rejection reasons)
+  - `MassCancelRequestType` (BySymbol, BySecurityType, AllOrders, ByDeribitLabel)
+  - `MassStatusRequestType` and `MassStatusRequestIdType` for bulk operations
+  - `QuantityType` (Units, Contracts)
+- Builder pattern methods for easy message construction with validation
+- 43 comprehensive unit tests covering all Order Management functionality
+- Runtime validation for conditional field requirements based on message type
 - **Market Data FIX Messages**: Complete implementation of Market Data Request (MsgType='V'), Market Data Request Reject (MsgType='Y'), Market Data Snapshot/Full Refresh (MsgType='W'), and Market Data Incremental Refresh (MsgType='X') messages
 - New `message::market_data` module with comprehensive FIX protocol support for market data operations
 - Market Data Request message with all Deribit-specific fields and subscription options
@@ -42,7 +61,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Authentication tests validate compliance with official Deribit FIX API specification
 
 ### Changed
-- **MsgType enum**: Added Market Data message types (V, W, X, Y) and Security List message types (x, y)
+- **MsgType enum**: Added Order Management message types (D, F, 9, q, r, AF), Market Data message types (V, W, X, Y) and Security List message types (x, y)
+- **Module exports**: Added orders module to message module and lib.rs prelude
 - **Module exports**: Added market_data module to message module and lib.rs prelude
 - **Module exports**: Added security_list module to message module and lib.rs prelude
 - **Code formatting**: Applied clippy suggestions for inline format arguments

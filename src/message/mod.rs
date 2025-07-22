@@ -15,7 +15,11 @@ pub mod security_list;
 /// Market data messages
 pub mod market_data;
 
+/// Orders messages
+pub mod orders;
+
 pub use admin::*;
 pub use builder::*;
 pub use market_data::*;
+pub use orders::*;
 pub use security_list::*;

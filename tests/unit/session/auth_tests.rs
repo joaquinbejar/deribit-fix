@@ -3,11 +3,9 @@
 
 use base64::{engine::general_purpose::STANDARD as BASE64_STANDARD, Engine};
 use sha2::{Digest, Sha256};
-use chrono;
-use rand;
 
 #[cfg(test)]
-mod auth_tests {
+mod tests {
     use super::*;
 
     /// Helper function to create auth data using the same logic as Session
@@ -85,8 +83,7 @@ mod auth_tests {
             
             if i > 0 {
                 assert!(timestamp >= previous_timestamp, 
-                    "Timestamp should be strictly increasing or equal. Previous: {}, Current: {}", 
-                    previous_timestamp, timestamp);
+                    "Timestamp should be strictly increasing or equal. Previous: {previous_timestamp}, Current: {timestamp}");
             }
             
             previous_timestamp = timestamp;
@@ -138,7 +135,7 @@ mod auth_tests {
             
             // Each password hash should be unique due to different nonces/timestamps
             assert!(password_hashes.insert(password_hash.clone()), 
-                "Password hash should be unique, but got duplicate: {}", password_hash);
+                "Password hash should be unique, but got duplicate: {password_hash}");
             
             // Small delay to ensure different timestamps
             std::thread::sleep(std::time::Duration::from_millis(1));
@@ -199,7 +196,7 @@ mod auth_tests {
         let (raw_data, password_hash) = generate_test_auth_data(access_secret);
         
         // Verify the specification: Password = base64(sha256(RawData ++ access_secret))
-        let concatenated = format!("{}{}", raw_data, access_secret);
+        let concatenated = format!("{raw_data}{access_secret}");
         let mut hasher = Sha256::new();
         hasher.update(concatenated.as_bytes());
         let hash_result = hasher.finalize();

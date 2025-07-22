@@ -268,7 +268,7 @@ impl Session {
 
     /// Generate authentication data according to Deribit FIX specification
     /// Returns (raw_data, base64_password_hash)
-    fn generate_auth_data(&self, access_secret: &str) -> Result<(String, String)> {
+    pub fn generate_auth_data(&self, access_secret: &str) -> Result<(String, String)> {
         // Generate timestamp (strictly increasing integer in milliseconds)
         let timestamp = chrono::Utc::now().timestamp_millis();
 

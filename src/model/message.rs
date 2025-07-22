@@ -5,6 +5,7 @@
 ******************************************************************************/
 use crate::DeribitFixError;
 use crate::model::types::MsgType;
+use std::str::FromStr;
 
 /// FIX message representation
 #[derive(Debug, Clone)]
@@ -81,7 +82,47 @@ impl FixMessage {
 
     /// Get message sequence number
     pub fn msg_seq_num(&self) -> Option<u32> {
-        self.get_field(34).and_then(|s| s.parse().ok())
+        self.get_field(34)?.parse().ok()
+    }
+
+    /// Check if a field exists
+    pub fn has_field(&self, tag: u32) -> bool {
+        self.fields.iter().any(|(t, _)| *t == tag)
+    }
+
+    /// Calculate checksum for the message
+    pub fn calculate_checksum(&self) -> u8 {
+        // Build message string without checksum field (tag 10), sorted by tag number
+        let mut field_pairs: Vec<_> = self.fields.iter().collect();
+        field_pairs.sort_by_key(|(tag, _)| *tag);
+        
+        let mut message_parts = Vec::new();
+        
+        // Add all fields except checksum (tag 10)
+        for (tag, value) in field_pairs {
+            if *tag != 10 { // Exclude checksum field
+                message_parts.push(format!("{}={}", tag, value));
+            }
+        }
+        
+        let message_str = message_parts.join("\x01") + "\x01";
+        let bytes = message_str.as_bytes();
+        let mut checksum: u32 = 0;
+
+        // Sum all bytes in the message
+        for &byte in bytes {
+            checksum += byte as u32;
+        }
+
+        (checksum % 256) as u8
+    }
+}
+
+impl FromStr for FixMessage {
+    type Err = DeribitFixError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Self::parse(s)
     }
 }
 

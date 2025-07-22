@@ -39,4 +39,12 @@ impl Stream {
             Stream::Tls(stream) => stream.flush().await,
         }
     }
+
+    /// Shutdown the stream
+    pub async fn shutdown(&mut self) -> std::io::Result<()> {
+        match self {
+            Stream::Tcp(stream) => stream.shutdown().await,
+            Stream::Tls(stream) => stream.shutdown().await,
+        }
+    }
 }

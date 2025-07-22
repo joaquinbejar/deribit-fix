@@ -7,7 +7,7 @@
 use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -53,18 +53,45 @@ async fn main() -> Result<()> {
         Ok(_) => {
             info!("✅ Successfully connected and logged in to Deribit FIX server!");
 
-            // Wait for logon confirmation
+            // Wait for logon confirmation and read server messages
             info!("Waiting for logon confirmation...");
             let mut logged_on = false;
-            for _ in 0..100 {
-                // Wait for max 10 seconds
-                if let Some(state) = client.get_session_state().await {
+            let start_time = std::time::Instant::now();
+            let timeout_duration = Duration::from_secs(10); // 10 second timeout
+            
+            while start_time.elapsed() < timeout_duration {
+                // Try to receive messages from server with longer timeout
+                match tokio::time::timeout(Duration::from_millis(500), client.receive_message()).await {
+                    Ok(Ok(Some(message))) => {
+                        info!("📨 Received message from server: {:?}", message);
+                        // Message received and processed
+                    }
+                    Ok(Ok(None)) => {
+                        // No message available right now
+                        debug!("No message available from server");
+                    }
+                    Ok(Err(e)) => {
+                        error!("❌ Error receiving message: {}", e);
+                        break;
+                    }
+                    Err(_) => {
+                        // Timeout - no message received in 500ms
+                        debug!("Timeout waiting for server message");
+                    }
+                }
+                
+                // Check if we're logged on
+                if let Some(state) = client.get_session_state() {
+                    debug!("Current session state: {:?}", state);
                     if state == deribit_fix::session::SessionState::LoggedOn {
                         logged_on = true;
                         break;
                     }
+                } else {
+                    debug!("Unable to get session state (session locked)");
                 }
-                sleep(Duration::from_millis(100)).await;
+                
+                sleep(Duration::from_millis(200)).await;
             }
 
             if logged_on {

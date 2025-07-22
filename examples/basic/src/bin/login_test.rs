@@ -5,7 +5,6 @@
 //! hashing and nonce generation.
 
 use deribit_base::prelude::*;
-use deribit_base::utils::setup_logger;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};

@@ -1,7 +1,6 @@
 //! Basic example of using the Deribit FIX client
 
 use deribit_base::prelude::*;
-use deribit_base::utils::setup_logger;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};

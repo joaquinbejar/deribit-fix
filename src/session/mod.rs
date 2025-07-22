@@ -11,7 +11,6 @@ use crate::{
 use base64::prelude::*;
 use chrono::Utc;
 use deribit_base::prelude::{fix::NewOrderRequest, *};
-use deribit_base::utils::{generate_nonce, generate_timestamp};
 use sha2::{Digest, Sha256};
 use std::sync::Arc;
 use tokio::sync::Mutex;

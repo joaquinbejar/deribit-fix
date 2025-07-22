@@ -104,64 +104,64 @@ impl MessageBuilder {
         // Calculate BodyLength (all fields except BeginString and BodyLength itself)
         let body_length = self.calculate_body_length();
         self.message.set_field(9, body_length.to_string());
-        
+
         // Calculate and set checksum
         let checksum = self.message.calculate_checksum();
         self.message.set_field(10, format!("{checksum:03}"));
 
         // Generate raw message string with proper FIX field ordering:
         // 1. BeginString (8) - first
-        // 2. BodyLength (9) - second  
+        // 2. BodyLength (9) - second
         // 3. All other fields sorted by tag number
         // 4. CheckSum (10) - last
         let mut field_pairs: Vec<_> = self.message.fields.iter().collect();
         field_pairs.sort_by_key(|(tag, _)| *tag);
-        
+
         let mut raw_parts = Vec::new();
         let mut checksum_part = None;
-        
+
         // Add BeginString first if present
         if let Some((_, value)) = field_pairs.iter().find(|(tag, _)| *tag == 8) {
-            raw_parts.push(format!("8={}", value));
+            raw_parts.push(format!("8={value}"));
         }
-        
+
         // Add BodyLength second if present
         if let Some((_, value)) = field_pairs.iter().find(|(tag, _)| *tag == 9) {
-            raw_parts.push(format!("9={}", value));
+            raw_parts.push(format!("9={value}"));
         }
-        
+
         // Add all other fields except BeginString, BodyLength, and CheckSum
         for (tag, value) in field_pairs {
             if *tag == 10 {
                 // Save checksum for last
-                checksum_part = Some(format!("{}={}", tag, value));
+                checksum_part = Some(format!("{tag}={value}"));
             } else if *tag != 8 && *tag != 9 {
-                raw_parts.push(format!("{}={}", tag, value));
+                raw_parts.push(format!("{tag}={value}"));
             }
         }
-        
+
         // Add checksum at the end
         if let Some(checksum) = checksum_part {
             raw_parts.push(checksum);
         }
-        
+
         self.message.raw_message = raw_parts.join("\x01") + "\x01";
 
         Ok(self.message)
     }
-    
+
     /// Calculate the body length for the FIX message
     /// Body length includes all fields except BeginString (8), BodyLength (9), and CheckSum (10)
     fn calculate_body_length(&self) -> usize {
         let mut body_parts = Vec::new();
-        
+
         // Add all fields except BeginString (8), BodyLength (9), and CheckSum (10)
         for (tag, value) in &self.message.fields {
             if *tag != 8 && *tag != 9 && *tag != 10 {
-                body_parts.push(format!("{}={}", tag, value));
+                body_parts.push(format!("{tag}={value}"));
             }
         }
-        
+
         // Join with SOH and add final SOH
         let body_str = body_parts.join("\x01") + "\x01";
         body_str.len()

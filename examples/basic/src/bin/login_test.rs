@@ -58,10 +58,12 @@ async fn main() -> Result<()> {
             let mut logged_on = false;
             let start_time = std::time::Instant::now();
             let timeout_duration = Duration::from_secs(10); // 10 second timeout
-            
+
             while start_time.elapsed() < timeout_duration {
                 // Try to receive messages from server with longer timeout
-                match tokio::time::timeout(Duration::from_millis(500), client.receive_message()).await {
+                match tokio::time::timeout(Duration::from_millis(500), client.receive_message())
+                    .await
+                {
                     Ok(Ok(Some(message))) => {
                         info!("📨 Received message from server: {:?}", message);
                         // Message received and processed
@@ -79,7 +81,7 @@ async fn main() -> Result<()> {
                         debug!("Timeout waiting for server message");
                     }
                 }
-                
+
                 // Check if we're logged on
                 if let Some(state) = client.get_session_state() {
                     debug!("Current session state: {:?}", state);
@@ -90,7 +92,7 @@ async fn main() -> Result<()> {
                 } else {
                     debug!("Unable to get session state (session locked)");
                 }
-                
+
                 sleep(Duration::from_millis(200)).await;
             }
 

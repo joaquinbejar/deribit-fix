@@ -95,16 +95,17 @@ impl FixMessage {
         // Build message string without checksum field (tag 10), sorted by tag number
         let mut field_pairs: Vec<_> = self.fields.iter().collect();
         field_pairs.sort_by_key(|(tag, _)| *tag);
-        
+
         let mut message_parts = Vec::new();
-        
+
         // Add all fields except checksum (tag 10)
         for (tag, value) in field_pairs {
-            if *tag != 10 { // Exclude checksum field
-                message_parts.push(format!("{}={}", tag, value));
+            if *tag != 10 {
+                // Exclude checksum field
+                message_parts.push(format!("{tag}={value}"));
             }
         }
-        
+
         let message_str = message_parts.join("\x01") + "\x01";
         let bytes = message_str.as_bytes();
         let mut checksum: u32 = 0;

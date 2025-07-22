@@ -70,7 +70,9 @@ impl Session {
             conn_guard.send_message(&message).await?;
             debug!("Sent FIX message: {}", message.to_string());
         } else {
-            return Err(DeribitFixError::Connection("No connection available".to_string()));
+            return Err(DeribitFixError::Connection(
+                "No connection available".to_string(),
+            ));
         }
         Ok(())
     }
@@ -79,25 +81,25 @@ impl Session {
     pub async fn logon(&mut self) -> Result<()> {
         info!("Performing FIX logon");
 
-        // Generate nonce and password hash according to Deribit FIX spec
-        let (nonce_b64, password_hash) = self.generate_auth_data(&self.config.password)?;
-        
-        let mut message_builder = MessageBuilder::new()
+        // Generate RawData and password hash according to Deribit FIX spec
+        let (raw_data, password_hash) = self.generate_auth_data(&self.config.password)?;
+
+        let message_builder = MessageBuilder::new()
             .msg_type(MsgType::Logon)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
             .msg_seq_num(self.outgoing_seq_num)
-            .field(96, nonce_b64) // RawData - base64 encoded nonce
+            .field(96, raw_data) // RawData - timestamp.nonce
             .field(98, "0".to_string()) // EncryptMethod (0 = None)
             .field(108, self.config.heartbeat_interval.to_string()) // HeartBtInt
             .field(553, self.config.username.clone()) // Username
             .field(554, password_hash); // Password - base64(sha256(nonce ++ access_secret))
-            
+
         // Add AppID if available - temporarily disabled for testing
         // if let Some(app_id) = &self.config.app_id {
         //     message_builder = message_builder.field(1128, app_id.clone()); // AppID
         // }
-        
+
         let logon_message = message_builder.build()?;
 
         // Send the logon message
@@ -265,34 +267,40 @@ impl Session {
     }
 
     /// Generate authentication data according to Deribit FIX specification
-    /// Returns (base64_nonce, base64_password_hash)
+    /// Returns (raw_data, base64_password_hash)
     fn generate_auth_data(&self, access_secret: &str) -> Result<(String, String)> {
+        // Generate timestamp (strictly increasing integer in milliseconds)
+        let timestamp = chrono::Utc::now().timestamp_millis();
+
         // Generate random nonce (at least 32 bytes as recommended by Deribit)
-        let mut nonce = vec![0u8; 32];
-        for byte in nonce.iter_mut() {
+        let mut nonce_bytes = vec![0u8; 32];
+        for byte in nonce_bytes.iter_mut() {
             *byte = rand::random::<u8>();
         }
-        
-        // Encode nonce as base64 for RawData field
-        let nonce_b64 = BASE64_STANDARD.encode(&nonce);
-        
-        // Calculate password hash: base64(sha256(nonce ++ access_secret))
-        let mut auth_data = nonce.clone();
+        let nonce_b64 = BASE64_STANDARD.encode(&nonce_bytes);
+
+        // Create RawData: timestamp.nonce (separated by ASCII period)
+        let raw_data = format!("{timestamp}.{nonce_b64}");
+
+        // Calculate password hash: base64(sha256(RawData ++ access_secret))
+        let mut auth_data = raw_data.as_bytes().to_vec();
         auth_data.extend_from_slice(access_secret.as_bytes());
-        
-        debug!("Nonce length: {} bytes", nonce.len());
-        debug!("Nonce (hex): {}", hex::encode(&nonce));
+
+        debug!("Timestamp: {}", timestamp);
+        debug!("Nonce length: {} bytes", nonce_bytes.len());
+        debug!("Nonce (base64): {}", nonce_b64);
+        debug!("RawData: {}", raw_data);
         debug!("Access secret: {}", access_secret);
         debug!("Auth data length: {} bytes", auth_data.len());
-        
+
         let mut hasher = Sha256::new();
         hasher.update(&auth_data);
         let hash_result = hasher.finalize();
         let password_hash = BASE64_STANDARD.encode(hash_result);
-        
+
         debug!("Password hash: {}", password_hash);
-        
-        Ok((nonce_b64, password_hash))
+
+        Ok((raw_data, password_hash))
     }
 
     /// Calculate application signature for registered apps

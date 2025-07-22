@@ -117,23 +117,25 @@ impl Connection {
 
         // Read data from the stream with timeout
         let mut temp_buffer = vec![0u8; 4096];
-        
+
         // Use a timeout to avoid blocking indefinitely
         match tokio::time::timeout(
             std::time::Duration::from_millis(1000), // Increased to 1 second
-            self.stream.read(&mut temp_buffer)
-        ).await {
+            self.stream.read(&mut temp_buffer),
+        )
+        .await
+        {
             Ok(Ok(0)) => {
                 // Connection closed
                 debug!("Connection closed by server");
                 self.connected = false;
-                return Ok(None);
+                Ok(None)
             }
             Ok(Ok(n)) => {
                 debug!("Received {} bytes from server", n);
                 debug!("Raw bytes: {:?}", &temp_buffer[..n]);
                 self.buffer.extend_from_slice(&temp_buffer[..n]);
-                
+
                 // Try to parse the new data
                 self.try_parse_message()
             }
@@ -143,7 +145,7 @@ impl Connection {
                     return Ok(None);
                 }
                 error!("IO error reading from server: {}", e);
-                return Err(DeribitFixError::Io(e));
+                Err(DeribitFixError::Io(e))
             }
             Err(_) => {
                 // Timeout - no data available
@@ -155,9 +157,13 @@ impl Connection {
     /// Try to parse a complete FIX message from the buffer
     fn try_parse_message(&mut self) -> Result<Option<FixMessage>> {
         if !self.buffer.is_empty() {
-            debug!("Buffer contains {} bytes: {:?}", self.buffer.len(), String::from_utf8_lossy(&self.buffer));
+            debug!(
+                "Buffer contains {} bytes: {:?}",
+                self.buffer.len(),
+                String::from_utf8_lossy(&self.buffer)
+            );
         }
-        
+
         // Look for SOH (Start of Header) character which delimits FIX fields
         const SOH: u8 = 0x01;
 

@@ -10,13 +10,17 @@ use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 
 pub mod cancel_reject;
+pub mod cancel_replace_request;
 pub mod cancel_request;
+pub mod execution_report;
 pub mod mass_cancel;
 pub mod mass_status;
 pub mod new_order;
 
 pub use cancel_reject::*;
+pub use cancel_replace_request::*;
 pub use cancel_request::*;
+pub use execution_report::*;
 pub use mass_cancel::*;
 pub use mass_status::*;
 pub use new_order::*;

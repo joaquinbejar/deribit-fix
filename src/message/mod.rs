@@ -18,8 +18,12 @@ pub mod market_data;
 /// Orders messages
 pub mod orders;
 
+/// Quotes messages
+pub mod quotes;
+
 pub use admin::*;
 pub use builder::*;
 pub use market_data::*;
 pub use orders::*;
+pub use quotes::*;
 pub use security_list::*;

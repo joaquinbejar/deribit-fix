@@ -249,6 +249,57 @@ pub enum ExecType {
     OrderStatus,
 }
 
+impl From<ExecType> for char {
+    fn from(exec_type: ExecType) -> Self {
+        match exec_type {
+            ExecType::New => '0',
+            ExecType::DoneForDay => '3',
+            ExecType::Canceled => '4',
+            ExecType::Replaced => '5',
+            ExecType::PendingCancel => '6',
+            ExecType::Stopped => '7',
+            ExecType::Rejected => '8',
+            ExecType::Suspended => '9',
+            ExecType::PendingNew => 'A',
+            ExecType::Calculated => 'B',
+            ExecType::Expired => 'C',
+            ExecType::Restated => 'D',
+            ExecType::PendingReplace => 'E',
+            ExecType::Trade => 'F',
+            ExecType::TradeCorrect => 'G',
+            ExecType::TradeCancel => 'H',
+            ExecType::OrderStatus => 'I',
+        }
+    }
+}
+
+impl TryFrom<char> for ExecType {
+    type Error = String;
+
+    fn try_from(value: char) -> Result<Self, Self::Error> {
+        match value {
+            '0' => Ok(ExecType::New),
+            '3' => Ok(ExecType::DoneForDay),
+            '4' => Ok(ExecType::Canceled),
+            '5' => Ok(ExecType::Replaced),
+            '6' => Ok(ExecType::PendingCancel),
+            '7' => Ok(ExecType::Stopped),
+            '8' => Ok(ExecType::Rejected),
+            '9' => Ok(ExecType::Suspended),
+            'A' => Ok(ExecType::PendingNew),
+            'B' => Ok(ExecType::Calculated),
+            'C' => Ok(ExecType::Expired),
+            'D' => Ok(ExecType::Restated),
+            'E' => Ok(ExecType::PendingReplace),
+            'F' => Ok(ExecType::Trade),
+            'G' => Ok(ExecType::TradeCorrect),
+            'H' => Ok(ExecType::TradeCancel),
+            'I' => Ok(ExecType::OrderStatus),
+            _ => Err(format!("Invalid ExecType: {}", value)),
+        }
+    }
+}
+
 /// Market data entry type
 #[derive(Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MDEntryType {

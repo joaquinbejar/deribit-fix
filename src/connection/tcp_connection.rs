@@ -109,10 +109,10 @@ impl Connection {
         }
 
         // Try to parse any existing buffered data first
-        if !self.buffer.is_empty() {
-            if let Some(message) = self.try_parse_message()? {
-                return Ok(Some(message));
-            }
+        if !self.buffer.is_empty()
+            && let Some(message) = self.try_parse_message()?
+        {
+            return Ok(Some(message));
         }
 
         // Read data from the stream with timeout

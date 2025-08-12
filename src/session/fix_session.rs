@@ -6,7 +6,7 @@ use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
-    message::MessageBuilder,
+    message::{MessageBuilder, RequestForPositions, PositionReport},
 };
 use base64::prelude::*;
 use chrono::Utc;
@@ -296,30 +296,94 @@ impl Session {
         Ok(())
     }
 
-    /// Request positions
-    pub fn request_positions(&mut self) -> Result<Vec<Position>> {
+    /// Request positions asynchronously
+    pub async fn request_positions(&mut self) -> Result<Vec<Position>> {
+        use std::time::{Duration, Instant};
+        use tracing::{debug, info, warn};
+
         info!("Requesting positions");
 
         let request_id = format!("POS_{}", chrono::Utc::now().timestamp_millis());
+        
+        // Create typed position request
+        let position_request = RequestForPositions::all_positions(request_id.clone())
+            .with_clearing_date(Utc::now().format("%Y%m%d").to_string());
 
-        let _position_request = MessageBuilder::new()
-            .msg_type(MsgType::RequestForPositions)
-            .sender_comp_id(self.config.sender_comp_id.clone())
-            .target_comp_id(self.config.target_comp_id.clone())
-            .msg_seq_num(self.outgoing_seq_num)
-            .field(710, request_id) // PosReqID
-            .field(724, "0".to_string()) // PosReqType (0 = Positions)
-            .field(263, "1".to_string()) // SubscriptionRequestType
-            .field(715, Utc::now().format("%Y%m%d").to_string()) // ClearingBusinessDate
-            .build()?;
-
-        // In a real implementation, you would send this message and wait for response
+        // Build the FIX message
+        let fix_message = position_request.to_fix_message(
+            self.config.sender_comp_id.clone(),
+            self.config.target_comp_id.clone(),
+            self.outgoing_seq_num,
+        )?;
+        
+        // Send the position request
+        self.send_message(fix_message).await?;
         self.outgoing_seq_num += 1;
+        
+        info!("Position request sent, awaiting responses for request ID: {}", request_id);
 
-        info!("Position request message prepared");
+        // Collect position reports with correlation by PosReqID
+        let mut positions = Vec::new();
+        let timeout = Duration::from_secs(30); // 30 second timeout
+        let start_time = Instant::now();
 
-        // Return empty positions for now
-        Ok(Vec::new())
+        loop {
+            // Check for timeout
+            if start_time.elapsed() > timeout {
+                warn!("Position request timed out after {:?}", timeout);
+                break;
+            }
+
+            // Receive and process messages
+            match self.receive_and_process_message().await {
+                Ok(Some(message)) => {
+                    // Check if this is a PositionReport message
+                    if let Some(msg_type_str) = message.get_field(35) {
+                        if msg_type_str == "AP" { // PositionReport
+                            // Check if this position report matches our request ID
+                            if let Some(pos_req_id) = message.get_field(710) {
+                                if pos_req_id == &request_id {
+                                    debug!("Received PositionReport for request: {}", request_id);
+                                    
+                                    match PositionReport::from_fix_message(&message) {
+                                        Ok(position_report) => {
+                                            let position = position_report.to_position();
+                                            debug!("Parsed position: {} - Qty: {}, Avg Price: {}", 
+                                                   position.symbol, position.quantity, position.average_price);
+                                            positions.push(position);
+                                        }
+                                        Err(e) => {
+                                            warn!("Failed to parse PositionReport: {}", e);
+                                        }
+                                    }
+                                } else {
+                                    debug!("Received PositionReport for different request: {}", pos_req_id);
+                                }
+                            }
+                        }
+                    }
+                }
+                Ok(None) => {
+                    // No message received, continue loop
+                    tokio::time::sleep(Duration::from_millis(10)).await;
+                }
+                Err(e) => {
+                    warn!("Error receiving message: {}", e);
+                    // Continue trying to receive more messages
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                }
+            }
+
+            // For now, we'll break after receiving some positions or after a reasonable time
+            // In a real implementation, we might wait for an end-of-transmission signal
+            if !positions.is_empty() && start_time.elapsed() > Duration::from_secs(5) {
+                debug!("Received {} positions, stopping collection", positions.len());
+                break;
+            }
+        }
+
+        info!("Position request completed, received {} positions", positions.len());
+        Ok(positions)
     }
 
     /// Generate authentication data according to Deribit FIX specification

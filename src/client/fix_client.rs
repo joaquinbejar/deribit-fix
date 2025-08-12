@@ -137,7 +137,7 @@ impl DeribitFixClient {
     pub async fn get_positions(&self) -> Result<Vec<Position>> {
         if let Some(session) = &self.session {
             let mut session_guard = session.lock().await;
-            session_guard.request_positions()
+            session_guard.request_positions().await
         } else {
             Err(DeribitFixError::Session("Not connected".to_string()))
         }

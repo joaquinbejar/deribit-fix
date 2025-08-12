@@ -57,10 +57,22 @@ pub const MARKET_DEPTH: u32 = 264;
 pub const USERNAME: u32 = 553;
 /// Password (554)
 pub const PASSWORD: u32 = 554;
+/// Average Price (6)
+pub const AVERAGE_PRICE: u32 = 6;
+/// Position Date (704)
+pub const POSITION_DATE: u32 = 704;
+/// Position Quantity (703)
+pub const POSITION_QTY: u32 = 703;
 /// PosReqID (710)
 pub const POS_REQ_ID: u32 = 710;
+/// Clearing Business Date (715)
+pub const CLEARING_BUSINESS_DATE: u32 = 715;
 /// PosReqType (724)
 pub const POS_REQ_TYPE: u32 = 724;
+/// Unrealized PnL (1247)
+pub const UNREALIZED_PNL: u32 = 1247;
+/// Realized PnL (1248)
+pub const REALIZED_PNL: u32 = 1248;
 
 // Deribit custom tags
 /// CancelOnDisconnect (9001)

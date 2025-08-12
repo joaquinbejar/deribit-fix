@@ -31,10 +31,14 @@ pub mod user;
 /// Risk management messages
 pub mod risk;
 
+/// Position messages
+pub mod positions;
+
 pub use admin::*;
 pub use builder::*;
 pub use market_data::*;
 pub use orders::*;
+pub use positions::*;
 pub use quotes::*;
 pub use risk::*;
 pub use security_list::*;

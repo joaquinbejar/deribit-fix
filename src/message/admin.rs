@@ -10,6 +10,7 @@
 //! - **Test Request (1)**: Request for heartbeat response to test connectivity  
 //! - **Resend Request (2)**: Request to resend specific messages by sequence number range
 //! - **Reject (3)**: Rejection of received messages due to validation errors
+//! - **Business Message Reject (j)**: Business-level rejection of application messages
 
 use crate::error::Result;
 use crate::message::MessageBuilder;
@@ -29,6 +30,46 @@ pub struct Heartbeat {
     /// TestReqID (112) - Optional field echoed from Test Request
     /// Present only when responding to a Test Request message
     pub test_req_id: Option<String>,
+}
+
+/// Business-level reject reason codes (FIX 4.4, tag 380)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum BusinessRejectReason {
+    /// Other
+    Other = 0,
+    /// Unknown ID
+    UnknownId = 1,
+    /// Unknown Security
+    UnknownSecurity = 2,
+    /// Unsupported Message Type
+    UnsupportedMessageType = 3,
+    /// Application not available
+    ApplicationNotAvailable = 4,
+    /// Conditionally required field missing
+    ConditionallyRequiredFieldMissing = 5,
+    /// Not authorized
+    NotAuthorized = 6,
+    /// DeliverTo firm not available at this time
+    DeliverToFirmNotAvailableAtThisTime = 7,
+}
+
+/// Business Message Reject (MsgType = j)
+///
+/// This message is used to reject application-level (business) messages
+/// when they cannot be processed for business reasons.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BusinessMessageReject {
+    /// RefMsgType (372) - Message type of the rejected application message (required)
+    pub ref_msg_type: String,
+
+    /// BusinessRejectReason (380) - Reason for rejection (required)
+    pub business_reject_reason: BusinessRejectReason,
+
+    /// BusinessRejectRefID (379) - ID from the rejected message for correlation (optional)
+    pub business_reject_ref_id: Option<String>,
+
+    /// Text (58) - Optional free-form text with details
+    pub text: Option<String>,
 }
 
 /// Test Request message (MsgType = 1)
@@ -150,6 +191,7 @@ impl_json_display!(TestRequest);
 impl_json_display!(ResendRequest);
 impl_json_display!(SequenceReset);
 impl_json_display!(Reject);
+impl_json_display!(BusinessMessageReject);
 
 impl Heartbeat {
     /// Create a new Heartbeat message without TestReqID (periodic heartbeat)
@@ -424,6 +466,57 @@ impl Reject {
     }
 }
 
+impl BusinessMessageReject {
+    /// Create a new Business Message Reject
+    pub fn new(ref_msg_type: String, business_reject_reason: BusinessRejectReason) -> Self {
+        Self {
+            ref_msg_type,
+            business_reject_reason,
+            business_reject_ref_id: None,
+            text: None,
+        }
+    }
+
+    /// Set BusinessRejectRefID (379)
+    pub fn with_ref_id(mut self, business_reject_ref_id: String) -> Self {
+        self.business_reject_ref_id = Some(business_reject_ref_id);
+        self
+    }
+
+    /// Set Text (58)
+    pub fn with_text(mut self, text: String) -> Self {
+        self.text = Some(text);
+        self
+    }
+
+    /// Build a FIX message for this Business Message Reject
+    pub fn to_fix_message(
+        &self,
+        sender_comp_id: String,
+        target_comp_id: String,
+        msg_seq_num: u32,
+    ) -> Result<FixMessage> {
+        let mut builder = MessageBuilder::new()
+            .msg_type(MsgType::BusinessMessageReject)
+            .sender_comp_id(sender_comp_id)
+            .target_comp_id(target_comp_id)
+            .msg_seq_num(msg_seq_num)
+            .sending_time(Utc::now())
+            .field(372, self.ref_msg_type.clone()) // RefMsgType
+            .field(380, (self.business_reject_reason as u32).to_string()); // BusinessRejectReason
+
+        if let Some(ref ref_id) = self.business_reject_ref_id {
+            builder = builder.field(379, ref_id.clone()); // BusinessRejectRefID
+        }
+
+        if let Some(ref text) = self.text {
+            builder = builder.field(58, text.clone()); // Text
+        }
+
+        builder.build()
+    }
+}
+
 impl Default for Heartbeat {
     fn default() -> Self {
         Self::new()
@@ -520,5 +613,24 @@ mod tests {
         let msg = fix_msg.unwrap();
         assert_eq!(msg.get_field(35), Some(&"1".to_string())); // MsgType = TestRequest
         assert_eq!(msg.get_field(112), Some(&"REQ456".to_string())); // TestReqID
+    }
+
+    #[test]
+    fn test_business_message_reject_to_fix_message() {
+        let bmr = BusinessMessageReject::new(
+            "D".to_string(),
+            BusinessRejectReason::UnsupportedMessageType,
+        )
+        .with_ref_id("ABC123".to_string())
+        .with_text("Unsupported type".to_string());
+
+        let fix_msg = bmr.to_fix_message("SENDER".to_string(), "TARGET".to_string(), 77);
+        assert!(fix_msg.is_ok());
+        let msg = fix_msg.unwrap();
+        assert_eq!(msg.get_field(35), Some(&"j".to_string())); // MsgType = BusinessMessageReject
+        assert_eq!(msg.get_field(372), Some(&"D".to_string())); // RefMsgType
+        assert_eq!(msg.get_field(379), Some(&"ABC123".to_string())); // BusinessRejectRefID
+        assert_eq!(msg.get_field(380), Some(&(BusinessRejectReason::UnsupportedMessageType as u32).to_string())); // Reason
+        assert_eq!(msg.get_field(58), Some(&"Unsupported type".to_string())); // Text
     }
 }

@@ -10,6 +10,7 @@ use crate::error::Result as DeribitFixResult;
 use crate::message::builder::MessageBuilder;
 use crate::model::types::MsgType;
 use chrono::Utc;
+use base64::{engine::general_purpose, Engine as _};
 use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
@@ -249,7 +250,7 @@ impl UserRequest {
 
         if let Some(raw_data) = &self.raw_data {
             // Convert raw data to base64 for FIX transmission
-            let encoded_data = base64::encode(raw_data);
+            let encoded_data = general_purpose::STANDARD.encode(raw_data);
             builder = builder.field(96, encoded_data);
         }
 

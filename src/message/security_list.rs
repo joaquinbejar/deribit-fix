@@ -956,8 +956,7 @@ mod tests {
 
     #[test]
     fn test_security_list_to_fix_message_with_all_fields() {
-        use chrono::Utc;
-
+        
         let security = SecurityInfo::new("BTC-PERPETUAL".to_string())
             .with_security_desc("BTC Perpetual Future".to_string())
             .with_security_type(SecurityType::Future)

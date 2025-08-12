@@ -18,6 +18,8 @@ pub enum MsgType {
     ResendRequest,
     /// Reject (3)
     Reject,
+    /// Business Message Reject (j)
+    BusinessMessageReject,
     /// Sequence Reset (4)
     SequenceReset,
     /// Logout (5)
@@ -104,6 +106,7 @@ impl MsgType {
             MsgType::TestRequest => "1",
             MsgType::ResendRequest => "2",
             MsgType::Reject => "3",
+            MsgType::BusinessMessageReject => "j",
             MsgType::SequenceReset => "4",
             MsgType::Logout => "5",
             MsgType::ExecutionReport => "8",
@@ -167,6 +170,7 @@ impl FromStr for MsgType {
             "1" => Ok(MsgType::TestRequest),
             "2" => Ok(MsgType::ResendRequest),
             "3" => Ok(MsgType::Reject),
+            "j" => Ok(MsgType::BusinessMessageReject),
             "4" => Ok(MsgType::SequenceReset),
             "5" => Ok(MsgType::Logout),
             "8" => Ok(MsgType::ExecutionReport),

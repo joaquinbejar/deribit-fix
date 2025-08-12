@@ -2,6 +2,7 @@
 //!
 //! This module provides functionality for creating, parsing, and manipulating
 //! FIX protocol messages used in communication with Deribit.
+#![allow(ambiguous_glob_reexports)]
 
 /// Administrative messages (Heartbeat, Test Request, Resend Request, Reject)
 pub mod admin;

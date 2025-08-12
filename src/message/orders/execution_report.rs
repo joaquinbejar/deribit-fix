@@ -55,6 +55,46 @@ pub struct ExecutionReport {
     pub ord_rej_reason: Option<OrderRejectReason>,
     /// Custom label
     pub deribit_label: Option<String>,
+    /// Secondary execution ID
+    pub secondary_exec_id: Option<String>,
+    /// Order type
+    pub ord_type: Option<OrderType>,
+    /// Commission (deprecated, always 0)
+    pub commission: Option<f64>,
+    /// Security exchange
+    pub security_exchange: Option<String>,
+    /// Quantity type
+    pub qty_type: Option<QuantityType>,
+    /// Contract multiplier
+    pub contract_multiplier: Option<f64>,
+    /// Display quantity
+    pub display_qty: Option<f64>,
+    /// Advanced order type for options
+    pub deribit_adv_order_type: Option<char>,
+    /// Volatility for implied volatility orders
+    pub volatility: Option<f64>,
+    /// Fixed USD price for USD orders
+    pub pegged_price: Option<f64>,
+    /// Trade match ID
+    pub trd_match_id: Option<String>,
+    /// Market Maker Protection flag
+    pub deribit_mm_protection: Option<bool>,
+    /// MMP Group
+    pub mmp_group: Option<String>,
+    /// Quote Set ID (for orders from Mass Quote)
+    pub quote_set_id: Option<String>,
+    /// Quote ID (for orders from Mass Quote)
+    pub quote_id: Option<String>,
+    /// Quote Entry ID (for orders from Mass Quote)
+    pub quote_entry_id: Option<String>,
+    /// Execution instruction
+    pub exec_inst: Option<String>,
+    /// Stop price
+    pub stop_px: Option<f64>,
+    /// Condition trigger method
+    pub condition_trigger_method: Option<i32>,
+    /// Last liquidity indicator (1=Added Liquidity, 2=Removed Liquidity)
+    pub last_liquidity_ind: Option<i32>,
 }
 
 impl ExecutionReport {
@@ -90,6 +130,26 @@ impl ExecutionReport {
             text: None,
             ord_rej_reason: None,
             deribit_label: None,
+            secondary_exec_id: None,
+            ord_type: None,
+            commission: None,
+            security_exchange: None,
+            qty_type: None,
+            contract_multiplier: None,
+            display_qty: None,
+            deribit_adv_order_type: None,
+            volatility: None,
+            pegged_price: None,
+            trd_match_id: None,
+            deribit_mm_protection: None,
+            mmp_group: None,
+            quote_set_id: None,
+            quote_id: None,
+            quote_entry_id: None,
+            exec_inst: None,
+            stop_px: None,
+            condition_trigger_method: None,
+            last_liquidity_ind: None,
         }
     }
 
@@ -132,6 +192,26 @@ impl ExecutionReport {
             text: None,
             ord_rej_reason: None,
             deribit_label: None,
+            secondary_exec_id: None,
+            ord_type: None,
+            commission: None,
+            security_exchange: None,
+            qty_type: None,
+            contract_multiplier: None,
+            display_qty: None,
+            deribit_adv_order_type: None,
+            volatility: None,
+            pegged_price: None,
+            trd_match_id: None,
+            deribit_mm_protection: None,
+            mmp_group: None,
+            quote_set_id: None,
+            quote_id: None,
+            quote_entry_id: None,
+            exec_inst: None,
+            stop_px: None,
+            condition_trigger_method: None,
+            last_liquidity_ind: None,
         }
     }
 
@@ -164,6 +244,26 @@ impl ExecutionReport {
             text,
             ord_rej_reason: Some(reason),
             deribit_label: None,
+            secondary_exec_id: None,
+            ord_type: None,
+            commission: None,
+            security_exchange: None,
+            qty_type: None,
+            contract_multiplier: None,
+            display_qty: None,
+            deribit_adv_order_type: None,
+            volatility: None,
+            pegged_price: None,
+            trd_match_id: None,
+            deribit_mm_protection: None,
+            mmp_group: None,
+            quote_set_id: None,
+            quote_id: None,
+            quote_entry_id: None,
+            exec_inst: None,
+            stop_px: None,
+            condition_trigger_method: None,
+            last_liquidity_ind: None,
         }
     }
 
@@ -235,6 +335,87 @@ impl ExecutionReport {
 
         if let Some(deribit_label) = &self.deribit_label {
             builder = builder.field(100010, deribit_label.clone());
+        }
+
+        // Additional optional fields from specification
+        if let Some(secondary_exec_id) = &self.secondary_exec_id {
+            builder = builder.field(527, secondary_exec_id.clone());
+        }
+
+        if let Some(ord_type) = &self.ord_type {
+            builder = builder.field(40, char::from(*ord_type).to_string());
+        }
+
+        if let Some(commission) = &self.commission {
+            builder = builder.field(12, commission.to_string());
+        }
+
+        if let Some(security_exchange) = &self.security_exchange {
+            builder = builder.field(207, security_exchange.clone());
+        }
+
+        if let Some(qty_type) = &self.qty_type {
+            builder = builder.field(854, i32::from(*qty_type).to_string());
+        }
+
+        if let Some(contract_multiplier) = &self.contract_multiplier {
+            builder = builder.field(231, contract_multiplier.to_string());
+        }
+
+        if let Some(display_qty) = &self.display_qty {
+            builder = builder.field(1138, display_qty.to_string());
+        }
+
+        if let Some(deribit_adv_order_type) = &self.deribit_adv_order_type {
+            builder = builder.field(100012, deribit_adv_order_type.to_string());
+        }
+
+        if let Some(volatility) = &self.volatility {
+            builder = builder.field(1188, volatility.to_string());
+        }
+
+        if let Some(pegged_price) = &self.pegged_price {
+            builder = builder.field(839, pegged_price.to_string());
+        }
+
+        if let Some(trd_match_id) = &self.trd_match_id {
+            builder = builder.field(880, trd_match_id.clone());
+        }
+
+        if let Some(deribit_mm_protection) = &self.deribit_mm_protection {
+            builder = builder.field(9008, if *deribit_mm_protection { "Y" } else { "N" }.to_string());
+        }
+
+        if let Some(mmp_group) = &self.mmp_group {
+            builder = builder.field(9019, mmp_group.clone());
+        }
+
+        if let Some(quote_set_id) = &self.quote_set_id {
+            builder = builder.field(302, quote_set_id.clone());
+        }
+
+        if let Some(quote_id) = &self.quote_id {
+            builder = builder.field(117, quote_id.clone());
+        }
+
+        if let Some(quote_entry_id) = &self.quote_entry_id {
+            builder = builder.field(299, quote_entry_id.clone());
+        }
+
+        if let Some(exec_inst) = &self.exec_inst {
+            builder = builder.field(18, exec_inst.clone());
+        }
+
+        if let Some(stop_px) = &self.stop_px {
+            builder = builder.field(99, stop_px.to_string());
+        }
+
+        if let Some(condition_trigger_method) = &self.condition_trigger_method {
+            builder = builder.field(5127, condition_trigger_method.to_string());
+        }
+
+        if let Some(last_liquidity_ind) = &self.last_liquidity_ind {
+            builder = builder.field(851, last_liquidity_ind.to_string());
         }
 
         Ok(builder.build()?.to_string())

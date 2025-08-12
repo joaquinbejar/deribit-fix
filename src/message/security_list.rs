@@ -451,6 +451,132 @@ impl SecurityInfo {
     pub fn is_spot(&self) -> bool {
         matches!(self.security_type, Some(SecurityType::FxSpot))
     }
+
+    /// Set security description
+    pub fn with_security_desc(mut self, desc: String) -> Self {
+        self.security_desc = Some(desc);
+        self
+    }
+
+    /// Set security type
+    pub fn with_security_type(mut self, security_type: SecurityType) -> Self {
+        self.security_type = Some(security_type);
+        self
+    }
+
+    /// Set put or call for options
+    pub fn with_put_or_call(mut self, put_or_call: PutOrCall) -> Self {
+        self.put_or_call = Some(put_or_call);
+        self
+    }
+
+    /// Set strike price for options
+    pub fn with_strike_price(mut self, strike_price: f64) -> Self {
+        self.strike_price = Some(strike_price);
+        self
+    }
+
+    /// Set strike currency
+    pub fn with_strike_currency(mut self, strike_currency: String) -> Self {
+        self.strike_currency = Some(strike_currency);
+        self
+    }
+
+    /// Set currency
+    pub fn with_currency(mut self, currency: String) -> Self {
+        self.currency = Some(currency);
+        self
+    }
+
+    /// Set price quote currency
+    pub fn with_price_quote_currency(mut self, currency: String) -> Self {
+        self.price_quote_currency = Some(currency);
+        self
+    }
+
+    /// Set instrument price precision
+    pub fn with_instrument_price_precision(mut self, precision: i32) -> Self {
+        self.instrument_price_precision = Some(precision);
+        self
+    }
+
+    /// Set minimum price increment
+    pub fn with_min_price_increment(mut self, increment: f64) -> Self {
+        self.min_price_increment = Some(increment);
+        self
+    }
+
+    /// Set underlying symbol for options
+    pub fn with_underlying_symbol(mut self, underlying: String) -> Self {
+        self.underlying_symbol = Some(underlying);
+        self
+    }
+
+    /// Set issue date
+    pub fn with_issue_date(mut self, issue_date: DateTime<Utc>) -> Self {
+        self.issue_date = Some(issue_date);
+        self
+    }
+
+    /// Set maturity date
+    pub fn with_maturity_date(mut self, maturity_date: DateTime<Utc>) -> Self {
+        self.maturity_date = Some(maturity_date);
+        self
+    }
+
+    /// Set maturity time
+    pub fn with_maturity_time(mut self, maturity_time: DateTime<Utc>) -> Self {
+        self.maturity_time = Some(maturity_time);
+        self
+    }
+
+    /// Set minimum trade volume
+    pub fn with_min_trade_vol(mut self, min_vol: f64) -> Self {
+        self.min_trade_vol = Some(min_vol);
+        self
+    }
+
+    /// Set settlement type
+    pub fn with_settl_type(mut self, settl_type: String) -> Self {
+        self.settl_type = Some(settl_type);
+        self
+    }
+
+    /// Set settlement currency
+    pub fn with_settl_currency(mut self, currency: String) -> Self {
+        self.settl_currency = Some(currency);
+        self
+    }
+
+    /// Set commission currency
+    pub fn with_comm_currency(mut self, currency: String) -> Self {
+        self.comm_currency = Some(currency);
+        self
+    }
+
+    /// Set contract multiplier
+    pub fn with_contract_multiplier(mut self, multiplier: f64) -> Self {
+        self.contract_multiplier = Some(multiplier);
+        self
+    }
+
+    /// Add a security alternative ID
+    pub fn add_security_alt_id(mut self, alt_id: SecurityAltId) -> Self {
+        self.security_alt_ids.push(alt_id);
+        self
+    }
+
+    /// Add a tick rule
+    pub fn add_tick_rule(mut self, tick_rule: TickRule) -> Self {
+        self.tick_rules.push(tick_rule);
+        self
+    }
+
+    /// Set security status
+    pub fn with_security_status(mut self, status: SecurityStatus) -> Self {
+        self.security_status = Some(status);
+        self
+    }
 }
 
 /// Security List response message (MsgType = y)
@@ -534,22 +660,107 @@ impl SecurityList {
             .field(560, self.security_request_result.to_string()) // SecurityRequestResult
             .field(146, self.securities.len().to_string()); // NoRelatedSym
 
-        // Add security information
-        // Note: In a real implementation, you would need to add all the repeating group fields
-        // for each security. This is a simplified version showing the structure.
-        for (i, security) in self.securities.iter().enumerate() {
-            let prefix = format!("{}.", i + 1);
-            builder = builder.field(55, format!("{}{}", prefix, security.symbol)); // Symbol
+        // Add security information with proper FIX repeating group structure
+        for security in &self.securities {
+            // Required fields
+            builder = builder.field(55, security.symbol.clone()); // Symbol
 
+            // Optional security fields
             if let Some(ref desc) = security.security_desc {
-                builder = builder.field(107, format!("{prefix}{desc}")); // SecurityDesc
+                builder = builder.field(107, desc.clone()); // SecurityDesc
             }
 
             if let Some(ref sec_type) = security.security_type {
-                builder = builder.field(167, format!("{}{}", prefix, sec_type.as_fix_str())); // SecurityType
+                builder = builder.field(167, sec_type.as_fix_str().to_string()); // SecurityType
             }
 
-            // Add other fields as needed...
+            if let Some(put_or_call) = security.put_or_call {
+                builder = builder.field(201, i32::from(put_or_call).to_string()); // PutOrCall
+            }
+
+            if let Some(strike_price) = security.strike_price {
+                builder = builder.field(202, strike_price.to_string()); // StrikePrice
+            }
+
+            if let Some(ref strike_currency) = security.strike_currency {
+                builder = builder.field(947, strike_currency.clone()); // StrikeCurrency
+            }
+
+            if let Some(ref currency) = security.currency {
+                builder = builder.field(15, currency.clone()); // Currency
+            }
+
+            if let Some(ref price_quote_currency) = security.price_quote_currency {
+                builder = builder.field(1524, price_quote_currency.clone()); // PriceQuoteCurrency
+            }
+
+            if let Some(instrument_price_precision) = security.instrument_price_precision {
+                builder = builder.field(2576, instrument_price_precision.to_string()); // InstrumentPricePrecision
+            }
+
+            if let Some(min_price_increment) = security.min_price_increment {
+                builder = builder.field(969, min_price_increment.to_string()); // MinPriceIncrement
+            }
+
+            if let Some(ref underlying_symbol) = security.underlying_symbol {
+                builder = builder.field(311, underlying_symbol.clone()); // UnderlyingSymbol
+            }
+
+            if let Some(issue_date) = security.issue_date {
+                builder = builder.field(225, issue_date.format("%Y%m%d-%H:%M:%S%.3f").to_string()); // IssueDate
+            }
+
+            if let Some(maturity_date) = security.maturity_date {
+                builder = builder.field(541, maturity_date.format("%Y%m%d").to_string()); // MaturityDate
+            }
+
+            if let Some(maturity_time) = security.maturity_time {
+                builder = builder.field(1079, maturity_time.format("%Y%m%d-%H:%M:%S%.3f").to_string()); // MaturityTime
+            }
+
+            if let Some(min_trade_vol) = security.min_trade_vol {
+                builder = builder.field(562, min_trade_vol.to_string()); // MinTradeVol
+            }
+
+            if let Some(ref settl_type) = security.settl_type {
+                builder = builder.field(63, settl_type.clone()); // SettlType
+            }
+
+            if let Some(ref settl_currency) = security.settl_currency {
+                builder = builder.field(120, settl_currency.clone()); // SettlCurrency
+            }
+
+            if let Some(ref comm_currency) = security.comm_currency {
+                builder = builder.field(479, comm_currency.clone()); // CommCurrency
+            }
+
+            if let Some(contract_multiplier) = security.contract_multiplier {
+                builder = builder.field(231, contract_multiplier.to_string()); // ContractMultiplier
+            }
+
+            // Security Alternative IDs repeating group
+            if !security.security_alt_ids.is_empty() {
+                builder = builder.field(454, security.security_alt_ids.len().to_string()); // NoSecurityAltID
+
+                for alt_id in &security.security_alt_ids {
+                    builder = builder.field(455, alt_id.security_alt_id.clone()); // SecurityAltID
+                    builder = builder.field(456, alt_id.security_alt_id_source.clone()); // SecurityAltIDSource
+                }
+            }
+
+            // Tick Rules repeating group
+            if !security.tick_rules.is_empty() {
+                builder = builder.field(1205, security.tick_rules.len().to_string()); // NoTickRules
+
+                for tick_rule in &security.tick_rules {
+                    builder = builder.field(1206, tick_rule.start_tick_price_range.to_string()); // StartTickPriceRange
+                    builder = builder.field(1208, tick_rule.tick_increment.to_string()); // TickIncrement
+                }
+            }
+
+            if let Some(security_status) = security.security_status {
+                builder = builder.field(965, i32::from(security_status).to_string()); // SecurityStatus
+            }
         }
 
         builder.build()
@@ -683,5 +894,117 @@ mod tests {
 
         assert_eq!(tick_rule.start_tick_price_range, 100.0);
         assert_eq!(tick_rule.tick_increment, 0.5);
+    }
+
+    #[test]
+    fn test_security_info_with_all_fields() {
+        use chrono::Utc;
+
+        let maturity_date = Utc::now() + chrono::Duration::days(30);
+        let issue_date = Utc::now() - chrono::Duration::days(365);
+
+        let security = SecurityInfo::new("BTC-28JUL23-30000-C".to_string())
+            .with_security_desc("BTC Call Option".to_string())
+            .with_security_type(SecurityType::Option)
+            .with_put_or_call(PutOrCall::Call)
+            .with_strike_price(30000.0)
+            .with_strike_currency("USD".to_string())
+            .with_currency("BTC".to_string())
+            .with_price_quote_currency("USD".to_string())
+            .with_instrument_price_precision(4)
+            .with_min_price_increment(0.0001)
+            .with_underlying_symbol("BTC".to_string())
+            .with_issue_date(issue_date)
+            .with_maturity_date(maturity_date)
+            .with_maturity_time(maturity_date)
+            .with_min_trade_vol(0.1)
+            .with_settl_type("M1".to_string())
+            .with_settl_currency("USD".to_string())
+            .with_comm_currency("USD".to_string())
+            .with_contract_multiplier(1.0)
+            .add_security_alt_id(SecurityAltId::multicast("MC123".to_string()))
+            .add_tick_rule(TickRule {
+                start_tick_price_range: 0.0,
+                tick_increment: 0.0001,
+            })
+            .with_security_status(SecurityStatus::Active);
+
+        assert_eq!(security.symbol, "BTC-28JUL23-30000-C");
+        assert_eq!(security.security_desc, Some("BTC Call Option".to_string()));
+        assert_eq!(security.security_type, Some(SecurityType::Option));
+        assert_eq!(security.put_or_call, Some(PutOrCall::Call));
+        assert_eq!(security.strike_price, Some(30000.0));
+        assert_eq!(security.strike_currency, Some("USD".to_string()));
+        assert_eq!(security.currency, Some("BTC".to_string()));
+        assert_eq!(security.price_quote_currency, Some("USD".to_string()));
+        assert_eq!(security.instrument_price_precision, Some(4));
+        assert_eq!(security.min_price_increment, Some(0.0001));
+        assert_eq!(security.underlying_symbol, Some("BTC".to_string()));
+        assert_eq!(security.issue_date, Some(issue_date));
+        assert_eq!(security.maturity_date, Some(maturity_date));
+        assert_eq!(security.maturity_time, Some(maturity_date));
+        assert_eq!(security.min_trade_vol, Some(0.1));
+        assert_eq!(security.settl_type, Some("M1".to_string()));
+        assert_eq!(security.settl_currency, Some("USD".to_string()));
+        assert_eq!(security.comm_currency, Some("USD".to_string()));
+        assert_eq!(security.contract_multiplier, Some(1.0));
+        assert_eq!(security.security_alt_ids.len(), 1);
+        assert_eq!(security.tick_rules.len(), 1);
+        assert_eq!(security.security_status, Some(SecurityStatus::Active));
+        assert!(security.is_option());
+    }
+
+    #[test]
+    fn test_security_list_to_fix_message_with_all_fields() {
+        use chrono::Utc;
+
+        let security = SecurityInfo::new("BTC-PERPETUAL".to_string())
+            .with_security_desc("BTC Perpetual Future".to_string())
+            .with_security_type(SecurityType::Future)
+            .with_currency("BTC".to_string())
+            .with_price_quote_currency("USD".to_string())
+            .with_instrument_price_precision(2)
+            .with_min_price_increment(0.5)
+            .with_min_trade_vol(1.0)
+            .with_settl_currency("USD".to_string())
+            .with_contract_multiplier(1.0)
+            .add_security_alt_id(SecurityAltId::multicast("MC456".to_string()))
+            .add_tick_rule(TickRule {
+                start_tick_price_range: 0.0,
+                tick_increment: 0.5,
+            })
+            .with_security_status(SecurityStatus::Active);
+
+        let securities = vec![security];
+        let security_list = SecurityList::success("REQ123".to_string(), "RESP456".to_string(), securities);
+
+        let fix_message = security_list.to_fix_message("SENDER".to_string(), "TARGET".to_string(), 1).unwrap();
+        let fix_str = fix_message.to_string();
+
+        // Check required SecurityList fields
+        assert!(fix_str.contains("35=y")); // MsgType
+        assert!(fix_str.contains("320=REQ123")); // SecurityReqId
+        assert!(fix_str.contains("322=RESP456")); // SecurityResponseID
+        assert!(fix_str.contains("560=0")); // SecurityRequestResult
+        assert!(fix_str.contains("146=1")); // NoRelatedSym
+
+        // Check SecurityInfo fields are serialized
+        assert!(fix_str.contains("55=BTC-PERPETUAL")); // Symbol
+        assert!(fix_str.contains("107=BTC Perpetual Future")); // SecurityDesc
+        assert!(fix_str.contains("167=FUT")); // SecurityType
+        assert!(fix_str.contains("15=BTC")); // Currency
+        assert!(fix_str.contains("1524=USD")); // PriceQuoteCurrency
+        assert!(fix_str.contains("2576=2")); // InstrumentPricePrecision
+        assert!(fix_str.contains("969=0.5")); // MinPriceIncrement
+        assert!(fix_str.contains("562=1")); // MinTradeVol
+        assert!(fix_str.contains("120=USD")); // SettlCurrency
+        assert!(fix_str.contains("231=1")); // ContractMultiplier
+        assert!(fix_str.contains("454=1")); // NoSecurityAltID
+        assert!(fix_str.contains("455=MC456")); // SecurityAltID
+        assert!(fix_str.contains("456=101")); // SecurityAltIDSource (multicast)
+        assert!(fix_str.contains("1205=1")); // NoTickRules
+        assert!(fix_str.contains("1206=0")); // StartTickPriceRange
+        assert!(fix_str.contains("1208=0.5")); // TickIncrement
+        assert!(fix_str.contains("965=1")); // SecurityStatus
     }
 }

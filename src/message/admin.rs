@@ -58,6 +58,22 @@ pub struct ResendRequest {
     pub end_seq_no: u32,
 }
 
+/// Sequence Reset message (MsgType = 4)
+///
+/// The Sequence Reset message is used to recover from an out-of-sequence condition,
+/// to reestablish a FIX session after a sequence loss. The MsgSeqNum(34) in the 
+/// header is ignored.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SequenceReset {
+    /// NewSeqNo (36) - New sequence number to reset to
+    /// This can only increase the sequence number, never decrease it
+    pub new_seq_no: u32,
+
+    /// GapFillFlag (123) - Indicates if this is a gap fill
+    /// Y = Gap Fill message, N = Sequence Reset message
+    pub gap_fill_flag: Option<bool>,
+}
+
 /// Reject message (MsgType = 3)
 ///
 /// The Reject message is sent when a received message cannot be processed
@@ -132,6 +148,7 @@ pub enum SessionRejectReason {
 impl_json_display!(Heartbeat);
 impl_json_display!(TestRequest);
 impl_json_display!(ResendRequest);
+impl_json_display!(SequenceReset);
 impl_json_display!(Reject);
 
 impl Heartbeat {
@@ -252,6 +269,60 @@ impl ResendRequest {
             .field(7, self.begin_seq_no.to_string()) // BeginSeqNo
             .field(16, self.end_seq_no.to_string()) // EndSeqNo
             .build()
+    }
+}
+
+impl SequenceReset {
+    /// Create a new Sequence Reset message
+    pub fn new(new_seq_no: u32) -> Self {
+        Self {
+            new_seq_no,
+            gap_fill_flag: None,
+        }
+    }
+
+    /// Create a gap fill Sequence Reset message
+    pub fn new_gap_fill(new_seq_no: u32) -> Self {
+        Self {
+            new_seq_no,
+            gap_fill_flag: Some(true),
+        }
+    }
+
+    /// Create a sequence reset (not gap fill) message
+    pub fn new_reset(new_seq_no: u32) -> Self {
+        Self {
+            new_seq_no,
+            gap_fill_flag: Some(false),
+        }
+    }
+
+    /// Check if this is a gap fill message
+    pub fn is_gap_fill(&self) -> bool {
+        self.gap_fill_flag.unwrap_or(false)
+    }
+
+    /// Build a FIX message for this Sequence Reset
+    pub fn to_fix_message(
+        &self,
+        sender_comp_id: String,
+        target_comp_id: String,
+        msg_seq_num: u32,
+    ) -> Result<FixMessage> {
+        let mut builder = MessageBuilder::new()
+            .msg_type(MsgType::SequenceReset)
+            .sender_comp_id(sender_comp_id)
+            .target_comp_id(target_comp_id)
+            .msg_seq_num(msg_seq_num)
+            .sending_time(Utc::now())
+            .field(36, self.new_seq_no.to_string()); // NewSeqNo
+
+        // Add GapFillFlag if specified
+        if let Some(gap_fill) = self.gap_fill_flag {
+            builder = builder.field(123, if gap_fill { "Y" } else { "N" }.to_string());
+        }
+
+        builder.build()
     }
 }
 

@@ -328,6 +328,8 @@ pub enum MassStatusRequestType {
     SpecificOrder,
     /// Status of all orders
     AllOrders,
+    /// Historical orders request
+    Historical,
 }
 
 impl From<MassStatusRequestType> for i32 {
@@ -335,6 +337,7 @@ impl From<MassStatusRequestType> for i32 {
         match request_type {
             MassStatusRequestType::SpecificOrder => 1,
             MassStatusRequestType::AllOrders => 7,
+            MassStatusRequestType::Historical => 10,
         }
     }
 }
@@ -346,6 +349,7 @@ impl TryFrom<i32> for MassStatusRequestType {
         match value {
             1 => Ok(MassStatusRequestType::SpecificOrder),
             7 => Ok(MassStatusRequestType::AllOrders),
+            10 => Ok(MassStatusRequestType::Historical),
             _ => Err(format!("Invalid MassStatusRequestType: {value}")),
         }
     }

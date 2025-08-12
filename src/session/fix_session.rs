@@ -155,15 +155,29 @@ impl Session {
 
     /// Perform FIX logout
     pub async fn logout(&mut self) -> Result<()> {
+        self.logout_with_options(None, None).await
+    }
+
+    /// Perform FIX logout with optional parameters
+    pub async fn logout_with_options(&mut self, text: Option<String>, dont_cancel_on_disconnect: Option<bool>) -> Result<()> {
         info!("Performing FIX logout");
 
-        let logout_message = MessageBuilder::new()
+        let mut message_builder = MessageBuilder::new()
             .msg_type(MsgType::Logout)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
-            .msg_seq_num(self.outgoing_seq_num)
-            .field(58, "Normal logout".to_string()) // Text
-            .build()?;
+            .msg_seq_num(self.outgoing_seq_num);
+
+        // Add Text field (tag 58) - optional
+        let logout_text = text.unwrap_or_else(|| "Normal logout".to_string());
+        message_builder = message_builder.field(58, logout_text); // Text
+
+        // Add DontCancelOnDisconnect field (tag 9003) - optional
+        if let Some(dont_cancel) = dont_cancel_on_disconnect {
+            message_builder = message_builder.field(9003, if dont_cancel { "Y" } else { "N" }.to_string()); // DontCancelOnDisconnect
+        }
+
+        let logout_message = message_builder.build()?;
 
         // Send the logout message
         self.send_message(logout_message).await?;

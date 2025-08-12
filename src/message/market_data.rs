@@ -339,6 +339,23 @@ impl MarketDataRequest {
             builder = builder.field(269, i32::from(*entry_type).to_string()); // MDEntryType
         }
 
+        // Add Deribit-specific optional fields
+        if let Some(skip_block_trades) = self.skip_block_trades {
+            builder = builder.field(9011, if skip_block_trades { "Y" } else { "N" }.to_string()); // DeribitSkipBlockTrades
+        }
+
+        if let Some(show_block_trade_id) = self.show_block_trade_id {
+            builder = builder.field(9012, if show_block_trade_id { "Y" } else { "N" }.to_string()); // DeribitShowBlockTradeId
+        }
+
+        if let Some(trade_amount) = self.trade_amount {
+            builder = builder.field(100007, trade_amount.to_string()); // DeribitTradeAmount
+        }
+
+        if let Some(since_timestamp) = self.since_timestamp {
+            builder = builder.field(100008, since_timestamp.to_string()); // DeribitSinceTimestamp
+        }
+
         // Add symbols group
         if !self.symbols.is_empty() {
             builder = builder.field(146, self.symbols.len().to_string()); // NoRelatedSym

@@ -84,16 +84,58 @@ impl Session {
         // Generate RawData and password hash according to Deribit FIX spec
         let (raw_data, password_hash) = self.generate_auth_data(&self.config.password)?;
 
-        let message_builder = MessageBuilder::new()
+        let mut message_builder = MessageBuilder::new()
             .msg_type(MsgType::Logon)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
             .msg_seq_num(self.outgoing_seq_num)
-            .field(96, raw_data) // RawData - timestamp.nonce
-            .field(98, "0".to_string()) // EncryptMethod (0 = None)
-            .field(108, self.config.heartbeat_interval.to_string()) // HeartBtInt
-            .field(553, self.config.username.clone()) // Username
-            .field(554, password_hash); // Password - base64(sha256(nonce ++ access_secret))
+            .field(108, self.config.heartbeat_interval.to_string()) // HeartBtInt - Required
+            .field(96, raw_data.clone()) // RawData - Required (timestamp.nonce)
+            .field(553, self.config.username.clone()) // Username - Required
+            .field(554, password_hash); // Password - Required
+
+        // Add RawDataLength if needed (optional but recommended)
+        message_builder = message_builder.field(95, raw_data.len().to_string()); // RawDataLength
+
+        // Add optional Deribit-specific tags based on configuration
+        if let Some(use_wordsafe_tags) = &self.config.use_wordsafe_tags {
+            message_builder = message_builder.field(9002, if *use_wordsafe_tags { "Y" } else { "N" }.to_string()); // UseWordsafeTags
+        }
+
+        // CancelOnDisconnect - always include based on config
+        message_builder = message_builder.field(9001, if self.config.cancel_on_disconnect { "Y" } else { "N" }.to_string()); // CancelOnDisconnect
+
+        if let Some(app_id) = &self.config.app_id {
+            message_builder = message_builder.field(9004, app_id.clone()); // DeribitAppId
+        }
+
+        if let Some(app_secret) = &self.config.app_secret {
+            if let Some(raw_data_str) = raw_data.split_once('.').map(|(timestamp, nonce)| format!("{}.{}", timestamp, nonce)) {
+                if let Ok(app_sig) = self.calculate_app_signature(&raw_data_str, app_secret) {
+                    message_builder = message_builder.field(9005, app_sig); // DeribitAppSig
+                }
+            }
+        }
+
+        if let Some(deribit_sequential) = &self.config.deribit_sequential {
+            message_builder = message_builder.field(9007, if *deribit_sequential { "Y" } else { "N" }.to_string()); // DeribitSequential
+        }
+
+        if let Some(unsubscribe_exec_reports) = &self.config.unsubscribe_execution_reports {
+            message_builder = message_builder.field(9009, if *unsubscribe_exec_reports { "Y" } else { "N" }.to_string()); // UnsubscribeExecutionReports
+        }
+
+        if let Some(connection_only_exec_reports) = &self.config.connection_only_execution_reports {
+            message_builder = message_builder.field(9010, if *connection_only_exec_reports { "Y" } else { "N" }.to_string()); // ConnectionOnlyExecutionReports
+        }
+
+        if let Some(report_fills_as_exec_reports) = &self.config.report_fills_as_exec_reports {
+            message_builder = message_builder.field(9015, if *report_fills_as_exec_reports { "Y" } else { "N" }.to_string()); // ReportFillsAsExecReports
+        }
+
+        if let Some(display_increment_steps) = &self.config.display_increment_steps {
+            message_builder = message_builder.field(9018, if *display_increment_steps { "Y" } else { "N" }.to_string()); // DisplayIncrementSteps
+        }
 
         // Add AppID if available - temporarily disabled for testing
         // if let Some(app_id) = &self.config.app_id {

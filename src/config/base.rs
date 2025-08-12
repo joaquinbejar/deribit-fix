@@ -54,6 +54,18 @@ pub struct DeribitFixConfig {
     pub app_id: Option<String>,
     /// Application secret for registered applications
     pub app_secret: Option<String>,
+    /// Use word-safe tags (custom tags start at 5000 instead of 100000)
+    pub use_wordsafe_tags: Option<bool>,
+    /// Enable sequential FIX messaging (single queue for all messages)
+    pub deribit_sequential: Option<bool>,
+    /// Unsubscribe from notificational Execution Reports
+    pub unsubscribe_execution_reports: Option<bool>,
+    /// Receive Execution Reports only for orders created in this connection
+    pub connection_only_execution_reports: Option<bool>,
+    /// Report fills as Execution Reports with ExecType = F(TRADE)
+    pub report_fills_as_exec_reports: Option<bool>,
+    /// Include price increment steps in symbol entries
+    pub display_increment_steps: Option<bool>,
 }
 
 impl DeribitFixConfig {
@@ -116,6 +128,12 @@ impl DeribitFixConfig {
             cancel_on_disconnect: get_env_or_default("DERIBIT_CANCEL_ON_DISCONNECT", false),
             app_id: get_env_optional("DERIBIT_APP_ID"),
             app_secret: get_env_optional("DERIBIT_APP_SECRET"),
+            use_wordsafe_tags: get_env_optional::<String>("DERIBIT_USE_WORDSAFE_TAGS").map(|v| v == "Y" || v == "true"),
+            deribit_sequential: get_env_optional::<String>("DERIBIT_SEQUENTIAL").map(|v| v == "Y" || v == "true"),
+            unsubscribe_execution_reports: get_env_optional::<String>("DERIBIT_UNSUBSCRIBE_EXECUTION_REPORTS").map(|v| v == "Y" || v == "true"),
+            connection_only_execution_reports: get_env_optional::<String>("DERIBIT_CONNECTION_ONLY_EXECUTION_REPORTS").map(|v| v == "Y" || v == "true"),
+            report_fills_as_exec_reports: get_env_optional::<String>("DERIBIT_REPORT_FILLS_AS_EXEC_REPORTS").map(|v| v == "Y" || v == "true"),
+            display_increment_steps: get_env_optional::<String>("DERIBIT_DISPLAY_INCREMENT_STEPS").map(|v| v == "Y" || v == "true"),
         }
     }
 
@@ -219,6 +237,42 @@ impl DeribitFixConfig {
     pub fn with_app_credentials(mut self, app_id: String, app_secret: String) -> Self {
         self.app_id = Some(app_id);
         self.app_secret = Some(app_secret);
+        self
+    }
+
+    /// Set whether to use word-safe tags (custom tags start at 5000 instead of 100000)
+    pub fn with_use_wordsafe_tags(mut self, use_wordsafe_tags: bool) -> Self {
+        self.use_wordsafe_tags = Some(use_wordsafe_tags);
+        self
+    }
+
+    /// Set whether to enable sequential FIX messaging (single queue for all messages)
+    pub fn with_deribit_sequential(mut self, deribit_sequential: bool) -> Self {
+        self.deribit_sequential = Some(deribit_sequential);
+        self
+    }
+
+    /// Set whether to unsubscribe from notificational Execution Reports
+    pub fn with_unsubscribe_execution_reports(mut self, unsubscribe: bool) -> Self {
+        self.unsubscribe_execution_reports = Some(unsubscribe);
+        self
+    }
+
+    /// Set whether to receive Execution Reports only for orders created in this connection
+    pub fn with_connection_only_execution_reports(mut self, connection_only: bool) -> Self {
+        self.connection_only_execution_reports = Some(connection_only);
+        self
+    }
+
+    /// Set whether to report fills as Execution Reports with ExecType = F(TRADE)
+    pub fn with_report_fills_as_exec_reports(mut self, report_fills: bool) -> Self {
+        self.report_fills_as_exec_reports = Some(report_fills);
+        self
+    }
+
+    /// Set whether to include price increment steps in symbol entries
+    pub fn with_display_increment_steps(mut self, display_steps: bool) -> Self {
+        self.display_increment_steps = Some(display_steps);
         self
     }
 

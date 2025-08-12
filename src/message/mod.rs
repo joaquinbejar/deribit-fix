@@ -21,9 +21,21 @@ pub mod orders;
 /// Quotes messages
 pub mod quotes;
 
+/// Trade reporting messages
+pub mod trade;
+
+/// User management messages
+pub mod user;
+
+/// Risk management messages
+pub mod risk;
+
 pub use admin::*;
 pub use builder::*;
 pub use market_data::*;
 pub use orders::*;
 pub use quotes::*;
+pub use risk::*;
 pub use security_list::*;
+pub use trade::*;
+pub use user::*;

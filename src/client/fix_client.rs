@@ -80,15 +80,11 @@ impl DeribitFixClient {
     }
 
     /// Get the current session state
-    pub fn get_session_state(&self) -> Option<crate::session::SessionState> {
+    pub async fn get_session_state(&self) -> Option<crate::session::SessionState> {
         if let Some(session) = &self.session {
-            // Try to get the session state without blocking
-            if let Ok(session_guard) = session.try_lock() {
-                Some(session_guard.get_state())
-            } else {
-                // Session is locked, return None to indicate we can't check right now
-                None
-            }
+            // Use async lock to properly wait for session access
+            let session_guard = session.lock().await;
+            Some(session_guard.get_state())
         } else {
             None
         }

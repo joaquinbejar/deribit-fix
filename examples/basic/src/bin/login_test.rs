@@ -83,7 +83,7 @@ async fn main() -> Result<()> {
                 }
 
                 // Check if we're logged on
-                if let Some(state) = client.get_session_state() {
+                if let Some(state) = client.get_session_state().await {
                     debug!("Current session state: {:?}", state);
                     if state == deribit_fix::session::SessionState::LoggedOn {
                         logged_on = true;

@@ -21,7 +21,7 @@
 [![Downloads](https://img.shields.io/crates/d/deribit-fix.svg)](https://crates.io/crates/deribit-fix)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/deribit-fix)
 
-**Version:** 0.2.0 | **Status:** Production Ready | **Repository:** https://github.com/joaquinbejar/deribit-fix
+**Version:** 0.2.0 | **Status:** Production Ready | **Repository:** <https://github.com/joaquinbejar/deribit-fix>
 
 A comprehensive, production-ready FIX protocol client framework for Deribit cryptocurrency exchange.
 This library provides a complete, type-safe, and async foundation for building sophisticated trading applications
@@ -56,7 +56,6 @@ use deribit_fix::prelude::*;
 async fn main() -> Result<()> {
     let config = DeribitFixConfig::default()
         .with_credentials("your_key".to_string(), "your_secret".to_string())
-        .with_test_environment()
         .with_heartbeat_interval(30);
 
     let mut client = DeribitFixClient::new(config).await?;

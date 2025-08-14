@@ -90,10 +90,8 @@ impl Connection {
         let message_str = message.to_string();
         debug!("Sending FIX message: {}", message_str);
 
-        match self.stream
-            .write_all(message_str.as_bytes())
-            .await {
-            Ok(_) => {},
+        match self.stream.write_all(message_str.as_bytes()).await {
+            Ok(_) => {}
             Err(e) => {
                 error!("Failed to send message: {}", e);
                 self.connected = false;

@@ -102,7 +102,7 @@ pub struct ResendRequest {
 /// Sequence Reset message (MsgType = 4)
 ///
 /// The Sequence Reset message is used to recover from an out-of-sequence condition,
-/// to reestablish a FIX session after a sequence loss. The MsgSeqNum(34) in the 
+/// to reestablish a FIX session after a sequence loss. The MsgSeqNum(34) in the
 /// header is ignored.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct SequenceReset {
@@ -630,7 +630,10 @@ mod tests {
         assert_eq!(msg.get_field(35), Some(&"j".to_string())); // MsgType = BusinessMessageReject
         assert_eq!(msg.get_field(372), Some(&"D".to_string())); // RefMsgType
         assert_eq!(msg.get_field(379), Some(&"ABC123".to_string())); // BusinessRejectRefID
-        assert_eq!(msg.get_field(380), Some(&(BusinessRejectReason::UnsupportedMessageType as u32).to_string())); // Reason
+        assert_eq!(
+            msg.get_field(380),
+            Some(&(BusinessRejectReason::UnsupportedMessageType as u32).to_string())
+        ); // Reason
         assert_eq!(msg.get_field(58), Some(&"Unsupported type".to_string())); // Text
     }
 }

@@ -34,6 +34,12 @@ pub mod risk;
 /// Position messages
 pub mod positions;
 
+/// Security definition messages
+pub mod security_definition;
+
+/// Security status messages
+pub mod security_status;
+
 pub use admin::*;
 pub use builder::*;
 pub use market_data::*;
@@ -41,6 +47,8 @@ pub use orders::*;
 pub use positions::*;
 pub use quotes::*;
 pub use risk::*;
+pub use security_definition::*;
 pub use security_list::*;
+pub use security_status::*;
 pub use trade::*;
 pub use user::*;

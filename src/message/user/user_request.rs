@@ -9,8 +9,8 @@
 use crate::error::Result as DeribitFixResult;
 use crate::message::builder::MessageBuilder;
 use crate::model::types::MsgType;
+use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
-use base64::{engine::general_purpose, Engine as _};
 use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
@@ -145,11 +145,7 @@ impl UserRequest {
     }
 
     /// Create a log on user request
-    pub fn log_on_user(
-        user_request_id: String,
-        username: String,
-        password: String,
-    ) -> Self {
+    pub fn log_on_user(user_request_id: String, username: String, password: String) -> Self {
         let mut request = Self::new(user_request_id, UserRequestType::LogOnUser, username);
         request.password = Some(password);
         request
@@ -167,7 +163,11 @@ impl UserRequest {
         old_password: String,
         new_password: String,
     ) -> Self {
-        let mut request = Self::new(user_request_id, UserRequestType::ChangePasswordForUser, username);
+        let mut request = Self::new(
+            user_request_id,
+            UserRequestType::ChangePasswordForUser,
+            username,
+        );
         request.password = Some(old_password);
         request.new_password = Some(new_password);
         request
@@ -175,7 +175,11 @@ impl UserRequest {
 
     /// Create a status request
     pub fn status_request(user_request_id: String, username: String) -> Self {
-        Self::new(user_request_id, UserRequestType::RequestIndividualUserStatus, username)
+        Self::new(
+            user_request_id,
+            UserRequestType::RequestIndividualUserStatus,
+            username,
+        )
     }
 
     /// Set password
@@ -286,7 +290,10 @@ mod tests {
         );
 
         assert_eq!(request.user_request_id, "UR123");
-        assert_eq!(request.user_request_type, UserRequestType::RequestIndividualUserStatus);
+        assert_eq!(
+            request.user_request_type,
+            UserRequestType::RequestIndividualUserStatus
+        );
         assert_eq!(request.username, "testuser");
         assert!(request.password.is_none());
         assert!(request.new_password.is_none());
@@ -307,10 +314,7 @@ mod tests {
 
     #[test]
     fn test_user_request_log_off() {
-        let request = UserRequest::log_off_user(
-            "UR789".to_string(),
-            "user2".to_string(),
-        );
+        let request = UserRequest::log_off_user("UR789".to_string(), "user2".to_string());
 
         assert_eq!(request.user_request_type, UserRequestType::LogOffUser);
         assert_eq!(request.username, "user2");
@@ -326,7 +330,10 @@ mod tests {
             "newpass".to_string(),
         );
 
-        assert_eq!(request.user_request_type, UserRequestType::ChangePasswordForUser);
+        assert_eq!(
+            request.user_request_type,
+            UserRequestType::ChangePasswordForUser
+        );
         assert_eq!(request.username, "user3");
         assert_eq!(request.password, Some("oldpass".to_string()));
         assert_eq!(request.new_password, Some("newpass".to_string()));
@@ -334,12 +341,12 @@ mod tests {
 
     #[test]
     fn test_user_request_status_request() {
-        let request = UserRequest::status_request(
-            "UR111".to_string(),
-            "user4".to_string(),
-        );
+        let request = UserRequest::status_request("UR111".to_string(), "user4".to_string());
 
-        assert_eq!(request.user_request_type, UserRequestType::RequestIndividualUserStatus);
+        assert_eq!(
+            request.user_request_type,
+            UserRequestType::RequestIndividualUserStatus
+        );
         assert_eq!(request.username, "user4");
     }
 
@@ -361,7 +368,10 @@ mod tests {
         assert_eq!(request.raw_data, Some(raw_data));
         assert_eq!(request.raw_data_length, Some(5));
         assert_eq!(request.user_status, Some(UserStatus::LoggedIn));
-        assert_eq!(request.user_status_text, Some("User logged in successfully".to_string()));
+        assert_eq!(
+            request.user_status_text,
+            Some("User logged in successfully".to_string())
+        );
         assert_eq!(request.deribit_label, Some("test-user-request".to_string()));
     }
 
@@ -392,10 +402,22 @@ mod tests {
         assert_eq!(i32::from(UserRequestType::ChangePasswordForUser), 3);
         assert_eq!(i32::from(UserRequestType::RequestIndividualUserStatus), 4);
 
-        assert_eq!(UserRequestType::try_from(1).unwrap(), UserRequestType::LogOnUser);
-        assert_eq!(UserRequestType::try_from(2).unwrap(), UserRequestType::LogOffUser);
-        assert_eq!(UserRequestType::try_from(3).unwrap(), UserRequestType::ChangePasswordForUser);
-        assert_eq!(UserRequestType::try_from(4).unwrap(), UserRequestType::RequestIndividualUserStatus);
+        assert_eq!(
+            UserRequestType::try_from(1).unwrap(),
+            UserRequestType::LogOnUser
+        );
+        assert_eq!(
+            UserRequestType::try_from(2).unwrap(),
+            UserRequestType::LogOffUser
+        );
+        assert_eq!(
+            UserRequestType::try_from(3).unwrap(),
+            UserRequestType::ChangePasswordForUser
+        );
+        assert_eq!(
+            UserRequestType::try_from(4).unwrap(),
+            UserRequestType::RequestIndividualUserStatus
+        );
 
         assert!(UserRequestType::try_from(99).is_err());
     }
@@ -411,9 +433,18 @@ mod tests {
 
         assert_eq!(UserStatus::try_from(1).unwrap(), UserStatus::LoggedIn);
         assert_eq!(UserStatus::try_from(2).unwrap(), UserStatus::NotLoggedIn);
-        assert_eq!(UserStatus::try_from(3).unwrap(), UserStatus::UserNotRecognised);
-        assert_eq!(UserStatus::try_from(4).unwrap(), UserStatus::PasswordIncorrect);
-        assert_eq!(UserStatus::try_from(5).unwrap(), UserStatus::PasswordChanged);
+        assert_eq!(
+            UserStatus::try_from(3).unwrap(),
+            UserStatus::UserNotRecognised
+        );
+        assert_eq!(
+            UserStatus::try_from(4).unwrap(),
+            UserStatus::PasswordIncorrect
+        );
+        assert_eq!(
+            UserStatus::try_from(5).unwrap(),
+            UserStatus::PasswordChanged
+        );
         assert_eq!(UserStatus::try_from(99).unwrap(), UserStatus::Other);
 
         assert!(UserStatus::try_from(50).is_err());

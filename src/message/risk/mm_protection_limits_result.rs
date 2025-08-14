@@ -315,7 +315,11 @@ impl MMProtectionLimitsResult {
     }
 
     /// Set current validity period
-    pub fn with_current_validity_period(mut self, from: DateTime<Utc>, until: DateTime<Utc>) -> Self {
+    pub fn with_current_validity_period(
+        mut self,
+        from: DateTime<Utc>,
+        until: DateTime<Utc>,
+    ) -> Self {
         self.current_valid_from = Some(from);
         self.current_valid_until = Some(until);
         self
@@ -364,8 +368,16 @@ impl MMProtectionLimitsResult {
             .field(9001, self.mm_protection_req_id.clone()) // MMProtectionReqID
             .field(9002, i32::from(self.mm_protection_action).to_string()) // MMProtectionAction
             .field(9003, i32::from(self.mm_protection_scope).to_string()) // MMProtectionScope
-            .field(9017, i32::from(self.mm_protection_result_status).to_string()) // MMProtectionResultStatus
-            .field(9018, self.processing_time.format("%Y%m%d-%H:%M:%S%.3f").to_string()); // ProcessingTime
+            .field(
+                9017,
+                i32::from(self.mm_protection_result_status).to_string(),
+            ) // MMProtectionResultStatus
+            .field(
+                9018,
+                self.processing_time
+                    .format("%Y%m%d-%H:%M:%S%.3f")
+                    .to_string(),
+            ); // ProcessingTime
 
         // Optional fields
         if let Some(reject_reason) = &self.mm_protection_reject_reason {
@@ -433,7 +445,9 @@ impl MMProtectionLimitsResult {
         if let Some(current_valid_until) = &self.current_valid_until {
             builder = builder.field(
                 9030,
-                current_valid_until.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
+                current_valid_until
+                    .format("%Y%m%d-%H:%M:%S%.3f")
+                    .to_string(),
             );
         }
 
@@ -480,8 +494,14 @@ mod tests {
 
         assert_eq!(result.mm_protection_req_id, "MMP123");
         assert_eq!(result.mm_protection_action, MMProtectionAction::SetLimits);
-        assert_eq!(result.mm_protection_scope, MMProtectionScope::AllInstruments);
-        assert_eq!(result.mm_protection_result_status, MMProtectionResultStatus::Accepted);
+        assert_eq!(
+            result.mm_protection_scope,
+            MMProtectionScope::AllInstruments
+        );
+        assert_eq!(
+            result.mm_protection_result_status,
+            MMProtectionResultStatus::Accepted
+        );
         assert!(result.mm_protection_reject_reason.is_none());
     }
 
@@ -493,9 +513,18 @@ mod tests {
             MMProtectionScope::SpecificInstrument,
         );
 
-        assert_eq!(result.mm_protection_result_status, MMProtectionResultStatus::Accepted);
-        assert_eq!(result.mm_protection_action, MMProtectionAction::UpdateLimits);
-        assert_eq!(result.mm_protection_scope, MMProtectionScope::SpecificInstrument);
+        assert_eq!(
+            result.mm_protection_result_status,
+            MMProtectionResultStatus::Accepted
+        );
+        assert_eq!(
+            result.mm_protection_action,
+            MMProtectionAction::UpdateLimits
+        );
+        assert_eq!(
+            result.mm_protection_scope,
+            MMProtectionScope::SpecificInstrument
+        );
     }
 
     #[test]
@@ -508,8 +537,14 @@ mod tests {
             Some("Symbol not found".to_string()),
         );
 
-        assert_eq!(result.mm_protection_result_status, MMProtectionResultStatus::Rejected);
-        assert_eq!(result.mm_protection_reject_reason, Some(MMProtectionRejectReason::UnknownSymbol));
+        assert_eq!(
+            result.mm_protection_result_status,
+            MMProtectionResultStatus::Rejected
+        );
+        assert_eq!(
+            result.mm_protection_reject_reason,
+            Some(MMProtectionRejectReason::UnknownSymbol)
+        );
         assert_eq!(result.text, Some("Symbol not found".to_string()));
     }
 
@@ -521,7 +556,10 @@ mod tests {
             MMProtectionScope::AllInstruments,
         );
 
-        assert_eq!(result.mm_protection_result_status, MMProtectionResultStatus::Completed);
+        assert_eq!(
+            result.mm_protection_result_status,
+            MMProtectionResultStatus::Completed
+        );
         assert_eq!(result.mm_protection_action, MMProtectionAction::QueryLimits);
     }
 
@@ -536,7 +574,13 @@ mod tests {
             MMProtectionScope::SpecificInstrument,
         )
         .with_symbol("BTC-PERPETUAL".to_string())
-        .with_current_limits(Some(1000.0), Some(100.0), Some(50), Some(300), Some(10000.0))
+        .with_current_limits(
+            Some(1000.0),
+            Some(100.0),
+            Some(50),
+            Some(300),
+            Some(10000.0),
+        )
         .with_current_greeks_limits(Some(10.0), Some(5.0), Some(2.0), Some(-1.0))
         .with_current_validity_period(valid_from, valid_until)
         .with_affected_instruments_count(1)
@@ -595,11 +639,26 @@ mod tests {
         assert_eq!(i32::from(MMProtectionResultStatus::PartiallyCompleted), 3);
         assert_eq!(i32::from(MMProtectionResultStatus::Pending), 4);
 
-        assert_eq!(MMProtectionResultStatus::try_from(0).unwrap(), MMProtectionResultStatus::Accepted);
-        assert_eq!(MMProtectionResultStatus::try_from(1).unwrap(), MMProtectionResultStatus::Rejected);
-        assert_eq!(MMProtectionResultStatus::try_from(2).unwrap(), MMProtectionResultStatus::Completed);
-        assert_eq!(MMProtectionResultStatus::try_from(3).unwrap(), MMProtectionResultStatus::PartiallyCompleted);
-        assert_eq!(MMProtectionResultStatus::try_from(4).unwrap(), MMProtectionResultStatus::Pending);
+        assert_eq!(
+            MMProtectionResultStatus::try_from(0).unwrap(),
+            MMProtectionResultStatus::Accepted
+        );
+        assert_eq!(
+            MMProtectionResultStatus::try_from(1).unwrap(),
+            MMProtectionResultStatus::Rejected
+        );
+        assert_eq!(
+            MMProtectionResultStatus::try_from(2).unwrap(),
+            MMProtectionResultStatus::Completed
+        );
+        assert_eq!(
+            MMProtectionResultStatus::try_from(3).unwrap(),
+            MMProtectionResultStatus::PartiallyCompleted
+        );
+        assert_eq!(
+            MMProtectionResultStatus::try_from(4).unwrap(),
+            MMProtectionResultStatus::Pending
+        );
 
         assert!(MMProtectionResultStatus::try_from(99).is_err());
     }
@@ -611,10 +670,22 @@ mod tests {
         assert_eq!(i32::from(MMProtectionRejectReason::UnknownSymbol), 4);
         assert_eq!(i32::from(MMProtectionRejectReason::Other), 99);
 
-        assert_eq!(MMProtectionRejectReason::try_from(1).unwrap(), MMProtectionRejectReason::UnknownRequest);
-        assert_eq!(MMProtectionRejectReason::try_from(2).unwrap(), MMProtectionRejectReason::InvalidAction);
-        assert_eq!(MMProtectionRejectReason::try_from(4).unwrap(), MMProtectionRejectReason::UnknownSymbol);
-        assert_eq!(MMProtectionRejectReason::try_from(99).unwrap(), MMProtectionRejectReason::Other);
+        assert_eq!(
+            MMProtectionRejectReason::try_from(1).unwrap(),
+            MMProtectionRejectReason::UnknownRequest
+        );
+        assert_eq!(
+            MMProtectionRejectReason::try_from(2).unwrap(),
+            MMProtectionRejectReason::InvalidAction
+        );
+        assert_eq!(
+            MMProtectionRejectReason::try_from(4).unwrap(),
+            MMProtectionRejectReason::UnknownSymbol
+        );
+        assert_eq!(
+            MMProtectionRejectReason::try_from(99).unwrap(),
+            MMProtectionRejectReason::Other
+        );
 
         assert!(MMProtectionRejectReason::try_from(50).is_err());
     }

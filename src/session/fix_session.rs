@@ -6,7 +6,7 @@ use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
-    message::{MessageBuilder, RequestForPositions, PositionReport},
+    message::{MessageBuilder, PositionReport, RequestForPositions},
 };
 use base64::prelude::*;
 use chrono::Utc;
@@ -99,40 +99,77 @@ impl Session {
 
         // Add optional Deribit-specific tags based on configuration
         if let Some(use_wordsafe_tags) = &self.config.use_wordsafe_tags {
-            message_builder = message_builder.field(9002, if *use_wordsafe_tags { "Y" } else { "N" }.to_string()); // UseWordsafeTags
+            message_builder =
+                message_builder.field(9002, if *use_wordsafe_tags { "Y" } else { "N" }.to_string()); // UseWordsafeTags
         }
 
         // CancelOnDisconnect - always include based on config
-        message_builder = message_builder.field(9001, if self.config.cancel_on_disconnect { "Y" } else { "N" }.to_string()); // CancelOnDisconnect
+        message_builder = message_builder.field(
+            9001,
+            if self.config.cancel_on_disconnect {
+                "Y"
+            } else {
+                "N"
+            }
+            .to_string(),
+        ); // CancelOnDisconnect
 
         if let Some(app_id) = &self.config.app_id {
             message_builder = message_builder.field(9004, app_id.clone()); // DeribitAppId
         }
 
         if let Some(app_secret) = &self.config.app_secret
-            && let Some(raw_data_str) = raw_data.split_once('.').map(|(timestamp, nonce)| format!("{}.{}", timestamp, nonce))
-                && let Ok(app_sig) = self.calculate_app_signature(&raw_data_str, app_secret) {
-                    message_builder = message_builder.field(9005, app_sig); // DeribitAppSig
-                }
+            && let Some(raw_data_str) = raw_data
+                .split_once('.')
+                .map(|(timestamp, nonce)| format!("{}.{}", timestamp, nonce))
+            && let Ok(app_sig) = self.calculate_app_signature(&raw_data_str, app_secret)
+        {
+            message_builder = message_builder.field(9005, app_sig); // DeribitAppSig
+        }
 
         if let Some(deribit_sequential) = &self.config.deribit_sequential {
-            message_builder = message_builder.field(9007, if *deribit_sequential { "Y" } else { "N" }.to_string()); // DeribitSequential
+            message_builder = message_builder.field(
+                9007,
+                if *deribit_sequential { "Y" } else { "N" }.to_string(),
+            ); // DeribitSequential
         }
 
         if let Some(unsubscribe_exec_reports) = &self.config.unsubscribe_execution_reports {
-            message_builder = message_builder.field(9009, if *unsubscribe_exec_reports { "Y" } else { "N" }.to_string()); // UnsubscribeExecutionReports
+            message_builder = message_builder.field(
+                9009,
+                if *unsubscribe_exec_reports { "Y" } else { "N" }.to_string(),
+            ); // UnsubscribeExecutionReports
         }
 
         if let Some(connection_only_exec_reports) = &self.config.connection_only_execution_reports {
-            message_builder = message_builder.field(9010, if *connection_only_exec_reports { "Y" } else { "N" }.to_string()); // ConnectionOnlyExecutionReports
+            message_builder = message_builder.field(
+                9010,
+                if *connection_only_exec_reports {
+                    "Y"
+                } else {
+                    "N"
+                }
+                .to_string(),
+            ); // ConnectionOnlyExecutionReports
         }
 
         if let Some(report_fills_as_exec_reports) = &self.config.report_fills_as_exec_reports {
-            message_builder = message_builder.field(9015, if *report_fills_as_exec_reports { "Y" } else { "N" }.to_string()); // ReportFillsAsExecReports
+            message_builder = message_builder.field(
+                9015,
+                if *report_fills_as_exec_reports {
+                    "Y"
+                } else {
+                    "N"
+                }
+                .to_string(),
+            ); // ReportFillsAsExecReports
         }
 
         if let Some(display_increment_steps) = &self.config.display_increment_steps {
-            message_builder = message_builder.field(9018, if *display_increment_steps { "Y" } else { "N" }.to_string()); // DisplayIncrementSteps
+            message_builder = message_builder.field(
+                9018,
+                if *display_increment_steps { "Y" } else { "N" }.to_string(),
+            ); // DisplayIncrementSteps
         }
 
         // Add AppID if available - temporarily disabled for testing
@@ -157,7 +194,11 @@ impl Session {
     }
 
     /// Perform FIX logout with optional parameters
-    pub async fn logout_with_options(&mut self, text: Option<String>, dont_cancel_on_disconnect: Option<bool>) -> Result<()> {
+    pub async fn logout_with_options(
+        &mut self,
+        text: Option<String>,
+        dont_cancel_on_disconnect: Option<bool>,
+    ) -> Result<()> {
         info!("Performing FIX logout");
 
         let mut message_builder = MessageBuilder::new()
@@ -172,7 +213,8 @@ impl Session {
 
         // Add DontCancelOnDisconnect field (tag 9003) - optional
         if let Some(dont_cancel) = dont_cancel_on_disconnect {
-            message_builder = message_builder.field(9003, if dont_cancel { "Y" } else { "N" }.to_string()); // DontCancelOnDisconnect
+            message_builder =
+                message_builder.field(9003, if dont_cancel { "Y" } else { "N" }.to_string()); // DontCancelOnDisconnect
         }
 
         let logout_message = message_builder.build()?;
@@ -291,7 +333,10 @@ impl Session {
         self.send_message(market_data_request).await?;
         self.outgoing_seq_num += 1;
 
-        info!("Market data subscription request sent for symbol: {} with ID: {}", symbol, request_id);
+        info!(
+            "Market data subscription request sent for symbol: {} with ID: {}",
+            symbol, request_id
+        );
         Ok(())
     }
 
@@ -303,7 +348,7 @@ impl Session {
         info!("Requesting positions");
 
         let request_id = format!("POS_{}", chrono::Utc::now().timestamp_millis());
-        
+
         // Create typed position request
         let position_request = RequestForPositions::all_positions(request_id.clone())
             .with_clearing_date(Utc::now().format("%Y%m%d").to_string());
@@ -314,12 +359,15 @@ impl Session {
             self.config.target_comp_id.clone(),
             self.outgoing_seq_num,
         )?;
-        
+
         // Send the position request
         self.send_message(fix_message).await?;
         self.outgoing_seq_num += 1;
-        
-        info!("Position request sent, awaiting responses for request ID: {}", request_id);
+
+        info!(
+            "Position request sent, awaiting responses for request ID: {}",
+            request_id
+        );
 
         // Collect position reports with correlation by PosReqID
         let mut positions = Vec::new();
@@ -338,28 +386,37 @@ impl Session {
                 Ok(Some(message)) => {
                     // Check if this is a PositionReport message
                     if let Some(msg_type_str) = message.get_field(35)
-                        && msg_type_str == "AP" { // PositionReport
-                            // Check if this position report matches our request ID
-                            if let Some(pos_req_id) = message.get_field(710) {
-                                if pos_req_id == &request_id {
-                                    debug!("Received PositionReport for request: {}", request_id);
-                                    
-                                    match PositionReport::from_fix_message(&message) {
-                                        Ok(position_report) => {
-                                            let position = position_report.to_position();
-                                            debug!("Parsed position: {} - Qty: {}, Avg Price: {}", 
-                                                   position.symbol, position.quantity, position.average_price);
-                                            positions.push(position);
-                                        }
-                                        Err(e) => {
-                                            warn!("Failed to parse PositionReport: {}", e);
-                                        }
+                        && msg_type_str == "AP"
+                    {
+                        // PositionReport
+                        // Check if this position report matches our request ID
+                        if let Some(pos_req_id) = message.get_field(710) {
+                            if pos_req_id == &request_id {
+                                debug!("Received PositionReport for request: {}", request_id);
+
+                                match PositionReport::from_fix_message(&message) {
+                                    Ok(position_report) => {
+                                        let position = position_report.to_position();
+                                        debug!(
+                                            "Parsed position: {} - Qty: {}, Avg Price: {}",
+                                            position.symbol,
+                                            position.quantity,
+                                            position.average_price
+                                        );
+                                        positions.push(position);
                                     }
-                                } else {
-                                    debug!("Received PositionReport for different request: {}", pos_req_id);
+                                    Err(e) => {
+                                        warn!("Failed to parse PositionReport: {}", e);
+                                    }
                                 }
+                            } else {
+                                debug!(
+                                    "Received PositionReport for different request: {}",
+                                    pos_req_id
+                                );
                             }
                         }
+                    }
                 }
                 Ok(None) => {
                     // No message received, continue loop
@@ -375,12 +432,18 @@ impl Session {
             // For now, we'll break after receiving some positions or after a reasonable time
             // In a real implementation, we might wait for an end-of-transmission signal
             if !positions.is_empty() && start_time.elapsed() > Duration::from_secs(5) {
-                debug!("Received {} positions, stopping collection", positions.len());
+                debug!(
+                    "Received {} positions, stopping collection",
+                    positions.len()
+                );
                 break;
             }
         }
 
-        info!("Position request completed, received {} positions", positions.len());
+        info!(
+            "Position request completed, received {} positions",
+            positions.len()
+        );
         Ok(positions)
     }
 

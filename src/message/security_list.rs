@@ -715,7 +715,10 @@ impl SecurityList {
             }
 
             if let Some(maturity_time) = security.maturity_time {
-                builder = builder.field(1079, maturity_time.format("%Y%m%d-%H:%M:%S%.3f").to_string()); // MaturityTime
+                builder = builder.field(
+                    1079,
+                    maturity_time.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
+                ); // MaturityTime
             }
 
             if let Some(min_trade_vol) = security.min_trade_vol {
@@ -956,7 +959,6 @@ mod tests {
 
     #[test]
     fn test_security_list_to_fix_message_with_all_fields() {
-        
         let security = SecurityInfo::new("BTC-PERPETUAL".to_string())
             .with_security_desc("BTC Perpetual Future".to_string())
             .with_security_type(SecurityType::Future)
@@ -975,9 +977,12 @@ mod tests {
             .with_security_status(SecurityStatus::Active);
 
         let securities = vec![security];
-        let security_list = SecurityList::success("REQ123".to_string(), "RESP456".to_string(), securities);
+        let security_list =
+            SecurityList::success("REQ123".to_string(), "RESP456".to_string(), securities);
 
-        let fix_message = security_list.to_fix_message("SENDER".to_string(), "TARGET".to_string(), 1).unwrap();
+        let fix_message = security_list
+            .to_fix_message("SENDER".to_string(), "TARGET".to_string(), 1)
+            .unwrap();
         let fix_str = fix_message.to_string();
 
         // Check required SecurityList fields

@@ -56,7 +56,7 @@ impl DeribitFixClient {
             let session_arc = session.clone();
             let hb_interval_secs = self.config.heartbeat_interval as u64;
             self.heartbeat_task = Some(tokio::spawn(async move {
-                use tokio::time::{sleep, Duration};
+                use tokio::time::{Duration, sleep};
                 loop {
                     sleep(Duration::from_secs(hb_interval_secs)).await;
                     let mut guard = session_arc.lock().await;

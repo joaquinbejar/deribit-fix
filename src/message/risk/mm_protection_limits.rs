@@ -215,11 +215,7 @@ impl MMProtectionLimits {
 
     /// Create a query request
     pub fn query(mm_protection_req_id: String, scope: MMProtectionScope) -> Self {
-        Self::new(
-            mm_protection_req_id,
-            MMProtectionAction::QueryLimits,
-            scope,
-        )
+        Self::new(mm_protection_req_id, MMProtectionAction::QueryLimits, scope)
     }
 
     /// Set position limit
@@ -371,17 +367,11 @@ impl MMProtectionLimits {
 
         // Validity period
         if let Some(valid_from) = &self.valid_from {
-            builder = builder.field(
-                9015,
-                valid_from.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
-            );
+            builder = builder.field(9015, valid_from.format("%Y%m%d-%H:%M:%S%.3f").to_string());
         }
 
         if let Some(valid_until) = &self.valid_until {
-            builder = builder.field(
-                9016,
-                valid_until.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
-            );
+            builder = builder.field(9016, valid_until.format("%Y%m%d-%H:%M:%S%.3f").to_string());
         }
 
         // Standard optional fields
@@ -426,7 +416,10 @@ mod tests {
 
         assert_eq!(limits.mm_protection_req_id, "MMP123");
         assert_eq!(limits.mm_protection_action, MMProtectionAction::SetLimits);
-        assert_eq!(limits.mm_protection_scope, MMProtectionScope::AllInstruments);
+        assert_eq!(
+            limits.mm_protection_scope,
+            MMProtectionScope::AllInstruments
+        );
         assert!(limits.symbol.is_none());
         assert!(limits.max_position_limit.is_none());
     }
@@ -435,38 +428,40 @@ mod tests {
     fn test_mm_protection_limits_all_instruments() {
         let limits = MMProtectionLimits::all_instruments("MMP456".to_string());
 
-        assert_eq!(limits.mm_protection_scope, MMProtectionScope::AllInstruments);
+        assert_eq!(
+            limits.mm_protection_scope,
+            MMProtectionScope::AllInstruments
+        );
         assert_eq!(limits.mm_protection_action, MMProtectionAction::SetLimits);
     }
 
     #[test]
     fn test_mm_protection_limits_for_instrument() {
-        let limits = MMProtectionLimits::for_instrument(
-            "MMP789".to_string(),
-            "BTC-PERPETUAL".to_string(),
-        );
+        let limits =
+            MMProtectionLimits::for_instrument("MMP789".to_string(), "BTC-PERPETUAL".to_string());
 
-        assert_eq!(limits.mm_protection_scope, MMProtectionScope::SpecificInstrument);
+        assert_eq!(
+            limits.mm_protection_scope,
+            MMProtectionScope::SpecificInstrument
+        );
         assert_eq!(limits.symbol, Some("BTC-PERPETUAL".to_string()));
     }
 
     #[test]
     fn test_mm_protection_limits_for_group() {
-        let limits = MMProtectionLimits::for_group(
-            "MMP999".to_string(),
-            "CRYPTO_PERPS".to_string(),
-        );
+        let limits =
+            MMProtectionLimits::for_group("MMP999".to_string(), "CRYPTO_PERPS".to_string());
 
-        assert_eq!(limits.mm_protection_scope, MMProtectionScope::InstrumentGroup);
+        assert_eq!(
+            limits.mm_protection_scope,
+            MMProtectionScope::InstrumentGroup
+        );
         assert_eq!(limits.instrument_group, Some("CRYPTO_PERPS".to_string()));
     }
 
     #[test]
     fn test_mm_protection_limits_for_underlying() {
-        let limits = MMProtectionLimits::for_underlying(
-            "MMP111".to_string(),
-            "BTC".to_string(),
-        );
+        let limits = MMProtectionLimits::for_underlying("MMP111".to_string(), "BTC".to_string());
 
         assert_eq!(limits.mm_protection_scope, MMProtectionScope::Underlying);
         assert_eq!(limits.underlying_symbol, Some("BTC".to_string()));
@@ -474,13 +469,14 @@ mod tests {
 
     #[test]
     fn test_mm_protection_limits_query() {
-        let limits = MMProtectionLimits::query(
-            "MMP222".to_string(),
-            MMProtectionScope::AllInstruments,
-        );
+        let limits =
+            MMProtectionLimits::query("MMP222".to_string(), MMProtectionScope::AllInstruments);
 
         assert_eq!(limits.mm_protection_action, MMProtectionAction::QueryLimits);
-        assert_eq!(limits.mm_protection_scope, MMProtectionScope::AllInstruments);
+        assert_eq!(
+            limits.mm_protection_scope,
+            MMProtectionScope::AllInstruments
+        );
     }
 
     #[test]
@@ -488,21 +484,19 @@ mod tests {
         let valid_from = Utc::now();
         let valid_until = valid_from + chrono::Duration::hours(24);
 
-        let limits = MMProtectionLimits::for_instrument(
-            "MMP333".to_string(),
-            "ETH-PERPETUAL".to_string(),
-        )
-        .with_position_limit(1000.0)
-        .with_order_qty_limit(100.0)
-        .with_max_orders_limit(50)
-        .with_time_window(300)
-        .with_greeks_limits(Some(10.0), Some(5.0), Some(2.0), Some(-1.0))
-        .with_total_risk_limit(10000.0)
-        .with_validity_period(valid_from, valid_until)
-        .with_account("ACC123".to_string())
-        .with_trading_session_id("SESSION1".to_string())
-        .with_text("MM protection limits for ETH".to_string())
-        .with_label("test-mm-protection".to_string());
+        let limits =
+            MMProtectionLimits::for_instrument("MMP333".to_string(), "ETH-PERPETUAL".to_string())
+                .with_position_limit(1000.0)
+                .with_order_qty_limit(100.0)
+                .with_max_orders_limit(50)
+                .with_time_window(300)
+                .with_greeks_limits(Some(10.0), Some(5.0), Some(2.0), Some(-1.0))
+                .with_total_risk_limit(10000.0)
+                .with_validity_period(valid_from, valid_until)
+                .with_account("ACC123".to_string())
+                .with_trading_session_id("SESSION1".to_string())
+                .with_text("MM protection limits for ETH".to_string())
+                .with_label("test-mm-protection".to_string());
 
         assert_eq!(limits.max_position_limit, Some(1000.0));
         assert_eq!(limits.max_order_qty_limit, Some(100.0));
@@ -517,19 +511,20 @@ mod tests {
         assert_eq!(limits.valid_until, Some(valid_until));
         assert_eq!(limits.account, Some("ACC123".to_string()));
         assert_eq!(limits.trading_session_id, Some("SESSION1".to_string()));
-        assert_eq!(limits.text, Some("MM protection limits for ETH".to_string()));
+        assert_eq!(
+            limits.text,
+            Some("MM protection limits for ETH".to_string())
+        );
         assert_eq!(limits.deribit_label, Some("test-mm-protection".to_string()));
     }
 
     #[test]
     fn test_mm_protection_limits_to_fix_message() {
-        let limits = MMProtectionLimits::for_instrument(
-            "MMP123".to_string(),
-            "BTC-PERPETUAL".to_string(),
-        )
-        .with_position_limit(500.0)
-        .with_order_qty_limit(50.0)
-        .with_label("test-label".to_string());
+        let limits =
+            MMProtectionLimits::for_instrument("MMP123".to_string(), "BTC-PERPETUAL".to_string())
+                .with_position_limit(500.0)
+                .with_order_qty_limit(50.0)
+                .with_label("test-label".to_string());
 
         let fix_message = limits.to_fix_message("SENDER", "TARGET", 1).unwrap();
 
@@ -551,10 +546,22 @@ mod tests {
         assert_eq!(i32::from(MMProtectionAction::QueryLimits), 3);
         assert_eq!(i32::from(MMProtectionAction::RemoveLimits), 4);
 
-        assert_eq!(MMProtectionAction::try_from(1).unwrap(), MMProtectionAction::SetLimits);
-        assert_eq!(MMProtectionAction::try_from(2).unwrap(), MMProtectionAction::UpdateLimits);
-        assert_eq!(MMProtectionAction::try_from(3).unwrap(), MMProtectionAction::QueryLimits);
-        assert_eq!(MMProtectionAction::try_from(4).unwrap(), MMProtectionAction::RemoveLimits);
+        assert_eq!(
+            MMProtectionAction::try_from(1).unwrap(),
+            MMProtectionAction::SetLimits
+        );
+        assert_eq!(
+            MMProtectionAction::try_from(2).unwrap(),
+            MMProtectionAction::UpdateLimits
+        );
+        assert_eq!(
+            MMProtectionAction::try_from(3).unwrap(),
+            MMProtectionAction::QueryLimits
+        );
+        assert_eq!(
+            MMProtectionAction::try_from(4).unwrap(),
+            MMProtectionAction::RemoveLimits
+        );
 
         assert!(MMProtectionAction::try_from(99).is_err());
     }
@@ -566,10 +573,22 @@ mod tests {
         assert_eq!(i32::from(MMProtectionScope::InstrumentGroup), 3);
         assert_eq!(i32::from(MMProtectionScope::Underlying), 4);
 
-        assert_eq!(MMProtectionScope::try_from(1).unwrap(), MMProtectionScope::AllInstruments);
-        assert_eq!(MMProtectionScope::try_from(2).unwrap(), MMProtectionScope::SpecificInstrument);
-        assert_eq!(MMProtectionScope::try_from(3).unwrap(), MMProtectionScope::InstrumentGroup);
-        assert_eq!(MMProtectionScope::try_from(4).unwrap(), MMProtectionScope::Underlying);
+        assert_eq!(
+            MMProtectionScope::try_from(1).unwrap(),
+            MMProtectionScope::AllInstruments
+        );
+        assert_eq!(
+            MMProtectionScope::try_from(2).unwrap(),
+            MMProtectionScope::SpecificInstrument
+        );
+        assert_eq!(
+            MMProtectionScope::try_from(3).unwrap(),
+            MMProtectionScope::InstrumentGroup
+        );
+        assert_eq!(
+            MMProtectionScope::try_from(4).unwrap(),
+            MMProtectionScope::Underlying
+        );
 
         assert!(MMProtectionScope::try_from(99).is_err());
     }

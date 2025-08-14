@@ -335,7 +335,10 @@ mod tests {
         );
 
         assert_eq!(ack.trade_request_id, "TR123");
-        assert_eq!(ack.trade_request_status, TradeCaptureRequestStatus::Accepted);
+        assert_eq!(
+            ack.trade_request_status,
+            TradeCaptureRequestStatus::Accepted
+        );
         assert!(ack.trade_request_result.is_none());
         assert!(ack.symbol.is_none());
     }
@@ -344,7 +347,10 @@ mod tests {
     fn test_trade_capture_report_request_ack_accepted() {
         let ack = TradeCaptureReportRequestAck::accepted("TR456".to_string());
 
-        assert_eq!(ack.trade_request_status, TradeCaptureRequestStatus::Accepted);
+        assert_eq!(
+            ack.trade_request_status,
+            TradeCaptureRequestStatus::Accepted
+        );
         assert_eq!(ack.trade_request_id, "TR456");
     }
 
@@ -352,7 +358,10 @@ mod tests {
     fn test_trade_capture_report_request_ack_completed() {
         let ack = TradeCaptureReportRequestAck::completed("TR789".to_string(), 25);
 
-        assert_eq!(ack.trade_request_status, TradeCaptureRequestStatus::Completed);
+        assert_eq!(
+            ack.trade_request_status,
+            TradeCaptureRequestStatus::Completed
+        );
         assert_eq!(ack.tot_num_trade_reports, Some(25));
     }
 
@@ -364,7 +373,10 @@ mod tests {
             Some("Invalid symbol".to_string()),
         );
 
-        assert_eq!(ack.trade_request_status, TradeCaptureRequestStatus::Rejected);
+        assert_eq!(
+            ack.trade_request_status,
+            TradeCaptureRequestStatus::Rejected
+        );
         assert_eq!(
             ack.trade_request_result,
             Some(TradeCaptureRequestResult::InvalidOrUnknownInstrument)

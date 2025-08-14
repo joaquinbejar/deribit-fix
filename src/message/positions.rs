@@ -218,21 +218,13 @@ impl PositionReport {
             .ok_or_else(|| DeribitFixError::MessageParsing("Missing Symbol (55)".to_string()))?
             .clone();
 
-        let position_qty = message
-            .get_field(703)
-            .and_then(|s| s.parse::<f64>().ok());
+        let position_qty = message.get_field(703).and_then(|s| s.parse::<f64>().ok());
 
-        let average_price = message
-            .get_field(6)
-            .and_then(|s| s.parse::<f64>().ok());
+        let average_price = message.get_field(6).and_then(|s| s.parse::<f64>().ok());
 
-        let unrealized_pnl = message
-            .get_field(1247)
-            .and_then(|s| s.parse::<f64>().ok());
+        let unrealized_pnl = message.get_field(1247).and_then(|s| s.parse::<f64>().ok());
 
-        let realized_pnl = message
-            .get_field(1248)
-            .and_then(|s| s.parse::<f64>().ok());
+        let realized_pnl = message.get_field(1248).and_then(|s| s.parse::<f64>().ok());
 
         let position_date = message.get_field(704).cloned();
 
@@ -268,10 +260,10 @@ mod tests {
     fn test_pos_req_type_conversion() {
         assert_eq!(i32::from(PosReqType::Positions), 0);
         assert_eq!(i32::from(PosReqType::Trades), 1);
-        
+
         assert_eq!(PosReqType::try_from(0).unwrap(), PosReqType::Positions);
         assert_eq!(PosReqType::try_from(1).unwrap(), PosReqType::Trades);
-        
+
         assert!(PosReqType::try_from(99).is_err());
     }
 
@@ -279,10 +271,16 @@ mod tests {
     fn test_subscription_request_type_conversion() {
         assert_eq!(i32::from(SubscriptionRequestType::Snapshot), 0);
         assert_eq!(i32::from(SubscriptionRequestType::SnapshotPlusUpdates), 1);
-        
-        assert_eq!(SubscriptionRequestType::try_from(0).unwrap(), SubscriptionRequestType::Snapshot);
-        assert_eq!(SubscriptionRequestType::try_from(1).unwrap(), SubscriptionRequestType::SnapshotPlusUpdates);
-        
+
+        assert_eq!(
+            SubscriptionRequestType::try_from(0).unwrap(),
+            SubscriptionRequestType::Snapshot
+        );
+        assert_eq!(
+            SubscriptionRequestType::try_from(1).unwrap(),
+            SubscriptionRequestType::SnapshotPlusUpdates
+        );
+
         assert!(SubscriptionRequestType::try_from(99).is_err());
     }
 
@@ -291,14 +289,19 @@ mod tests {
         let request = RequestForPositions::all_positions("POS_123".to_string());
         assert_eq!(request.pos_req_id, "POS_123");
         assert_eq!(request.pos_req_type, PosReqType::Positions);
-        assert_eq!(request.subscription_request_type, Some(SubscriptionRequestType::Snapshot));
+        assert_eq!(
+            request.subscription_request_type,
+            Some(SubscriptionRequestType::Snapshot)
+        );
     }
 
     #[test]
     fn test_request_for_positions_with_symbols() {
-        let request = RequestForPositions::all_positions("POS_123".to_string())
-            .with_symbols(vec!["BTC-PERPETUAL".to_string(), "ETH-PERPETUAL".to_string()]);
-        
+        let request = RequestForPositions::all_positions("POS_123".to_string()).with_symbols(vec![
+            "BTC-PERPETUAL".to_string(),
+            "ETH-PERPETUAL".to_string(),
+        ]);
+
         assert_eq!(request.symbols.len(), 2);
         assert!(request.symbols.contains(&"BTC-PERPETUAL".to_string()));
     }
@@ -306,12 +309,10 @@ mod tests {
     #[test]
     fn test_request_for_positions_to_fix_message() {
         let request = RequestForPositions::all_positions("POS_123".to_string());
-        let fix_message = request.to_fix_message(
-            "SENDER".to_string(),
-            "TARGET".to_string(),
-            1,
-        ).unwrap();
-        
+        let fix_message = request
+            .to_fix_message("SENDER".to_string(), "TARGET".to_string(), 1)
+            .unwrap();
+
         // Test field values directly
         assert_eq!(fix_message.get_field(35), Some(&"AN".to_string())); // MsgType
         assert_eq!(fix_message.get_field(710), Some(&"POS_123".to_string())); // PosReqID

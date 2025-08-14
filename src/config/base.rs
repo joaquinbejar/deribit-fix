@@ -128,12 +128,24 @@ impl DeribitFixConfig {
             cancel_on_disconnect: get_env_or_default("DERIBIT_CANCEL_ON_DISCONNECT", false),
             app_id: get_env_optional("DERIBIT_APP_ID"),
             app_secret: get_env_optional("DERIBIT_APP_SECRET"),
-            use_wordsafe_tags: get_env_optional::<String>("DERIBIT_USE_WORDSAFE_TAGS").map(|v| v == "Y" || v == "true"),
-            deribit_sequential: get_env_optional::<String>("DERIBIT_SEQUENTIAL").map(|v| v == "Y" || v == "true"),
-            unsubscribe_execution_reports: get_env_optional::<String>("DERIBIT_UNSUBSCRIBE_EXECUTION_REPORTS").map(|v| v == "Y" || v == "true"),
-            connection_only_execution_reports: get_env_optional::<String>("DERIBIT_CONNECTION_ONLY_EXECUTION_REPORTS").map(|v| v == "Y" || v == "true"),
-            report_fills_as_exec_reports: get_env_optional::<String>("DERIBIT_REPORT_FILLS_AS_EXEC_REPORTS").map(|v| v == "Y" || v == "true"),
-            display_increment_steps: get_env_optional::<String>("DERIBIT_DISPLAY_INCREMENT_STEPS").map(|v| v == "Y" || v == "true"),
+            use_wordsafe_tags: get_env_optional::<String>("DERIBIT_USE_WORDSAFE_TAGS")
+                .map(|v| v == "Y" || v == "true"),
+            deribit_sequential: get_env_optional::<String>("DERIBIT_SEQUENTIAL")
+                .map(|v| v == "Y" || v == "true"),
+            unsubscribe_execution_reports: get_env_optional::<String>(
+                "DERIBIT_UNSUBSCRIBE_EXECUTION_REPORTS",
+            )
+            .map(|v| v == "Y" || v == "true"),
+            connection_only_execution_reports: get_env_optional::<String>(
+                "DERIBIT_CONNECTION_ONLY_EXECUTION_REPORTS",
+            )
+            .map(|v| v == "Y" || v == "true"),
+            report_fills_as_exec_reports: get_env_optional::<String>(
+                "DERIBIT_REPORT_FILLS_AS_EXEC_REPORTS",
+            )
+            .map(|v| v == "Y" || v == "true"),
+            display_increment_steps: get_env_optional::<String>("DERIBIT_DISPLAY_INCREMENT_STEPS")
+                .map(|v| v == "Y" || v == "true"),
         }
     }
 

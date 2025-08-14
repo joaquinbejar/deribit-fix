@@ -345,7 +345,10 @@ impl MarketDataRequest {
         }
 
         if let Some(show_block_trade_id) = self.show_block_trade_id {
-            builder = builder.field(9012, if show_block_trade_id { "Y" } else { "N" }.to_string()); // DeribitShowBlockTradeId
+            builder = builder.field(
+                9012,
+                if show_block_trade_id { "Y" } else { "N" }.to_string(),
+            ); // DeribitShowBlockTradeId
         }
 
         if let Some(trade_amount) = self.trade_amount {

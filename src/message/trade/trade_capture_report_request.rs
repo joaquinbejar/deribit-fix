@@ -159,12 +159,18 @@ impl TradeCaptureReportRequest {
 
     /// Create a request for matched trades
     pub fn matched_trades(trade_request_id: String) -> Self {
-        Self::new(trade_request_id, TradeCaptureRequestType::MatchedTradesMatchingCriteria)
+        Self::new(
+            trade_request_id,
+            TradeCaptureRequestType::MatchedTradesMatchingCriteria,
+        )
     }
 
     /// Create a request for a specific symbol
     pub fn for_symbol(trade_request_id: String, symbol: String) -> Self {
-        let mut request = Self::new(trade_request_id, TradeCaptureRequestType::MatchedTradesMatchingCriteria);
+        let mut request = Self::new(
+            trade_request_id,
+            TradeCaptureRequestType::MatchedTradesMatchingCriteria,
+        );
         request.symbol = Some(symbol);
         request
     }
@@ -333,13 +339,14 @@ mod tests {
 
     #[test]
     fn test_trade_capture_report_request_creation() {
-        let request = TradeCaptureReportRequest::new(
-            "TR123".to_string(),
-            TradeCaptureRequestType::AllTrades,
-        );
+        let request =
+            TradeCaptureReportRequest::new("TR123".to_string(), TradeCaptureRequestType::AllTrades);
 
         assert_eq!(request.trade_request_id, "TR123");
-        assert_eq!(request.trade_request_type, TradeCaptureRequestType::AllTrades);
+        assert_eq!(
+            request.trade_request_type,
+            TradeCaptureRequestType::AllTrades
+        );
         assert!(request.symbol.is_none());
         assert!(request.side.is_none());
     }
@@ -348,7 +355,10 @@ mod tests {
     fn test_trade_capture_report_request_all_trades() {
         let request = TradeCaptureReportRequest::all_trades("TR456".to_string());
 
-        assert_eq!(request.trade_request_type, TradeCaptureRequestType::AllTrades);
+        assert_eq!(
+            request.trade_request_type,
+            TradeCaptureRequestType::AllTrades
+        );
         assert_eq!(request.trade_request_id, "TR456");
     }
 
@@ -356,18 +366,22 @@ mod tests {
     fn test_trade_capture_report_request_matched_trades() {
         let request = TradeCaptureReportRequest::matched_trades("TR789".to_string());
 
-        assert_eq!(request.trade_request_type, TradeCaptureRequestType::MatchedTradesMatchingCriteria);
+        assert_eq!(
+            request.trade_request_type,
+            TradeCaptureRequestType::MatchedTradesMatchingCriteria
+        );
         assert_eq!(request.trade_request_id, "TR789");
     }
 
     #[test]
     fn test_trade_capture_report_request_for_symbol() {
-        let request = TradeCaptureReportRequest::for_symbol(
-            "TR999".to_string(),
-            "BTC-PERPETUAL".to_string(),
-        );
+        let request =
+            TradeCaptureReportRequest::for_symbol("TR999".to_string(), "BTC-PERPETUAL".to_string());
 
-        assert_eq!(request.trade_request_type, TradeCaptureRequestType::MatchedTradesMatchingCriteria);
+        assert_eq!(
+            request.trade_request_type,
+            TradeCaptureRequestType::MatchedTradesMatchingCriteria
+        );
         assert_eq!(request.symbol, Some("BTC-PERPETUAL".to_string()));
     }
 
@@ -391,7 +405,10 @@ mod tests {
         .with_text("Trade capture request".to_string())
         .with_label("test-trade-capture".to_string());
 
-        assert_eq!(request.subscription_request_type, Some(SubscriptionRequestType::SnapshotPlusUpdates));
+        assert_eq!(
+            request.subscription_request_type,
+            Some(SubscriptionRequestType::SnapshotPlusUpdates)
+        );
         assert_eq!(request.trade_report_id, Some("TRP123".to_string()));
         assert_eq!(request.symbol, Some("ETH-PERPETUAL".to_string()));
         assert_eq!(request.side, Some(OrderSide::Buy));
@@ -401,17 +418,18 @@ mod tests {
         assert_eq!(request.account, Some("ACC123".to_string()));
         assert_eq!(request.trading_session_id, Some("SESSION1".to_string()));
         assert_eq!(request.text, Some("Trade capture request".to_string()));
-        assert_eq!(request.deribit_label, Some("test-trade-capture".to_string()));
+        assert_eq!(
+            request.deribit_label,
+            Some("test-trade-capture".to_string())
+        );
     }
 
     #[test]
     fn test_trade_capture_report_request_to_fix_message() {
-        let request = TradeCaptureReportRequest::for_symbol(
-            "TR123".to_string(),
-            "BTC-PERPETUAL".to_string(),
-        )
-        .with_subscription_type(SubscriptionRequestType::Snapshot)
-        .with_label("test-label".to_string());
+        let request =
+            TradeCaptureReportRequest::for_symbol("TR123".to_string(), "BTC-PERPETUAL".to_string())
+                .with_subscription_type(SubscriptionRequestType::Snapshot)
+                .with_label("test-label".to_string());
 
         let fix_message = request.to_fix_message("SENDER", "TARGET", 1).unwrap();
 
@@ -427,14 +445,29 @@ mod tests {
     #[test]
     fn test_trade_capture_request_type_conversions() {
         assert_eq!(i32::from(TradeCaptureRequestType::AllTrades), 0);
-        assert_eq!(i32::from(TradeCaptureRequestType::MatchedTradesMatchingCriteria), 1);
+        assert_eq!(
+            i32::from(TradeCaptureRequestType::MatchedTradesMatchingCriteria),
+            1
+        );
         assert_eq!(i32::from(TradeCaptureRequestType::UnmatchedTrades), 2);
         assert_eq!(i32::from(TradeCaptureRequestType::Advisories), 3);
 
-        assert_eq!(TradeCaptureRequestType::try_from(0).unwrap(), TradeCaptureRequestType::AllTrades);
-        assert_eq!(TradeCaptureRequestType::try_from(1).unwrap(), TradeCaptureRequestType::MatchedTradesMatchingCriteria);
-        assert_eq!(TradeCaptureRequestType::try_from(2).unwrap(), TradeCaptureRequestType::UnmatchedTrades);
-        assert_eq!(TradeCaptureRequestType::try_from(3).unwrap(), TradeCaptureRequestType::Advisories);
+        assert_eq!(
+            TradeCaptureRequestType::try_from(0).unwrap(),
+            TradeCaptureRequestType::AllTrades
+        );
+        assert_eq!(
+            TradeCaptureRequestType::try_from(1).unwrap(),
+            TradeCaptureRequestType::MatchedTradesMatchingCriteria
+        );
+        assert_eq!(
+            TradeCaptureRequestType::try_from(2).unwrap(),
+            TradeCaptureRequestType::UnmatchedTrades
+        );
+        assert_eq!(
+            TradeCaptureRequestType::try_from(3).unwrap(),
+            TradeCaptureRequestType::Advisories
+        );
 
         assert!(TradeCaptureRequestType::try_from(99).is_err());
     }
@@ -442,12 +475,24 @@ mod tests {
     #[test]
     fn test_subscription_request_type_conversions() {
         assert_eq!(char::from(SubscriptionRequestType::Snapshot), '0');
-        assert_eq!(char::from(SubscriptionRequestType::SnapshotPlusUpdates), '1');
+        assert_eq!(
+            char::from(SubscriptionRequestType::SnapshotPlusUpdates),
+            '1'
+        );
         assert_eq!(char::from(SubscriptionRequestType::DisablePrevious), '2');
 
-        assert_eq!(SubscriptionRequestType::try_from('0').unwrap(), SubscriptionRequestType::Snapshot);
-        assert_eq!(SubscriptionRequestType::try_from('1').unwrap(), SubscriptionRequestType::SnapshotPlusUpdates);
-        assert_eq!(SubscriptionRequestType::try_from('2').unwrap(), SubscriptionRequestType::DisablePrevious);
+        assert_eq!(
+            SubscriptionRequestType::try_from('0').unwrap(),
+            SubscriptionRequestType::Snapshot
+        );
+        assert_eq!(
+            SubscriptionRequestType::try_from('1').unwrap(),
+            SubscriptionRequestType::SnapshotPlusUpdates
+        );
+        assert_eq!(
+            SubscriptionRequestType::try_from('2').unwrap(),
+            SubscriptionRequestType::DisablePrevious
+        );
 
         assert!(SubscriptionRequestType::try_from('9').is_err());
     }

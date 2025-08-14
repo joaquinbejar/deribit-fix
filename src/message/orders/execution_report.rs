@@ -383,7 +383,10 @@ impl ExecutionReport {
         }
 
         if let Some(deribit_mm_protection) = &self.deribit_mm_protection {
-            builder = builder.field(9008, if *deribit_mm_protection { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9008,
+                if *deribit_mm_protection { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(mmp_group) = &self.mmp_group {

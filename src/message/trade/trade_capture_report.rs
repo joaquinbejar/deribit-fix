@@ -274,7 +274,15 @@ impl TradeCaptureReport {
         last_px: f64,
         trade_date: String,
     ) -> Self {
-        let mut report = Self::new(trade_report_id, symbol, side, quantity, last_qty, last_px, trade_date);
+        let mut report = Self::new(
+            trade_report_id,
+            symbol,
+            side,
+            quantity,
+            last_qty,
+            last_px,
+            trade_date,
+        );
         report.trade_id = Some(trade_id);
         report.trade_report_trans_type = Some(TradeReportTransType::New);
         report.trade_report_type = Some(TradeCaptureReportType::Submit);
@@ -290,7 +298,15 @@ impl TradeCaptureReport {
         quantity: f64,
         trade_date: String,
     ) -> Self {
-        let mut report = Self::new(trade_report_id, symbol, side, quantity, quantity, 0.0, trade_date);
+        let mut report = Self::new(
+            trade_report_id,
+            symbol,
+            side,
+            quantity,
+            quantity,
+            0.0,
+            trade_date,
+        );
         report.trade_id = Some(original_trade_id);
         report.trade_report_trans_type = Some(TradeReportTransType::Cancel);
         report.trade_report_type = Some(TradeCaptureReportType::TradeReportCancel);
@@ -398,7 +414,10 @@ impl TradeCaptureReport {
             .field(32, self.last_qty.to_string()) // LastQty
             .field(31, self.last_px.to_string()) // LastPx
             .field(75, self.trade_date.clone()) // TradeDate
-            .field(60, self.transact_time.format("%Y%m%d-%H:%M:%S%.3f").to_string()); // TransactTime
+            .field(
+                60,
+                self.transact_time.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
+            ); // TransactTime
 
         // Optional fields
         if let Some(trade_id) = &self.trade_id {
@@ -454,7 +473,10 @@ impl TradeCaptureReport {
         }
 
         if let Some(previously_reported) = &self.previously_reported {
-            builder = builder.field(570, if *previously_reported { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                570,
+                if *previously_reported { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(price_type) = &self.price_type {
@@ -547,8 +569,14 @@ mod tests {
         );
 
         assert_eq!(report.trade_id, Some("TRADE456".to_string()));
-        assert_eq!(report.trade_report_trans_type, Some(TradeReportTransType::New));
-        assert_eq!(report.trade_report_type, Some(TradeCaptureReportType::Submit));
+        assert_eq!(
+            report.trade_report_trans_type,
+            Some(TradeReportTransType::New)
+        );
+        assert_eq!(
+            report.trade_report_type,
+            Some(TradeCaptureReportType::Submit)
+        );
         assert_eq!(report.side, OrderSide::Sell);
     }
 
@@ -564,15 +592,21 @@ mod tests {
         );
 
         assert_eq!(report.trade_id, Some("TRADE789".to_string()));
-        assert_eq!(report.trade_report_trans_type, Some(TradeReportTransType::Cancel));
-        assert_eq!(report.trade_report_type, Some(TradeCaptureReportType::TradeReportCancel));
+        assert_eq!(
+            report.trade_report_trans_type,
+            Some(TradeReportTransType::Cancel)
+        );
+        assert_eq!(
+            report.trade_report_type,
+            Some(TradeCaptureReportType::TradeReportCancel)
+        );
         assert_eq!(report.last_px, 0.0);
     }
 
     #[test]
     fn test_trade_capture_report_with_options() {
         let exec_time = Utc::now();
-        
+
         let report = TradeCaptureReport::new(
             "TR999".to_string(),
             "BTC-PERPETUAL".to_string(),
@@ -597,8 +631,14 @@ mod tests {
         .with_label("test-trade".to_string());
 
         assert_eq!(report.trade_id, Some("TRADE999".to_string()));
-        assert_eq!(report.trade_report_trans_type, Some(TradeReportTransType::New));
-        assert_eq!(report.trade_report_type, Some(TradeCaptureReportType::Submit));
+        assert_eq!(
+            report.trade_report_trans_type,
+            Some(TradeReportTransType::New)
+        );
+        assert_eq!(
+            report.trade_report_type,
+            Some(TradeCaptureReportType::Submit)
+        );
         assert_eq!(report.trade_request_id, Some("REQ999".to_string()));
         assert_eq!(report.order_qty, Some(20.0));
         assert_eq!(report.gross_trade_amt, Some(1020000.0));
@@ -649,10 +689,22 @@ mod tests {
         assert_eq!(i32::from(TradeCaptureReportType::Accept), 2);
         assert_eq!(i32::from(TradeCaptureReportType::TradeReportCancel), 6);
 
-        assert_eq!(TradeCaptureReportType::try_from(0).unwrap(), TradeCaptureReportType::Submit);
-        assert_eq!(TradeCaptureReportType::try_from(1).unwrap(), TradeCaptureReportType::Alleged);
-        assert_eq!(TradeCaptureReportType::try_from(2).unwrap(), TradeCaptureReportType::Accept);
-        assert_eq!(TradeCaptureReportType::try_from(6).unwrap(), TradeCaptureReportType::TradeReportCancel);
+        assert_eq!(
+            TradeCaptureReportType::try_from(0).unwrap(),
+            TradeCaptureReportType::Submit
+        );
+        assert_eq!(
+            TradeCaptureReportType::try_from(1).unwrap(),
+            TradeCaptureReportType::Alleged
+        );
+        assert_eq!(
+            TradeCaptureReportType::try_from(2).unwrap(),
+            TradeCaptureReportType::Accept
+        );
+        assert_eq!(
+            TradeCaptureReportType::try_from(6).unwrap(),
+            TradeCaptureReportType::TradeReportCancel
+        );
 
         assert!(TradeCaptureReportType::try_from(99).is_err());
     }
@@ -662,12 +714,27 @@ mod tests {
         assert_eq!(i32::from(TradeReportTransType::New), 0);
         assert_eq!(i32::from(TradeReportTransType::Cancel), 1);
         assert_eq!(i32::from(TradeReportTransType::Replace), 2);
-        assert_eq!(i32::from(TradeReportTransType::CancelDueToBackOutOfTrade), 5);
+        assert_eq!(
+            i32::from(TradeReportTransType::CancelDueToBackOutOfTrade),
+            5
+        );
 
-        assert_eq!(TradeReportTransType::try_from(0).unwrap(), TradeReportTransType::New);
-        assert_eq!(TradeReportTransType::try_from(1).unwrap(), TradeReportTransType::Cancel);
-        assert_eq!(TradeReportTransType::try_from(2).unwrap(), TradeReportTransType::Replace);
-        assert_eq!(TradeReportTransType::try_from(5).unwrap(), TradeReportTransType::CancelDueToBackOutOfTrade);
+        assert_eq!(
+            TradeReportTransType::try_from(0).unwrap(),
+            TradeReportTransType::New
+        );
+        assert_eq!(
+            TradeReportTransType::try_from(1).unwrap(),
+            TradeReportTransType::Cancel
+        );
+        assert_eq!(
+            TradeReportTransType::try_from(2).unwrap(),
+            TradeReportTransType::Replace
+        );
+        assert_eq!(
+            TradeReportTransType::try_from(5).unwrap(),
+            TradeReportTransType::CancelDueToBackOutOfTrade
+        );
 
         assert!(TradeReportTransType::try_from(99).is_err());
     }

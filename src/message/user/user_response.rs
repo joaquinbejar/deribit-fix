@@ -9,8 +9,8 @@
 use crate::error::Result as DeribitFixResult;
 use crate::message::builder::MessageBuilder;
 use crate::model::types::MsgType;
+use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
-use base64::{engine::general_purpose, Engine as _};
 use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
@@ -178,62 +178,63 @@ mod tests {
 
     #[test]
     fn test_user_response_logged_in() {
-        let response = UserResponse::logged_in(
-            "UR456".to_string(),
-            "user1".to_string(),
-        );
+        let response = UserResponse::logged_in("UR456".to_string(), "user1".to_string());
 
         assert_eq!(response.user_status, UserStatus::LoggedIn);
         assert_eq!(response.username, "user1");
-        assert_eq!(response.user_status_text, Some("User logged in successfully".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("User logged in successfully".to_string())
+        );
     }
 
     #[test]
     fn test_user_response_logged_out() {
-        let response = UserResponse::logged_out(
-            "UR789".to_string(),
-            "user2".to_string(),
-        );
+        let response = UserResponse::logged_out("UR789".to_string(), "user2".to_string());
 
         assert_eq!(response.user_status, UserStatus::NotLoggedIn);
         assert_eq!(response.username, "user2");
-        assert_eq!(response.user_status_text, Some("User logged out successfully".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("User logged out successfully".to_string())
+        );
     }
 
     #[test]
     fn test_user_response_password_changed() {
-        let response = UserResponse::password_changed(
-            "UR999".to_string(),
-            "user3".to_string(),
-        );
+        let response = UserResponse::password_changed("UR999".to_string(), "user3".to_string());
 
         assert_eq!(response.user_status, UserStatus::PasswordChanged);
         assert_eq!(response.username, "user3");
-        assert_eq!(response.user_status_text, Some("Password changed successfully".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("Password changed successfully".to_string())
+        );
     }
 
     #[test]
     fn test_user_response_user_not_recognised() {
-        let response = UserResponse::user_not_recognised(
-            "UR111".to_string(),
-            "unknown_user".to_string(),
-        );
+        let response =
+            UserResponse::user_not_recognised("UR111".to_string(), "unknown_user".to_string());
 
         assert_eq!(response.user_status, UserStatus::UserNotRecognised);
         assert_eq!(response.username, "unknown_user");
-        assert_eq!(response.user_status_text, Some("User not recognised".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("User not recognised".to_string())
+        );
     }
 
     #[test]
     fn test_user_response_password_incorrect() {
-        let response = UserResponse::password_incorrect(
-            "UR222".to_string(),
-            "user4".to_string(),
-        );
+        let response = UserResponse::password_incorrect("UR222".to_string(), "user4".to_string());
 
         assert_eq!(response.user_status, UserStatus::PasswordIncorrect);
         assert_eq!(response.username, "user4");
-        assert_eq!(response.user_status_text, Some("Password incorrect".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("Password incorrect".to_string())
+        );
     }
 
     #[test]
@@ -246,7 +247,10 @@ mod tests {
 
         assert_eq!(response.user_status, UserStatus::Other);
         assert_eq!(response.username, "user5");
-        assert_eq!(response.user_status_text, Some("System temporarily unavailable".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("System temporarily unavailable".to_string())
+        );
     }
 
     #[test]
@@ -261,19 +265,22 @@ mod tests {
         .with_raw_data(raw_data.clone())
         .with_label("test-user-response".to_string());
 
-        assert_eq!(response.user_status_text, Some("Custom login message".to_string()));
+        assert_eq!(
+            response.user_status_text,
+            Some("Custom login message".to_string())
+        );
         assert_eq!(response.raw_data, Some(raw_data));
         assert_eq!(response.raw_data_length, Some(4));
-        assert_eq!(response.deribit_label, Some("test-user-response".to_string()));
+        assert_eq!(
+            response.deribit_label,
+            Some("test-user-response".to_string())
+        );
     }
 
     #[test]
     fn test_user_response_to_fix_message() {
-        let response = UserResponse::logged_in(
-            "UR123".to_string(),
-            "testuser".to_string(),
-        )
-        .with_label("test-label".to_string());
+        let response = UserResponse::logged_in("UR123".to_string(), "testuser".to_string())
+            .with_label("test-label".to_string());
 
         let fix_message = response.to_fix_message("SENDER", "TARGET", 1).unwrap();
 

@@ -358,7 +358,11 @@ impl MMProtectionReset {
     }
 
     /// Set trading session
-    pub fn with_trading_session(mut self, session_id: String, session_sub_id: Option<String>) -> Self {
+    pub fn with_trading_session(
+        mut self,
+        session_id: String,
+        session_sub_id: Option<String>,
+    ) -> Self {
         self.trading_session_id = Some(session_id);
         self.trading_session_sub_id = session_sub_id;
         self
@@ -413,7 +417,9 @@ impl MMProtectionReset {
         if let Some(reset_effective_time) = &self.reset_effective_time {
             builder = builder.field(
                 9035,
-                reset_effective_time.format("%Y%m%d-%H:%M:%S%.3f").to_string(),
+                reset_effective_time
+                    .format("%Y%m%d-%H:%M:%S%.3f")
+                    .to_string(),
             );
         }
 
@@ -430,32 +436,58 @@ impl MMProtectionReset {
         }
 
         if let Some(notify_all_participants) = &self.notify_all_participants {
-            builder = builder.field(9038, if *notify_all_participants { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9038,
+                if *notify_all_participants { "Y" } else { "N" }.to_string(),
+            );
         }
 
         // Counter reset flags
         if let Some(reset_position_counters) = &self.reset_position_counters {
-            builder = builder.field(9039, if *reset_position_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9039,
+                if *reset_position_counters { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(reset_order_counters) = &self.reset_order_counters {
-            builder = builder.field(9040, if *reset_order_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9040,
+                if *reset_order_counters { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(reset_volume_counters) = &self.reset_volume_counters {
-            builder = builder.field(9041, if *reset_volume_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9041,
+                if *reset_volume_counters { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(reset_time_window_counters) = &self.reset_time_window_counters {
-            builder = builder.field(9042, if *reset_time_window_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9042,
+                if *reset_time_window_counters {
+                    "Y"
+                } else {
+                    "N"
+                }
+                .to_string(),
+            );
         }
 
         if let Some(reset_greeks_counters) = &self.reset_greeks_counters {
-            builder = builder.field(9043, if *reset_greeks_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9043,
+                if *reset_greeks_counters { "Y" } else { "N" }.to_string(),
+            );
         }
 
         if let Some(reset_risk_counters) = &self.reset_risk_counters {
-            builder = builder.field(9044, if *reset_risk_counters { "Y" } else { "N" }.to_string());
+            builder = builder.field(
+                9044,
+                if *reset_risk_counters { "Y" } else { "N" }.to_string(),
+            );
         }
 
         // Standard optional fields
@@ -504,8 +536,14 @@ mod tests {
         );
 
         assert_eq!(reset.mm_protection_reset_req_id, "MMPR123");
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::ResetAllLimits);
-        assert_eq!(reset.mm_protection_reset_reason, MMProtectionResetReason::ManualResetRequested);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::ResetAllLimits
+        );
+        assert_eq!(
+            reset.mm_protection_reset_reason,
+            MMProtectionResetReason::ManualResetRequested
+        );
         assert_eq!(reset.mm_protection_scope, MMProtectionScope::AllInstruments);
         assert!(reset.force_reset.is_none());
     }
@@ -514,8 +552,14 @@ mod tests {
     fn test_mm_protection_reset_manual_all() {
         let reset = MMProtectionReset::manual_reset_all("MMPR456".to_string());
 
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::ResetAllLimits);
-        assert_eq!(reset.mm_protection_reset_reason, MMProtectionResetReason::ManualResetRequested);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::ResetAllLimits
+        );
+        assert_eq!(
+            reset.mm_protection_reset_reason,
+            MMProtectionResetReason::ManualResetRequested
+        );
         assert_eq!(reset.mm_protection_scope, MMProtectionScope::AllInstruments);
     }
 
@@ -526,8 +570,14 @@ mod tests {
             MMProtectionScope::SpecificInstrument,
         );
 
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::SoftReset);
-        assert_eq!(reset.mm_protection_scope, MMProtectionScope::SpecificInstrument);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::SoftReset
+        );
+        assert_eq!(
+            reset.mm_protection_scope,
+            MMProtectionScope::SpecificInstrument
+        );
     }
 
     #[test]
@@ -537,8 +587,14 @@ mod tests {
             MMProtectionScope::InstrumentGroup,
         );
 
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::HardReset);
-        assert_eq!(reset.mm_protection_scope, MMProtectionScope::InstrumentGroup);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::HardReset
+        );
+        assert_eq!(
+            reset.mm_protection_scope,
+            MMProtectionScope::InstrumentGroup
+        );
     }
 
     #[test]
@@ -548,8 +604,14 @@ mod tests {
             "System malfunction detected".to_string(),
         );
 
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::HardReset);
-        assert_eq!(reset.mm_protection_reset_reason, MMProtectionResetReason::EmergencyReset);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::HardReset
+        );
+        assert_eq!(
+            reset.mm_protection_reset_reason,
+            MMProtectionResetReason::EmergencyReset
+        );
         assert_eq!(reset.force_reset, Some(true));
         assert_eq!(reset.notify_all_participants, Some(true));
         assert_eq!(reset.text, Some("System malfunction detected".to_string()));
@@ -567,8 +629,14 @@ mod tests {
             Some(expiry_time),
         );
 
-        assert_eq!(reset.mm_protection_reset_type, MMProtectionResetType::ResetPositionLimits);
-        assert_eq!(reset.mm_protection_reset_reason, MMProtectionResetReason::ScheduledReset);
+        assert_eq!(
+            reset.mm_protection_reset_type,
+            MMProtectionResetType::ResetPositionLimits
+        );
+        assert_eq!(
+            reset.mm_protection_reset_reason,
+            MMProtectionResetReason::ScheduledReset
+        );
         assert_eq!(reset.reset_effective_time, Some(effective_time));
         assert_eq!(reset.reset_expiry_time, Some(expiry_time));
     }
@@ -643,10 +711,22 @@ mod tests {
         assert_eq!(i32::from(MMProtectionResetType::SoftReset), 7);
         assert_eq!(i32::from(MMProtectionResetType::HardReset), 8);
 
-        assert_eq!(MMProtectionResetType::try_from(1).unwrap(), MMProtectionResetType::ResetAllLimits);
-        assert_eq!(MMProtectionResetType::try_from(2).unwrap(), MMProtectionResetType::ResetPositionLimits);
-        assert_eq!(MMProtectionResetType::try_from(7).unwrap(), MMProtectionResetType::SoftReset);
-        assert_eq!(MMProtectionResetType::try_from(8).unwrap(), MMProtectionResetType::HardReset);
+        assert_eq!(
+            MMProtectionResetType::try_from(1).unwrap(),
+            MMProtectionResetType::ResetAllLimits
+        );
+        assert_eq!(
+            MMProtectionResetType::try_from(2).unwrap(),
+            MMProtectionResetType::ResetPositionLimits
+        );
+        assert_eq!(
+            MMProtectionResetType::try_from(7).unwrap(),
+            MMProtectionResetType::SoftReset
+        );
+        assert_eq!(
+            MMProtectionResetType::try_from(8).unwrap(),
+            MMProtectionResetType::HardReset
+        );
 
         assert!(MMProtectionResetType::try_from(99).is_err());
     }
@@ -654,14 +734,29 @@ mod tests {
     #[test]
     fn test_mm_protection_reset_reason_conversions() {
         assert_eq!(i32::from(MMProtectionResetReason::ManualResetRequested), 1);
-        assert_eq!(i32::from(MMProtectionResetReason::AutomaticResetBySystem), 2);
+        assert_eq!(
+            i32::from(MMProtectionResetReason::AutomaticResetBySystem),
+            2
+        );
         assert_eq!(i32::from(MMProtectionResetReason::EmergencyReset), 8);
         assert_eq!(i32::from(MMProtectionResetReason::Other), 99);
 
-        assert_eq!(MMProtectionResetReason::try_from(1).unwrap(), MMProtectionResetReason::ManualResetRequested);
-        assert_eq!(MMProtectionResetReason::try_from(2).unwrap(), MMProtectionResetReason::AutomaticResetBySystem);
-        assert_eq!(MMProtectionResetReason::try_from(8).unwrap(), MMProtectionResetReason::EmergencyReset);
-        assert_eq!(MMProtectionResetReason::try_from(99).unwrap(), MMProtectionResetReason::Other);
+        assert_eq!(
+            MMProtectionResetReason::try_from(1).unwrap(),
+            MMProtectionResetReason::ManualResetRequested
+        );
+        assert_eq!(
+            MMProtectionResetReason::try_from(2).unwrap(),
+            MMProtectionResetReason::AutomaticResetBySystem
+        );
+        assert_eq!(
+            MMProtectionResetReason::try_from(8).unwrap(),
+            MMProtectionResetReason::EmergencyReset
+        );
+        assert_eq!(
+            MMProtectionResetReason::try_from(99).unwrap(),
+            MMProtectionResetReason::Other
+        );
 
         assert!(MMProtectionResetReason::try_from(50).is_err());
     }

@@ -10,7 +10,7 @@
 use std::path::Path;
 use std::time::Duration;
 use tokio::time::{timeout, sleep};
-use tracing::{debug, info, warn, error};
+use tracing::{debug, info, warn};
 
 use deribit_base::prelude::*;
 use deribit_fix::prelude::*;

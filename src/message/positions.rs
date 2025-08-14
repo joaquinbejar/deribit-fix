@@ -206,6 +206,50 @@ pub struct PositionReport {
 }
 
 impl PositionReport {
+    /// Create a new Position Report
+    pub fn new(pos_req_id: String, symbol: String) -> Self {
+        Self {
+            pos_req_id,
+            symbol,
+            position_qty: None,
+            average_price: None,
+            unrealized_pnl: None,
+            realized_pnl: None,
+            position_date: None,
+            last_update_time: Some(Utc::now()),
+        }
+    }
+
+    /// Set position quantity
+    pub fn with_position_qty(mut self, position_qty: f64) -> Self {
+        self.position_qty = Some(position_qty);
+        self
+    }
+
+    /// Set average price
+    pub fn with_average_price(mut self, average_price: f64) -> Self {
+        self.average_price = Some(average_price);
+        self
+    }
+
+    /// Set unrealized PnL
+    pub fn with_unrealized_pnl(mut self, unrealized_pnl: f64) -> Self {
+        self.unrealized_pnl = Some(unrealized_pnl);
+        self
+    }
+
+    /// Set realized PnL
+    pub fn with_realized_pnl(mut self, realized_pnl: f64) -> Self {
+        self.realized_pnl = Some(realized_pnl);
+        self
+    }
+
+    /// Set position date
+    pub fn with_position_date(mut self, position_date: String) -> Self {
+        self.position_date = Some(position_date);
+        self
+    }
+
     /// Parse from FIX message
     pub fn from_fix_message(message: &FixMessage) -> DeribitFixResult<Self> {
         let pos_req_id = message
@@ -238,6 +282,45 @@ impl PositionReport {
             position_date,
             last_update_time: Some(Utc::now()),
         })
+    }
+
+    /// Convert to FIX message for emission
+    pub fn to_fix_message(
+        &self,
+        sender_comp_id: String,
+        target_comp_id: String,
+        msg_seq_num: u32,
+    ) -> DeribitFixResult<FixMessage> {
+        let mut builder = MessageBuilder::new()
+            .msg_type(MsgType::PositionReport)
+            .sender_comp_id(sender_comp_id)
+            .target_comp_id(target_comp_id)
+            .msg_seq_num(msg_seq_num)
+            .field(710, self.pos_req_id.clone()) // PosReqID
+            .field(55, self.symbol.clone()); // Symbol
+
+        // Add optional fields
+        if let Some(position_qty) = self.position_qty {
+            builder = builder.field(703, position_qty.to_string()); // PosQty
+        }
+
+        if let Some(average_price) = self.average_price {
+            builder = builder.field(6, average_price.to_string()); // AvgPx
+        }
+
+        if let Some(unrealized_pnl) = self.unrealized_pnl {
+            builder = builder.field(1247, unrealized_pnl.to_string()); // UnrealizedPnL
+        }
+
+        if let Some(realized_pnl) = self.realized_pnl {
+            builder = builder.field(1248, realized_pnl.to_string()); // RealizedPnL
+        }
+
+        if let Some(ref position_date) = self.position_date {
+            builder = builder.field(704, position_date.clone()); // PosDate
+        }
+
+        builder.build()
     }
 
     /// Convert to deribit_base Position
@@ -360,5 +443,71 @@ mod tests {
         assert_eq!(position.average_price, 50000.0);
         assert_eq!(position.unrealized_pnl, 100.0);
         assert_eq!(position.realized_pnl, 50.0);
+    }
+
+    #[test]
+    fn test_position_report_builder() {
+        let report = PositionReport::new("POS_789".to_string(), "ETH-PERPETUAL".to_string())
+            .with_position_qty(2.0)
+            .with_average_price(3500.0)
+            .with_unrealized_pnl(150.0)
+            .with_realized_pnl(50.0)
+            .with_position_date("20240102".to_string());
+
+        assert_eq!(report.pos_req_id, "POS_789");
+        assert_eq!(report.symbol, "ETH-PERPETUAL");
+        assert_eq!(report.position_qty, Some(2.0));
+        assert_eq!(report.average_price, Some(3500.0));
+        assert_eq!(report.unrealized_pnl, Some(150.0));
+        assert_eq!(report.realized_pnl, Some(50.0));
+        assert_eq!(report.position_date, Some("20240102".to_string()));
+        assert!(report.last_update_time.is_some());
+    }
+
+    #[test]
+    fn test_position_report_to_fix_message() {
+        let report = PositionReport::new("POS_123".to_string(), "BTC-PERPETUAL".to_string())
+            .with_position_qty(1.0)
+            .with_average_price(45000.0)
+            .with_unrealized_pnl(500.0)
+            .with_realized_pnl(-200.0)
+            .with_position_date("20240103".to_string());
+
+        let fix_message = report
+            .to_fix_message("SENDER".to_string(), "TARGET".to_string(), 1)
+            .unwrap();
+
+        // Check required fields
+        assert_eq!(fix_message.get_field(35).unwrap(), "AP"); // MsgType
+        assert_eq!(fix_message.get_field(710).unwrap(), "POS_123"); // PosReqID
+        assert_eq!(fix_message.get_field(55).unwrap(), "BTC-PERPETUAL"); // Symbol
+
+        // Check optional fields
+        assert_eq!(fix_message.get_field(703).unwrap(), "1"); // PosQty
+        assert_eq!(fix_message.get_field(6).unwrap(), "45000"); // AvgPx
+        assert_eq!(fix_message.get_field(1247).unwrap(), "500"); // UnrealizedPnL
+        assert_eq!(fix_message.get_field(1248).unwrap(), "-200"); // RealizedPnL
+        assert_eq!(fix_message.get_field(704).unwrap(), "20240103"); // PosDate
+    }
+
+    #[test]
+    fn test_position_report_to_fix_message_minimal() {
+        let report = PositionReport::new("POS_MIN".to_string(), "ETH-PERPETUAL".to_string());
+
+        let fix_message = report
+            .to_fix_message("SENDER".to_string(), "TARGET".to_string(), 2)
+            .unwrap();
+
+        // Check required fields only
+        assert_eq!(fix_message.get_field(35).unwrap(), "AP"); // MsgType
+        assert_eq!(fix_message.get_field(710).unwrap(), "POS_MIN"); // PosReqID
+        assert_eq!(fix_message.get_field(55).unwrap(), "ETH-PERPETUAL"); // Symbol
+
+        // Optional fields should not be present
+        assert!(fix_message.get_field(703).is_none()); // PosQty
+        assert!(fix_message.get_field(6).is_none()); // AvgPx
+        assert!(fix_message.get_field(1247).is_none()); // UnrealizedPnL
+        assert!(fix_message.get_field(1248).is_none()); // RealizedPnL
+        assert!(fix_message.get_field(704).is_none()); // PosDate
     }
 }

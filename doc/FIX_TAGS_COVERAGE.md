@@ -187,8 +187,8 @@ Notes:
 
 ### Position Report (35=AP)
 
-- Implemented: Receive/parse only (no builder)
-- Missing: Dedicated builder for emission (if needed)
+- Implemented: 710, 55, 703 (optional), 6 (optional), 1247 (optional), 1248 (optional), 704 (optional); Full builder pattern for emission with to_fix_message method
+- Missing: —
 
 ---
 

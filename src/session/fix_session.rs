@@ -109,13 +109,11 @@ impl Session {
             message_builder = message_builder.field(9004, app_id.clone()); // DeribitAppId
         }
 
-        if let Some(app_secret) = &self.config.app_secret {
-            if let Some(raw_data_str) = raw_data.split_once('.').map(|(timestamp, nonce)| format!("{}.{}", timestamp, nonce)) {
-                if let Ok(app_sig) = self.calculate_app_signature(&raw_data_str, app_secret) {
+        if let Some(app_secret) = &self.config.app_secret
+            && let Some(raw_data_str) = raw_data.split_once('.').map(|(timestamp, nonce)| format!("{}.{}", timestamp, nonce))
+                && let Ok(app_sig) = self.calculate_app_signature(&raw_data_str, app_secret) {
                     message_builder = message_builder.field(9005, app_sig); // DeribitAppSig
                 }
-            }
-        }
 
         if let Some(deribit_sequential) = &self.config.deribit_sequential {
             message_builder = message_builder.field(9007, if *deribit_sequential { "Y" } else { "N" }.to_string()); // DeribitSequential
@@ -338,8 +336,8 @@ impl Session {
             match self.receive_and_process_message().await {
                 Ok(Some(message)) => {
                     // Check if this is a PositionReport message
-                    if let Some(msg_type_str) = message.get_field(35) {
-                        if msg_type_str == "AP" { // PositionReport
+                    if let Some(msg_type_str) = message.get_field(35)
+                        && msg_type_str == "AP" { // PositionReport
                             // Check if this position report matches our request ID
                             if let Some(pos_req_id) = message.get_field(710) {
                                 if pos_req_id == &request_id {
@@ -361,7 +359,6 @@ impl Session {
                                 }
                             }
                         }
-                    }
                 }
                 Ok(None) => {
                     // No message received, continue loop

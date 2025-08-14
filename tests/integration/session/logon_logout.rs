@@ -50,6 +50,7 @@ fn check_env_file() -> Result<()> {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_logon_logout_flow() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
@@ -89,7 +90,7 @@ async fn test_logon_logout_flow() -> Result<()> {
             }
             
             // Check session state
-            if let Some(state) = client.get_session_state() {
+            if let Some(state) = client.get_session_state().await {
                 debug!("Session state: {:?}", state);
                 if state == SessionState::LoggedOn {
                     return Ok::<(), DeribitFixError>(());
@@ -129,6 +130,7 @@ async fn test_logon_logout_flow() -> Result<()> {
 }
 
 #[tokio::test]
+#[serial_test::serial]
 async fn test_logon_with_invalid_credentials() -> Result<()> {
     setup_logger();
     info!("=== Integration Test: Logon with Invalid Credentials ===");
@@ -176,7 +178,8 @@ async fn test_logon_with_invalid_credentials() -> Result<()> {
     }
 }
 
-#[tokio::test] 
+#[tokio::test]
+#[serial_test::serial]
 async fn test_logout_without_logon() -> Result<()> {
     setup_logger();
     info!("=== Integration Test: Logout without Logon ===");

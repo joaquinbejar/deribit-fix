@@ -17,6 +17,7 @@ pub struct DeribitFixClient {
     pub config: DeribitFixConfig,
     connection: Option<Arc<Mutex<Connection>>>,
     session: Option<Arc<Mutex<Session>>>,
+    heartbeat_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl DeribitFixClient {
@@ -28,6 +29,7 @@ impl DeribitFixClient {
             config,
             connection: None,
             session: None,
+            heartbeat_task: None,
         })
     }
 
@@ -49,6 +51,25 @@ impl DeribitFixClient {
         // Perform logon
         self.logon().await?;
 
+        // Start background heartbeat task to keep the session alive
+        if let Some(session) = &self.session {
+            let session_arc = session.clone();
+            let hb_interval_secs = self.config.heartbeat_interval as u64;
+            self.heartbeat_task = Some(tokio::spawn(async move {
+                use tokio::time::{sleep, Duration};
+                loop {
+                    sleep(Duration::from_secs(hb_interval_secs)).await;
+                    let mut guard = session_arc.lock().await;
+                    // Only send heartbeat when logged on; stop loop when not active
+                    if guard.get_state() == crate::session::SessionState::LoggedOn {
+                        let _ = guard.send_heartbeat(None).await;
+                    } else {
+                        break;
+                    }
+                }
+            }));
+        }
+
         info!("Successfully connected to Deribit FIX server");
         Ok(())
     }
@@ -56,6 +77,11 @@ impl DeribitFixClient {
     /// Disconnect from the server
     pub async fn disconnect(&mut self) -> Result<()> {
         info!("Disconnecting from Deribit FIX server");
+
+        // Stop heartbeat task if running
+        if let Some(handle) = self.heartbeat_task.take() {
+            handle.abort();
+        }
 
         if let Some(session) = &self.session {
             let mut session_guard = session.lock().await;

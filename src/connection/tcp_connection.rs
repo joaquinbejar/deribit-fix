@@ -90,14 +90,25 @@ impl Connection {
         let message_str = message.to_string();
         debug!("Sending FIX message: {}", message_str);
 
-        self.stream
+        match self.stream
             .write_all(message_str.as_bytes())
-            .await
-            .map_err(DeribitFixError::Io)?;
+            .await {
+            Ok(_) => {},
+            Err(e) => {
+                error!("Failed to send message: {}", e);
+                self.connected = false;
+                return Err(DeribitFixError::Io(e));
+            }
+        }
 
-        self.stream.flush().await.map_err(DeribitFixError::Io)?;
-
-        Ok(())
+        match self.stream.flush().await {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                error!("Failed to flush stream: {}", e);
+                self.connected = false;
+                Err(DeribitFixError::Io(e))
+            }
+        }
     }
 
     /// Receive a FIX message from the server
@@ -145,6 +156,8 @@ impl Connection {
                     return Ok(None);
                 }
                 error!("IO error reading from server: {}", e);
+                // Mark connection as inactive on IO errors
+                self.connected = false;
                 Err(DeribitFixError::Io(e))
             }
             Err(_) => {

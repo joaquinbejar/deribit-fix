@@ -112,7 +112,7 @@ mod tests {
 
         // Session state should be None when not connected
         assert!(
-            client.get_session_state().is_none(),
+            client.get_session_state().await.is_none(),
             "Session state should be None when not connected"
         );
     }

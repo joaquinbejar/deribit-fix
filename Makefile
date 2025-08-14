@@ -17,10 +17,15 @@ build:
 release:
 	cargo build --release
 
-# Run tests
+# Run unit tests only
 .PHONY: test
 test:
-	LOGLEVEL=WARN cargo test
+	LOGLEVEL=WARN cargo test --lib --test unit_tests
+
+# Run integration tests
+.PHONY: integration-test
+integration-test:
+	LOGLEVEL=WARN cargo test --test lib
 
 # Format the code
 .PHONY: fmt

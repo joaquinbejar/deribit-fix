@@ -99,10 +99,13 @@ Documentation for all public modules in the crate:
 Detailed documentation for all public structs:
 - **Order**: Trading order representation
 - **OrderResponse**: Response to order operations
-- **Position**: Trading position information
-- **MarketData**: Market data structures
+- **Position**: Trading position information (with dedicated PositionReport builder support)
+- **MarketData**: Market data structures (including snapshot-only fields: mark, funding, index)
 - **AccountSummary**: Account information
 - **Config**: Configuration structures
+
+### [Enhanced Features](enhanced_features.md)
+Details on Deribit-specific enhancements such as snapshot-only fields in Market Data Snapshot and the dedicated Position Report builder.
 
 ### [Traits](traits/main.md)
 Documentation for public traits and interfaces:

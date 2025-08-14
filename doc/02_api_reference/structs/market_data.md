@@ -10,6 +10,7 @@
 - **Order book data**: Bid and ask depth information
 - **Trading statistics**: Volume, high/low prices, and other metrics
 - **Market monitoring**: Real-time market state tracking
+- **Snapshot-only fields**: Funding rates (current and 8h), mark price, index/underlying price (from MarketDataSnapshotFullRefresh)
 
 ## Public Interface
 
@@ -48,6 +49,9 @@ impl MarketData {
     
     /// Updates with new price data
     pub fn update_price(&mut self, bid: Option<f64>, ask: Option<f64>, last: Option<f64>)
+    
+    /// Note: Snapshot-only fields (mark_price, index_price, funding_rate, funding_8h)
+    /// are updated internally when processing FIX W (MarketDataSnapshotFullRefresh) messages
     
     /// Checks if data is stale
     pub fn is_stale(&self, max_age: Duration) -> bool

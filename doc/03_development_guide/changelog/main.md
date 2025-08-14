@@ -15,7 +15,34 @@ The changelog tracks all user-facing changes, including:
 
 ## Version History
 
-### Current Version: 0.1.0
+### Current Version: 0.1.1
+
+**Release Date**: December 2024  
+**Status**: Patch Release
+
+This patch release includes documentation updates and feature completeness confirmations for market data snapshots and position reports.
+
+#### What's New
+
+- **Market Data Snapshot (35=W)**: Added snapshot-only fields (MarkPrice, CurrentFunding, Funding8h, UnderlyingPx, ContractMultiplier, PutOrCall) to emitted messages and docs
+- **Position Report (35=AP)**: Confirmed and documented dedicated builder for emission and parser for consumption
+- **API Docs**: Updated project overview, API reference for MarketData and Position, and enhanced features documentation
+
+#### Bug Fixes
+
+- **Docs**: Removed outdated references to missing fields and builders
+
+#### Breaking Changes
+
+None
+
+#### Migration Guide
+
+No changes required for existing users.
+
+---
+
+### Previous Version: 0.1.0
 
 **Release Date**: December 2024  
 **Status**: Initial Development Release

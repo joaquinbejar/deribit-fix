@@ -10,6 +10,7 @@
 - **Risk management**: Provides P&L and margin information
 - **Portfolio overview**: Shows exposure across instruments
 - **Margin calculations**: Supports margin requirement calculations
+- **Builder integration**: Emission and parsing supported via dedicated PositionReport builder (35=AP)
 
 ## Public Interface
 

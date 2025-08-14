@@ -26,23 +26,26 @@ The **Deribit FIX Client** is a high-performance, type-safe implementation of th
 
 ### ✅ **Implemented Features**
 - **Session Management**: Logon, logout, heartbeat, sequence management
-- **Market Data**: Real-time order book, trades, and instrument information
-- **Order Management**: Place, cancel, and manage trading orders
-- **Security Information**: Instrument definitions and status updates
-- **Position Management**: Track and query trading positions
+- **Market Data**: Real-time order book, trades, and instrument information with complete snapshot support including funding/index fields
+- **Order Management**: Place, cancel, modify, and manage trading orders
+- **Security Information**: Complete instrument definitions and status updates
+- **Position Management**: Full position tracking with dedicated builders for emission and parsing
+- **Quote Management**: Mass quotes with optional standard FIX repeating groups support
+- **RFQ System**: Request for quote functionality
+- **Trade Reporting**: Complete trade capture and reporting
+- **User Management**: User request/response handling
+- **Risk Management**: Market maker protection and limits
 - **Error Handling**: Comprehensive error types and handling
 
 ### 🚧 **In Development**
-- **Execution Reports**: Real-time order status updates
-- **Order Modifications**: Cancel/replace existing orders
-- **Quote Management**: Market making capabilities
-- **RFQ System**: Request for quote functionality
-
-### 📋 **Planned Features**
-- **Block Trading**: Large volume execution
-- **Risk Management**: Advanced position limits
+- **Block Trading**: Large volume execution improvements
 - **Analytics**: Performance metrics and reporting
 - **WebSocket Bridge**: Real-time notifications
+
+### 📋 **Planned Features**
+- **Advanced Risk Controls**: Enhanced position limits and risk management
+- **Performance Optimization**: Further latency improvements
+- **Extended Market Data**: Additional data feeds and analytics
 
 ## Architecture Overview
 

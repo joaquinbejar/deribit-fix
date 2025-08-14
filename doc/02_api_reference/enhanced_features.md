@@ -4,34 +4,23 @@ This document describes the recently enhanced features in the deribit-fix crate.
 
 ## Market Data Snapshot Enhancements
 
-The `MarketDataSnapshotFullRefresh` message now includes additional snapshot-only optional fields as per the Deribit FIX specification:
+The `MarketDataSnapshotFullRefresh` now includes additional fields to better represent Deribit-specific features:
 
-### New MdEntry Fields
+- `TradeVolume24h`: 24h traded volume
+- `MarkPrice`: Mark price for instruments
+- `CurrentFunding` and `Funding8h`: Funding rate metrics for perpetual swaps
+- `UnderlyingPx` and `ContractMultiplier`: Underlying/index price and contract size
+- `PutOrCall`: Option type when applicable
 
-The `MdEntry` struct now supports the following snapshot-only fields:
+These fields are emitted in the snapshot (`35=W`) message and parsed accordingly into market data structures.
 
-- **`price`** (`Option<f64>`) - Index price at trade moment (FIX tag 44)
-- **`text`** (`Option<String>`) - Trade sequence number (FIX tag 58)  
-- **`ord_status`** (`Option<char>`) - Order status (FIX tag 39)
-- **`deribit_label`** (`Option<String>`) - User-defined order label (FIX tag 100010)
-- **`deribit_liquidation`** (`Option<String>`) - Liquidation indicator (FIX tag 100091)
-- **`trd_match_id`** (`Option<String>`) - Block trade ID (FIX tag 880)
+## Position Report Enhancements
 
-These fields are automatically included in the FIX message output when present.
+A dedicated `PositionReport` builder and parser has been implemented to fully support emission and consumption of `35=AP` messages, including:
 
-### Usage Example
-
-```rust
-use deribit_fix::message::market_data::{MarketDataSnapshotFullRefresh, MdEntry, MdEntryType};
-
-let mut entry = MdEntry::trade(50000.0, 1.5, '1', "12345".to_string(), Utc::now());
-entry.deribit_label = Some("my_label".to_string());
-entry.ord_status = Some('2'); // Filled
-entry.trd_match_id = Some("block_123".to_string());
-
-let snapshot = MarketDataSnapshotFullRefresh::new("BTC-PERPETUAL".to_string())
-    .with_entries(vec![entry]);
-```
+- Position size, average price, and side
+- Mark price, index/underlying price
+- Realized/unrealized P&L, margin, and leverage
 
 ## Mass Quote Acknowledgement Enhancements
 

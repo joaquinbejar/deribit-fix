@@ -372,7 +372,140 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-### **2. Market Data Snapshot and Analysis**
+### **2. Market Data Snapshot with Additional Fields**
+
+```rust
+use deribit_fix::{DeribitFixClient, DeribitFixConfig};
+use deribit_fix::model::message::FixMessage;
+use log::info;
+use tokio::time::{sleep, Duration};
+
+struct SnapshotHandler {
+    client: DeribitFixClient,
+}
+
+impl SnapshotHandler {
+    fn new(client: DeribitFixClient) -> Self {
+        Self { client }
+    }
+    
+    async fn subscribe_and_process_snapshots(
+        &mut self,
+        symbol: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // Connect to Deribit
+        self.client.connect().await?;
+        
+        // Subscribe to market data
+        self.client.subscribe_market_data(symbol.to_string()).await?;
+        info!("Subscribed to market data for {}", symbol);
+        
+        // Process incoming messages
+        for _ in 0..50 {  // Process 50 messages maximum
+            match self.client.receive_message().await? {
+                Some(message) => {
+                    if self.is_market_data_snapshot(&message) {
+                        self.process_snapshot(&message, symbol).await?;
+                    }
+                }
+                None => {
+                    sleep(Duration::from_millis(100)).await;
+                }
+            }
+        }
+        
+        Ok(())
+    }
+    
+    fn is_market_data_snapshot(&self, message: &FixMessage) -> bool {
+        if let Some(msg_type) = message.get_field(35) {
+            msg_type == "W" // MarketDataSnapshotFullRefresh
+        } else {
+            false
+        }
+    }
+    
+    async fn process_snapshot(
+        &self,
+        message: &FixMessage,
+        symbol: &str,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        // Extract key fields from the snapshot
+        let underlying_px = message.get_field(810)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        let mark_price = message.get_field(100090)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        let current_funding = message.get_field(100092)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        let funding_8h = message.get_field(100093)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        let open_interest = message.get_field(746)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        let trade_volume_24h = message.get_field(100087)
+            .and_then(|s| s.parse::<f64>().ok());
+        
+        info!("=== Market Data Snapshot for {} ===", symbol);
+        
+        if let Some(price) = underlying_px {
+            info!("Underlying Price: ${:.2}", price);
+        }
+        
+        if let Some(mark) = mark_price {
+            info!("Mark Price: ${:.2}", mark);
+            
+            // Calculate premium/discount
+            if let Some(underlying) = underlying_px {
+                let premium = ((mark - underlying) / underlying) * 100.0;
+                info!("Premium/Discount: {:.2}%", premium);
+            }
+        }
+        
+        if let Some(funding) = current_funding {
+            info!("Current Funding Rate: {:.6}%", funding * 100.0);
+        }
+        
+        if let Some(funding_8h) = funding_8h {
+            info!("8h Funding Rate: {:.6}%", funding_8h * 100.0);
+        }
+        
+        if let Some(oi) = open_interest {
+            info!("Open Interest: {:.0} contracts", oi);
+        }
+        
+        if let Some(volume) = trade_volume_24h {
+            info!("24h Volume: {:.2} BTC", volume);
+        }
+        
+        info!("=====================================");
+        
+        Ok(())
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+    
+    let config = DeribitFixConfig::new()
+        .with_credentials("your_username".to_string(), "your_password".to_string())
+        .with_session_ids("YOUR_SENDER_ID".to_string(), "DERIBITSERVER".to_string());
+
+    let client = DeribitFixClient::new(config).await?;
+    let mut handler = SnapshotHandler::new(client);
+    
+    // Process snapshots for BTC-PERPETUAL
+    handler.subscribe_and_process_snapshots("BTC-PERPETUAL").await?;
+    
+    Ok(())
+}
+```
+
+### **3. Market Data Snapshot and Analysis**
 
 ```rust
 use deribit_fix::client::FixClient;
@@ -598,6 +731,55 @@ impl PositionManager {
                 match violation {
                     RiskViolation::PositionSizeExceeded { symbol, current, limit } => {
                         warn!("Position size limit exceeded for {}: {} > {}", symbol, current, limit);
+
+### 2. Position Report Parsing and Exposure
+
+```rust
+use deribit_fix::{DeribitFixClient, DeribitFixConfig};
+use deribit_fix::message::PositionReport;
+use deribit_fix::model::message::FixMessage;
+use log::{info, warn};
+use tokio::time::{sleep, Duration};
+
+struct PositionSnapshot {
+    client: DeribitFixClient,
+}
+
+impl PositionSnapshot {
+    fn new(config: DeribitFixConfig) -> Self {
+        Self {
+            client: DeribitFixClient::new(config).expect("Failed to create client"),
+        }
+    }
+    
+    async fn refresh_positions(&mut self) -> Result<Vec<deribit_base::prelude::Position>, Box<dyn std::error::Error>> {
+        self.client.connect().await?;
+        let positions = self.client.get_positions().await?;
+        Ok(positions)
+    }
+}
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
+    let config = DeribitFixConfig::new()
+        .with_credentials("your_username".to_string(), "your_password".to_string())
+        .with_session_ids("YOUR_SENDER_ID".to_string(), "DERIBITSERVER".to_string());
+
+    let mut snapshot = PositionSnapshot::new(config);
+    let positions = snapshot.refresh_positions().await?;
+
+    for p in positions {
+        info!(
+            "Position: {} | qty: {} | avg_px: {} | mark: {} | unrealized: {}",
+            p.symbol, p.quantity, p.average_price, p.mark_price, p.unrealized_pnl
+        );
+    }
+
+    Ok(())
+}
+```
                         // Implement position reduction logic
                     }
                     RiskViolation::DrawdownExceeded { symbol, current, limit } => {

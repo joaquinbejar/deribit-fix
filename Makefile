@@ -95,6 +95,23 @@ coverage-html:
 	mkdir -p coverage
 	cargo tarpaulin --color Always --engine llvm --lib --test unit_tests --all-features --workspace --timeout 0 --out Html
 
+.PHONY: coverage-lcov
+coverage-lcov:
+	export LOGLEVEL=WARN
+	cargo install cargo-tarpaulin
+	mkdir -p coverage
+	cargo tarpaulin \
+		--verbose
+		--color Never \
+		--engine llvm \
+		--lib \
+		--test unit_tests \
+		--all-features \
+		--workspace \
+		--timeout 0 \
+		--output-dir coverage \
+		--out Lcov
+
 .PHONY: open-coverage
 open-coverage:
 	open tarpaulin-report.html

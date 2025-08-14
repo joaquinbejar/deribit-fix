@@ -68,7 +68,7 @@ Notes:
 ### Market Data Snapshot/Full Refresh (35=W)
 
 - Implemented: 55, 262 (optional), 268 + entries: 269, 270, 271, 272, 54 (for trades), 100009 DeribitTradeId
-- Missing: Additional snapshot-only fields from spec (e.g., funding/index fields) not currently emitted
+- Missing: —
 
 ### Market Data Incremental Refresh (35=X)
 
@@ -296,8 +296,7 @@ Notes:
 
 ## Summary of Notable Gaps
 
-- Positions:
-    - Position Report (35=AP): Receive-only; no builder/emission support (if needed).
+
 - Documentation/tests: Add coverage and examples for recently implemented messages.
 
 Status: All core messages, including Security Definition/Status family, are now implemented with practical tag coverage.

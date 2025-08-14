@@ -496,7 +496,7 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
                                         "1" => {
                                             // Partial fill should not happen with FOK
                                             warn!("❌ FOK order partially filled - this violates FOK behavior");
-                                            assert!(false, "FOK orders should not be partially filled");
+                                            panic!("FOK orders should not be partially filled");
                                         }
                                         "0" => {
                                             // This shouldn't happen with FOK

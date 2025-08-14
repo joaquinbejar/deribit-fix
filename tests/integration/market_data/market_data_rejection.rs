@@ -393,13 +393,7 @@ async fn test_market_data_rejection_unsupported_parameters() -> Result<()> {
     client.disconnect().await?;
     info!("✅ Market data rejection scenarios test completed");
 
-    // Assert that at least one test scenario behaved as expected
-    // In a proper test environment, at least some invalid scenarios should be rejected
-    // This is a basic smoke test to ensure the rejection mechanism is working
-    assert!(
-        true, // This test validates the rejection mechanism exists and can be monitored
-        "Market data rejection scenarios test completed successfully"
-    );
+    // Test completed successfully - rejection mechanism validation finished
 
     Ok(())
 }
@@ -526,13 +520,7 @@ async fn test_market_data_rejection_duplicate_request() -> Result<()> {
     client.disconnect().await?;
     info!("✅ Duplicate request rejection test completed");
 
-    // Assert that the duplicate request handling was tested successfully
-    // Note: Some servers may allow duplicate MDReqIDs, but the test should verify
-    // that the mechanism for handling duplicates is working
-    assert!(
-        true, // Test completed successfully regardless of server behavior
-        "Duplicate request rejection test completed - mechanism verified"
-    );
+    // Test completed successfully - duplicate request handling mechanism verified
 
     Ok(())
 }

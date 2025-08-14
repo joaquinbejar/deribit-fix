@@ -281,10 +281,8 @@ async fn test_request_for_positions() -> Result<()> {
 
     // Test success validation - The test passes if we successfully request positions
     // and receive a reasonable response structure
-    assert!(
-        total_positions >= 0,
-        "Position request should return a valid response (empty array or populated)"
-    );
+    // total_positions is usize (from Vec::len()), so it's always >= 0
+    info!("Position request completed with {} positions", total_positions);
 
     if order_executed {
         info!("✅ Test passed: Order executed and positions successfully requested");

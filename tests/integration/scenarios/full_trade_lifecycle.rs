@@ -401,8 +401,7 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     info!("  ✅ 9. Position verification");
     info!("  ✅ 10. Logout successful");
 
-    // Final validation
-    assert!(true, "Full trade lifecycle completed - all major FIX operations tested");
+    // Test completed successfully - all major FIX operations tested
 
     info!("✅ Test completed successfully - Full Trade Lifecycle validated");
 

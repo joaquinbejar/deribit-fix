@@ -573,11 +573,8 @@ async fn test_stream_isolation_and_correlation() -> Result<()> {
 
     // Assert that the stream isolation and correlation test completed successfully
     // This validates that streams can be properly isolated and correlated
-    assert!(
-        total_correlated >= 0,
-        "Stream isolation test should complete with valid correlation count, got: {}",
-        total_correlated
-    );
+    // total_correlated is u32, so it's always >= 0
+    info!("Stream isolation test completed with correlation count: {}", total_correlated);
 
     Ok(())
 }

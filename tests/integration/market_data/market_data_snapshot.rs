@@ -233,20 +233,13 @@ async fn test_market_data_snapshot_request() -> Result<()> {
         info!("ℹ️ No snapshot received (acceptable in test environment)");
     }
 
-    // Assert that the snapshot request mechanism is working
-    // In a test environment, we verify the request/response cycle completed
-    assert!(
-        snapshot_received || additional_messages_received >= 0,
-        "Market data snapshot request should either receive a snapshot or complete without errors"
-    );
+    // Test completed successfully - snapshot request mechanism validated
+    info!("Market data snapshot request mechanism completed successfully");
 
     // If snapshot was received, verify it has reasonable structure
     if snapshot_received {
-        assert!(
-            snapshot_entries_count >= 0,
-            "Snapshot entries count should be non-negative, got: {}",
-            snapshot_entries_count
-        );
+        // snapshot_entries_count is u32, so it's always >= 0
+        info!("Snapshot entries count: {}", snapshot_entries_count);
     }
 
     // Step 7: Clean disconnect
@@ -351,12 +344,7 @@ async fn test_market_data_snapshot_validation() -> Result<()> {
     client.disconnect().await?;
     info!("✅ Market data snapshot validation test completed");
 
-    // Assert that the validation test completed successfully
-    // This test validates that snapshot requests can be created for different symbols
-    assert!(
-        true, // Test completed successfully - validated snapshot request creation
-        "Market data snapshot validation test completed successfully"
-    );
+    // Test completed successfully - snapshot request creation for different symbols validated
 
     Ok(())
 }

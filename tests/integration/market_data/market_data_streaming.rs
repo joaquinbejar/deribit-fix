@@ -369,12 +369,7 @@ async fn test_market_data_streaming_updates() -> Result<()> {
     client.disconnect().await?;
     info!("✅ Market data streaming updates test completed");
 
-    // Assert that the streaming updates test completed successfully
-    // This validates that streaming requests can be made for multiple symbols
-    assert!(
-        true, // Test completed successfully - validated streaming update mechanism
-        "Market data streaming updates test completed successfully"
-    );
+    // Test completed successfully - streaming update mechanism for multiple symbols validated
 
     Ok(())
 }

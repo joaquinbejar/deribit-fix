@@ -267,30 +267,31 @@ impl Session {
     }
 
     /// Subscribe to market data
-    pub fn subscribe_market_data(&mut self, symbol: String) -> Result<()> {
+    pub async fn subscribe_market_data(&mut self, symbol: String) -> Result<()> {
         info!("Subscribing to market data for: {}", symbol);
 
         let request_id = format!("MDR_{}", chrono::Utc::now().timestamp_millis());
 
-        let _market_data_request = MessageBuilder::new()
+        let market_data_request = MessageBuilder::new()
             .msg_type(MsgType::MarketDataRequest)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
             .msg_seq_num(self.outgoing_seq_num)
-            .field(262, request_id) // MDReqID
+            .field(262, request_id.clone()) // MDReqID
             .field(263, "1".to_string()) // SubscriptionRequestType (1 = Snapshot + Updates)
             .field(264, "0".to_string()) // MarketDepth (0 = Full Book)
             .field(267, "2".to_string()) // NoMDEntryTypes
             .field(269, "0".to_string()) // MDEntryType (0 = Bid)
             .field(269, "1".to_string()) // MDEntryType (1 = Offer)
             .field(146, "1".to_string()) // NoRelatedSym
-            .field(55, symbol) // Symbol
+            .field(55, symbol.clone()) // Symbol
             .build()?;
 
-        // In a real implementation, you would send this message
+        // Send the market data request
+        self.send_message(market_data_request).await?;
         self.outgoing_seq_num += 1;
 
-        info!("Market data subscription message prepared");
+        info!("Market data subscription request sent for symbol: {} with ID: {}", symbol, request_id);
         Ok(())
     }
 

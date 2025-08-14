@@ -149,7 +149,7 @@ impl DeribitFixClient {
     pub async fn subscribe_market_data(&self, symbol: String) -> Result<()> {
         if let Some(session) = &self.session {
             let mut session_guard = session.lock().await;
-            session_guard.subscribe_market_data(symbol)
+            session_guard.subscribe_market_data(symbol).await
         } else {
             Err(DeribitFixError::Session("Not connected".to_string()))
         }

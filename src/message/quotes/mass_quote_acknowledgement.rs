@@ -240,6 +240,8 @@ pub struct MassQuoteAcknowledgement {
     pub text: Option<String>,
     /// Custom label
     pub deribit_label: Option<String>,
+    /// Use standard FIX repeating groups instead of simplified custom tags
+    pub use_standard_repeating_groups: bool,
 }
 
 impl MassQuoteAcknowledgement {
@@ -258,6 +260,7 @@ impl MassQuoteAcknowledgement {
             clearing_account: None,
             text: None,
             deribit_label: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 
@@ -282,6 +285,7 @@ impl MassQuoteAcknowledgement {
             clearing_account: None,
             text: None,
             deribit_label: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 
@@ -304,6 +308,7 @@ impl MassQuoteAcknowledgement {
             clearing_account: None,
             text,
             deribit_label: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 

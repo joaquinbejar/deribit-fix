@@ -212,6 +212,8 @@ pub struct MassQuote {
     pub deribit_label: Option<String>,
     /// Mass quote response type
     pub mass_quote_response_type: Option<MassQuoteResponseType>,
+    /// Use standard FIX repeating groups instead of simplified custom tags
+    pub use_standard_repeating_groups: bool,
 }
 
 impl MassQuote {
@@ -237,6 +239,7 @@ impl MassQuote {
             time_in_force: None,
             deribit_label: None,
             mass_quote_response_type: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 
@@ -252,6 +255,18 @@ impl MassQuote {
         mass_quote.defaul_bid_size = Some(default_bid_size);
         mass_quote.default_offer_size = Some(default_offer_size);
         mass_quote
+    }
+
+    /// Enable standard FIX repeating groups (instead of simplified custom tags)
+    pub fn with_standard_repeating_groups(mut self) -> Self {
+        self.use_standard_repeating_groups = true;
+        self
+    }
+
+    /// Use simplified custom tags (default behavior for backward compatibility)
+    pub fn with_simplified_custom_tags(mut self) -> Self {
+        self.use_standard_repeating_groups = false;
+        self
     }
 
     /// Add a quote entry
@@ -365,32 +380,64 @@ impl MassQuote {
             builder = builder.field(296, i32::from(*mass_quote_response_type).to_string());
         }
 
-        // Add quote entries (simplified - in real implementation would need repeating groups)
-        for (i, entry) in self.quote_entries.iter().enumerate() {
-            let base_tag = 2000 + (i * 100); // Custom tag range for quote entries
+        // Add quote entries - support both standard FIX repeating groups and simplified custom tags
+        if self.use_standard_repeating_groups {
+            // Standard FIX repeating groups implementation
+            builder = builder.field(295, self.quote_entries.len().to_string()); // NoQuoteEntries (using 295 to avoid conflict with 296)
+            
+            for entry in &self.quote_entries {
+                builder = builder
+                    .field(299, entry.quote_entry_id.clone()) // QuoteEntryID
+                    .field(55, entry.symbol.clone()); // Symbol
 
-            builder = builder
-                .field(base_tag as u32, entry.quote_entry_id.clone()) // QuoteEntryID
-                .field((base_tag + 1) as u32, entry.symbol.clone()); // Symbol
+                if let Some(side) = &entry.side {
+                    builder = builder.field(54, char::from(*side).to_string()); // Side
+                }
 
-            if let Some(side) = &entry.side {
-                builder = builder.field((base_tag + 2) as u32, char::from(*side).to_string());
+                if let Some(bid_px) = &entry.bid_px {
+                    builder = builder.field(132, bid_px.to_string()); // BidPx
+                }
+
+                if let Some(offer_px) = &entry.offer_px {
+                    builder = builder.field(133, offer_px.to_string()); // OfferPx
+                }
+
+                if let Some(bid_size) = &entry.bid_size {
+                    builder = builder.field(134, bid_size.to_string()); // BidSize
+                }
+
+                if let Some(offer_size) = &entry.offer_size {
+                    builder = builder.field(135, offer_size.to_string()); // OfferSize
+                }
             }
+        } else {
+            // Simplified custom tags implementation (backward compatibility)
+            for (i, entry) in self.quote_entries.iter().enumerate() {
+                let base_tag = 2000 + (i * 100); // Custom tag range for quote entries
 
-            if let Some(bid_px) = &entry.bid_px {
-                builder = builder.field((base_tag + 10) as u32, bid_px.to_string());
-            }
+                builder = builder
+                    .field(base_tag as u32, entry.quote_entry_id.clone()) // QuoteEntryID
+                    .field((base_tag + 1) as u32, entry.symbol.clone()); // Symbol
 
-            if let Some(offer_px) = &entry.offer_px {
-                builder = builder.field((base_tag + 11) as u32, offer_px.to_string());
-            }
+                if let Some(side) = &entry.side {
+                    builder = builder.field((base_tag + 2) as u32, char::from(*side).to_string());
+                }
 
-            if let Some(bid_size) = &entry.bid_size {
-                builder = builder.field((base_tag + 12) as u32, bid_size.to_string());
-            }
+                if let Some(bid_px) = &entry.bid_px {
+                    builder = builder.field((base_tag + 10) as u32, bid_px.to_string());
+                }
 
-            if let Some(offer_size) = &entry.offer_size {
-                builder = builder.field((base_tag + 13) as u32, offer_size.to_string());
+                if let Some(offer_px) = &entry.offer_px {
+                    builder = builder.field((base_tag + 11) as u32, offer_px.to_string());
+                }
+
+                if let Some(bid_size) = &entry.bid_size {
+                    builder = builder.field((base_tag + 12) as u32, bid_size.to_string());
+                }
+
+                if let Some(offer_size) = &entry.offer_size {
+                    builder = builder.field((base_tag + 13) as u32, offer_size.to_string());
+                }
             }
         }
 

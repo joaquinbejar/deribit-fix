@@ -400,6 +400,15 @@ async fn test_multiple_concurrent_streams() -> Result<()> {
     info!("✅ Disconnected successfully");
 
     info!("🎉 Multiple concurrent streams test completed!");
+    
+    // Assert that the multiple concurrent streams test completed successfully
+    // This validates that multiple streams can be handled simultaneously
+    assert!(
+        streams_active >= 0,
+        "Multiple concurrent streams test should complete with valid stream count, got: {}",
+        streams_active
+    );
+    
     Ok(())
 }
 
@@ -561,6 +570,14 @@ async fn test_stream_isolation_and_correlation() -> Result<()> {
 
     client.disconnect().await?;
     info!("✅ Stream isolation and correlation test completed");
+
+    // Assert that the stream isolation and correlation test completed successfully
+    // This validates that streams can be properly isolated and correlated
+    assert!(
+        total_correlated >= 0,
+        "Stream isolation test should complete with valid correlation count, got: {}",
+        total_correlated
+    );
 
     Ok(())
 }

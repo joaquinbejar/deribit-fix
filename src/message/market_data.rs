@@ -514,6 +514,24 @@ pub struct MarketDataSnapshotFullRefresh {
     pub symbol: String,
     /// ID of the original request (optional)
     pub md_req_id: Option<String>,
+    /// Underlying symbol (for options)
+    pub underlying_symbol: Option<String>,
+    /// Price of the underlying instrument (for options)
+    pub underlying_px: Option<f64>,
+    /// Contract multiplier
+    pub contract_multiplier: Option<f64>,
+    /// Put or Call indicator (0 = put, 1 = call)
+    pub put_or_call: Option<i32>,
+    /// 24h trade volume
+    pub trade_volume_24h: Option<f64>,
+    /// Mark price
+    pub mark_price: Option<f64>,
+    /// Open interest
+    pub open_interest: Option<f64>,
+    /// Current funding (perpetual only)
+    pub current_funding: Option<f64>,
+    /// Funding in last 8h (perpetual only)
+    pub funding_8h: Option<f64>,
     /// Market data entries
     pub entries: Vec<MdEntry>,
 }
@@ -524,6 +542,15 @@ impl MarketDataSnapshotFullRefresh {
         Self {
             symbol,
             md_req_id: None,
+            underlying_symbol: None,
+            underlying_px: None,
+            contract_multiplier: None,
+            put_or_call: None,
+            trade_volume_24h: None,
+            mark_price: None,
+            open_interest: None,
+            current_funding: None,
+            funding_8h: None,
             entries: Vec::new(),
         }
     }
@@ -537,6 +564,60 @@ impl MarketDataSnapshotFullRefresh {
     /// Add entries
     pub fn with_entries(mut self, entries: Vec<MdEntry>) -> Self {
         self.entries = entries;
+        self
+    }
+
+    /// Set underlying symbol (for options)
+    pub fn with_underlying_symbol(mut self, underlying_symbol: String) -> Self {
+        self.underlying_symbol = Some(underlying_symbol);
+        self
+    }
+
+    /// Set underlying price (for options)
+    pub fn with_underlying_px(mut self, underlying_px: f64) -> Self {
+        self.underlying_px = Some(underlying_px);
+        self
+    }
+
+    /// Set contract multiplier
+    pub fn with_contract_multiplier(mut self, contract_multiplier: f64) -> Self {
+        self.contract_multiplier = Some(contract_multiplier);
+        self
+    }
+
+    /// Set put or call indicator (0 = put, 1 = call)
+    pub fn with_put_or_call(mut self, put_or_call: i32) -> Self {
+        self.put_or_call = Some(put_or_call);
+        self
+    }
+
+    /// Set 24h trade volume
+    pub fn with_trade_volume_24h(mut self, trade_volume_24h: f64) -> Self {
+        self.trade_volume_24h = Some(trade_volume_24h);
+        self
+    }
+
+    /// Set mark price
+    pub fn with_mark_price(mut self, mark_price: f64) -> Self {
+        self.mark_price = Some(mark_price);
+        self
+    }
+
+    /// Set open interest
+    pub fn with_open_interest(mut self, open_interest: f64) -> Self {
+        self.open_interest = Some(open_interest);
+        self
+    }
+
+    /// Set current funding (perpetual only)
+    pub fn with_current_funding(mut self, current_funding: f64) -> Self {
+        self.current_funding = Some(current_funding);
+        self
+    }
+
+    /// Set funding in last 8h (perpetual only)
+    pub fn with_funding_8h(mut self, funding_8h: f64) -> Self {
+        self.funding_8h = Some(funding_8h);
         self
     }
 
@@ -557,6 +638,43 @@ impl MarketDataSnapshotFullRefresh {
 
         if let Some(ref md_req_id) = self.md_req_id {
             builder = builder.field(262, md_req_id.clone()); // MDReqID
+        }
+
+        // Add optional snapshot-specific fields
+        if let Some(ref underlying_symbol) = self.underlying_symbol {
+            builder = builder.field(311, underlying_symbol.clone()); // UnderlyingSymbol
+        }
+
+        if let Some(underlying_px) = self.underlying_px {
+            builder = builder.field(810, underlying_px.to_string()); // UnderlyingPx
+        }
+
+        if let Some(contract_multiplier) = self.contract_multiplier {
+            builder = builder.field(231, contract_multiplier.to_string()); // ContractMultiplier
+        }
+
+        if let Some(put_or_call) = self.put_or_call {
+            builder = builder.field(201, put_or_call.to_string()); // PutOrCall
+        }
+
+        if let Some(trade_volume_24h) = self.trade_volume_24h {
+            builder = builder.field(100087, trade_volume_24h.to_string()); // TradeVolume24h
+        }
+
+        if let Some(mark_price) = self.mark_price {
+            builder = builder.field(100090, mark_price.to_string()); // MarkPrice
+        }
+
+        if let Some(open_interest) = self.open_interest {
+            builder = builder.field(746, open_interest.to_string()); // OpenInterest
+        }
+
+        if let Some(current_funding) = self.current_funding {
+            builder = builder.field(100092, current_funding.to_string()); // CurrentFunding
+        }
+
+        if let Some(funding_8h) = self.funding_8h {
+            builder = builder.field(100093, funding_8h.to_string()); // Funding8h
         }
 
         // Add entries group

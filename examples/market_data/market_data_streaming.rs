@@ -75,7 +75,7 @@ async fn main() -> Result<()> {
     // Subscribe to market data for BTC-PERPETUAL
     let instrument = "BTC-PERPETUAL";
     info!("Subscribing to market data for: {}", instrument);
-    
+
     match client.subscribe_market_data(instrument.to_string()).await {
         Ok(_) => info!("Successfully subscribed to {} market data", instrument),
         Err(e) => {
@@ -97,7 +97,7 @@ async fn main() -> Result<()> {
         sleep(Duration::from_secs(5)).await;
         update_count += 1;
         info!("Market data streaming active... update #{}", update_count);
-        
+
         // Check if we're still connected
         if let Some(state) = client.get_session_state().await {
             if state != SessionState::LoggedOn {

@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
 
     // Example 1: Configuration validation errors
     info!("=== Example 1: Configuration Validation Errors ===");
-    
+
     // Create an invalid configuration to demonstrate error handling
     let invalid_config = DeribitFixConfig::default()
         .with_heartbeat_interval(0) // Invalid: heartbeat must be > 0
@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
         }
         Err(e) => {
             info!("Configuration validation failed as expected: {}", e);
-            
+
             match e {
                 DeribitFixError::Config(msg) => {
                     info!("Caught configuration error: {}", msg);
@@ -52,7 +52,7 @@ async fn main() -> Result<()> {
 
     // Example 2: Connection failures
     info!("=== Example 2: Connection Failure Handling ===");
-    
+
     // Create a configuration with an invalid host to demonstrate connection errors
     let invalid_host_config = DeribitFixConfig::default()
         .with_endpoint("invalid-host-that-does-not-exist.com".to_string(), 9999)
@@ -72,7 +72,7 @@ async fn main() -> Result<()> {
                         }
                         Err(e) => {
                             info!("Connection failed as expected: {}", e);
-                            
+
                             match e {
                                 DeribitFixError::Connection(msg) => {
                                     info!("Caught connection error: {}", msg);
@@ -99,7 +99,7 @@ async fn main() -> Result<()> {
 
     // Example 3: Valid connection with basic error scenarios
     info!("=== Example 3: Basic Error Handling ===");
-    
+
     let config = DeribitFixConfig::default()
         .with_heartbeat_interval(30)
         .with_cancel_on_disconnect(true)
@@ -137,7 +137,7 @@ async fn main() -> Result<()> {
                     match logon_result {
                         Ok(_) => {
                             info!("Logon successful, testing basic error scenarios...");
-                            
+
                             // Error Scenario 1: Invalid order parameters
                             info!("--- Error Scenario 1: Invalid Order ---");
                             let invalid_order = NewOrderRequest::limit_buy(
@@ -162,10 +162,13 @@ async fn main() -> Result<()> {
                             // Error Scenario 2: Cancel non-existent order
                             info!("--- Error Scenario 2: Cancel Non-Existent Order ---");
                             let fake_order_id = "fake_order_id_12345".to_string();
-                            
+
                             match client.cancel_order(fake_order_id.clone()).await {
                                 Ok(_) => {
-                                    info!("Cancel request sent for non-existent order: {}", fake_order_id);
+                                    info!(
+                                        "Cancel request sent for non-existent order: {}",
+                                        fake_order_id
+                                    );
                                     sleep(Duration::from_secs(2)).await;
                                     info!("Cancel processing completed");
                                 }
@@ -178,14 +181,20 @@ async fn main() -> Result<()> {
 
                             // Error Scenario 3: Test invalid market data subscription
                             info!("--- Error Scenario 3: Invalid Market Data Subscription ---");
-                            match client.subscribe_market_data("INVALID_INSTRUMENT_XYZ".to_string()).await {
+                            match client
+                                .subscribe_market_data("INVALID_INSTRUMENT_XYZ".to_string())
+                                .await
+                            {
                                 Ok(_) => {
                                     info!("Market data subscription sent (may be rejected)");
                                     sleep(Duration::from_secs(2)).await;
                                     info!("Market data subscription processing completed");
                                 }
                                 Err(e) => {
-                                    info!("Market data subscription rejected at client level: {}", e);
+                                    info!(
+                                        "Market data subscription rejected at client level: {}",
+                                        e
+                                    );
                                 }
                             }
                         }
@@ -200,7 +209,7 @@ async fn main() -> Result<()> {
                 }
                 Err(e) => {
                     error!("Connection failed: {}", e);
-                    
+
                     // Demonstrate error classification
                     match e {
                         DeribitFixError::Connection(msg) => {
@@ -221,7 +230,9 @@ async fn main() -> Result<()> {
                         }
                         _ => {
                             info!("This is a different error type: {:?}", e);
-                            info!("Recovery strategy: Analyze error type and implement appropriate handling");
+                            info!(
+                                "Recovery strategy: Analyze error type and implement appropriate handling"
+                            );
                         }
                     }
                 }

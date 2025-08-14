@@ -27,7 +27,7 @@ mod tests {
         // Test basic session functionality without network connections
         // This will improve coverage on Session methods that don't require connections
         let config = create_test_config();
-        
+
         // Test that the config is set up correctly for sessions
         assert!(!config.username.is_empty());
         assert!(!config.password.is_empty());
@@ -52,21 +52,20 @@ mod tests {
             .with_app_credentials("test_app".to_string(), "test_secret".to_string())
             .with_use_wordsafe_tags(true)
             .with_deribit_sequential(false);
-        
+
         assert_eq!(full_config.username, "user");
         assert_eq!(full_config.password, "pass");
         assert_eq!(full_config.host, "test.deribit.com");
         assert_eq!(full_config.port, 9881);
         assert_eq!(full_config.heartbeat_interval, 60);
-        assert_eq!(full_config.cancel_on_disconnect, true);
+        assert!(full_config.cancel_on_disconnect);
         assert_eq!(full_config.app_id, Some("test_app".to_string()));
         assert_eq!(full_config.app_secret, Some("test_secret".to_string()));
     }
 
     // Create a mock connection for testing - this will try to connect but fail gracefully
     async fn create_mock_connection() -> Result<Arc<Mutex<Connection>>, DeribitFixError> {
-        let config = DeribitFixConfig::new()
-            .with_endpoint("127.0.0.1".to_string(), 1234); // Use a port that won't work
+        let config = DeribitFixConfig::new().with_endpoint("127.0.0.1".to_string(), 1234); // Use a port that won't work
         match Connection::new(&config).await {
             Ok(connection) => Ok(Arc::new(Mutex::new(connection))),
             Err(_) => {
@@ -74,7 +73,7 @@ mod tests {
                 let config = DeribitFixConfig::new();
                 match Connection::new(&config).await {
                     Ok(connection) => Ok(Arc::new(Mutex::new(connection))),
-                    Err(e) => Err(e)
+                    Err(e) => Err(e),
                 }
             }
         }
@@ -84,80 +83,78 @@ mod tests {
     async fn test_session_creation_and_state_management() {
         // Test creating a session (connection may fail but that's ok)
         let config = create_test_config();
-        
+
         // Try to create connection, if it fails we'll skip this test
-        if let Ok(connection) = create_mock_connection().await {
-            if let Ok(mut session) = Session::new(&config, connection) {
+        if let Ok(connection) = create_mock_connection().await
+            && let Ok(mut session) = Session::new(&config, connection) {
                 // Test initial state
                 assert_eq!(session.get_state(), SessionState::Disconnected);
                 assert_eq!(session.state(), SessionState::Disconnected);
-                
+
                 // Test state management
                 session.set_state(SessionState::LogonSent);
                 assert_eq!(session.state(), SessionState::LogonSent);
-                
+
                 session.set_state(SessionState::LoggedOn);
                 assert_eq!(session.state(), SessionState::LoggedOn);
-                
+
                 session.set_state(SessionState::LogoutSent);
                 assert_eq!(session.state(), SessionState::LogoutSent);
-                
+
                 session.set_state(SessionState::Disconnected);
                 assert_eq!(session.state(), SessionState::Disconnected);
             }
-        }
     }
 
     #[tokio::test]
     async fn test_session_auth_data_generation() {
         let config = create_test_config();
-        
+
         // Try to create connection, if it fails we'll skip this test
-        if let Ok(connection) = create_mock_connection().await {
-            if let Ok(session) = Session::new(&config, connection) {
+        if let Ok(connection) = create_mock_connection().await
+            && let Ok(session) = Session::new(&config, connection) {
                 // Test auth data generation with different secrets
                 let result1 = session.generate_auth_data("test_secret");
                 assert!(result1.is_ok());
-                
+
                 if let Ok((raw_data1, password_hash1)) = result1 {
                     assert!(!raw_data1.is_empty());
                     assert!(!password_hash1.is_empty());
-                    assert!(raw_data1.contains('.'));  // Should contain timestamp.nonce format
+                    assert!(raw_data1.contains('.')); // Should contain timestamp.nonce format
                     assert_eq!(password_hash1.len(), 44); // Base64 encoded SHA256 hash length
                 }
 
                 // Test with different secret
                 let result2 = session.generate_auth_data("different_secret");
                 assert!(result2.is_ok());
-                
+
                 if let Ok((raw_data2, password_hash2)) = result2 {
                     assert!(!raw_data2.is_empty());
                     assert!(!password_hash2.is_empty());
                     assert!(raw_data2.contains('.'));
-                    
+
                     // Different secrets should produce different hashes
                     if let Ok((_, hash1)) = session.generate_auth_data("test_secret") {
                         assert_ne!(hash1, password_hash2);
                     }
                 }
-                
+
                 // Test with empty secret
                 let result3 = session.generate_auth_data("");
                 assert!(result3.is_ok());
-                
+
                 // Test with special characters
                 let result4 = session.generate_auth_data("special@#$%");
                 assert!(result4.is_ok());
             }
-        }
     }
 
     #[tokio::test]
     async fn test_session_connection_management() {
         let config = create_test_config();
-        
-        if let Ok(connection1) = create_mock_connection().await {
-            if let Ok(mut session) = Session::new(&config, connection1) {
+
+        if let Ok(connection1) = create_mock_connection().await
+            && let Ok(mut session) = Session::new(&config, connection1) {
                 // Test setting a new connection
                 if let Ok(connection2) = create_mock_connection().await {
                     session.set_connection(connection2);
@@ -165,7 +162,6 @@ mod tests {
                     assert_eq!(session.get_state(), SessionState::Disconnected);
                 }
             }
-        }
     }
 
     #[test]
@@ -254,11 +250,11 @@ mod tests {
     #[tokio::test]
     async fn test_session_async_methods_without_connection() {
         let config = create_test_config();
-        
-        if let Ok(connection) = create_mock_connection().await {
-            if let Ok(mut session) = Session::new(&config, connection) {
+
+        if let Ok(connection) = create_mock_connection().await
+            && let Ok(mut session) = Session::new(&config, connection) {
                 // Test methods that don't require actual network operations
-                
+
                 // Test cancel_order (doesn't actually send, just prepares message)
                 let cancel_result = session.cancel_order("ORDER_123".to_string());
                 assert!(cancel_result.is_ok());
@@ -266,33 +262,34 @@ mod tests {
                 // Test calculate_app_signature (private method tested indirectly)
                 let auth_result = session.generate_auth_data("test_secret");
                 assert!(auth_result.is_ok());
-                
+
                 // Test that the session maintains state correctly
                 assert_eq!(session.get_state(), session.state());
             }
-        }
     }
 
     #[tokio::test]
     async fn test_session_message_processing() {
         let config = create_test_config();
-        
-        if let Ok(connection) = create_mock_connection().await {
-            if let Ok(mut session) = Session::new(&config, connection) {
+
+        if let Ok(connection) = create_mock_connection().await
+            && let Ok(session) = Session::new(&config, connection) {
                 // Test process_message with different message types
                 use deribit_fix::model::message::FixMessage;
-                
+
                 // Create a mock logon response message
                 let mut logon_msg = FixMessage::new();
                 logon_msg.set_field(35, "A".to_string()); // MsgType = Logon
                 logon_msg.set_field(49, "DERIBIT".to_string()); // SenderCompID
                 logon_msg.set_field(56, "CLIENT".to_string()); // TargetCompID
-                
+
                 // Test processing would normally change state, but we can't easily test
                 // the private process_message method directly
-                assert_eq!(session.state(), deribit_fix::session::SessionState::Disconnected);
+                assert_eq!(
+                    session.state(),
+                    deribit_fix::session::SessionState::Disconnected
+                );
             }
-        }
     }
 
     #[test]
@@ -302,7 +299,10 @@ mod tests {
         assert!(format!("{connection_error}").contains("Connection error"));
         assert!(format!("{connection_error}").contains("Connection lost"));
 
-        let io_error = DeribitFixError::Io(std::io::Error::new(std::io::ErrorKind::TimedOut, "Network timeout"));
+        let io_error = DeribitFixError::Io(std::io::Error::new(
+            std::io::ErrorKind::TimedOut,
+            "Network timeout",
+        ));
         assert!(format!("{io_error}").contains("I/O error"));
         assert!(format!("{io_error}").contains("Network timeout"));
 
@@ -313,11 +313,11 @@ mod tests {
 
     #[test]
     fn test_session_auth_data_variations() {
-        let config = create_test_config();
-        
+        let _config = create_test_config();
+
         // We'll test the auth data generation more thoroughly
         let mut test_sessions = Vec::new();
-        
+
         // Create multiple sessions to test auth data uniqueness
         for _ in 0..3 {
             // Since we can't easily create multiple sessions with connections,
@@ -325,10 +325,10 @@ mod tests {
             let config_variation = DeribitFixConfig::new()
                 .with_credentials("test_user".to_string(), "different_pass".to_string())
                 .with_app_credentials("app_id".to_string(), "app_secret".to_string());
-            
+
             test_sessions.push(config_variation);
         }
-        
+
         // Test that different configurations produce different setups
         assert_eq!(test_sessions.len(), 3);
         assert_eq!(test_sessions[0].username, "test_user");
@@ -368,7 +368,7 @@ mod tests {
         assert_eq!(full_config.sender_comp_id, "SENDER");
         assert_eq!(full_config.target_comp_id, "TARGET");
         assert_eq!(full_config.heartbeat_interval, 60);
-        assert_eq!(full_config.cancel_on_disconnect, true);
+        assert!(full_config.cancel_on_disconnect);
         assert_eq!(full_config.app_id, Some("app_id".to_string()));
         assert_eq!(full_config.app_secret, Some("app_secret".to_string()));
         assert_eq!(full_config.use_wordsafe_tags, Some(true));
@@ -382,7 +382,7 @@ mod tests {
     #[test]
     fn test_session_state_transitions() {
         use deribit_fix::session::SessionState;
-        
+
         // Test all possible state transitions
         let states = vec![
             SessionState::Disconnected,
@@ -390,20 +390,20 @@ mod tests {
             SessionState::LoggedOn,
             SessionState::LogoutSent,
         ];
-        
+
         for state in &states {
             // Test state formatting
             let debug_str = format!("{:?}", state);
             assert!(!debug_str.is_empty());
-            
+
             // Test state equality
             assert_eq!(*state, *state);
-            
+
             // Test state cloning/copying
             let copied_state = *state;
             assert_eq!(*state, copied_state);
         }
-        
+
         // Test state inequality
         assert_ne!(SessionState::Disconnected, SessionState::LoggedOn);
         assert_ne!(SessionState::LogonSent, SessionState::LogoutSent);
@@ -420,9 +420,12 @@ mod tests {
             DeribitFixError::Protocol("Invalid FIX protocol version".to_string()),
             DeribitFixError::MessageConstruction("Failed to build message".to_string()),
             DeribitFixError::MessageParsing("Malformed FIX message".to_string()),
-            DeribitFixError::Io(std::io::Error::new(std::io::ErrorKind::NetworkUnreachable, "Network unreachable")),
+            DeribitFixError::Io(std::io::Error::new(
+                std::io::ErrorKind::NetworkUnreachable,
+                "Network unreachable",
+            )),
         ];
-        
+
         for error in errors {
             let error_string = format!("{}", error);
             assert!(!error_string.is_empty());

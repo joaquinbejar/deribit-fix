@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
 
     // Example 1: Basic session lifecycle
     info!("=== Example 1: Basic Session Lifecycle ===");
-    
+
     let config = DeribitFixConfig::default()
         .with_heartbeat_interval(10) // Shorter heartbeat for demonstration
         .with_cancel_on_disconnect(true)
@@ -40,13 +40,19 @@ async fn main() -> Result<()> {
     let mut client = DeribitFixClient::new(config).await?;
 
     // Monitor session state during connection
-    info!("Initial session state: {:?}", client.get_session_state().await);
+    info!(
+        "Initial session state: {:?}",
+        client.get_session_state().await
+    );
 
     info!("Connecting to Deribit FIX server...");
     client.connect().await?;
     info!("Connection established");
 
-    info!("Session state after connection: {:?}", client.get_session_state().await);
+    info!(
+        "Session state after connection: {:?}",
+        client.get_session_state().await
+    );
 
     // Wait for logon and monitor state changes
     info!("Waiting for logon confirmation...");
@@ -84,7 +90,7 @@ async fn main() -> Result<()> {
     // Example 2: Session monitoring
     info!("=== Example 2: Session State Monitoring ===");
     info!("Monitoring session for 30 seconds...");
-    
+
     let monitor_duration = Duration::from_secs(30);
     let start_time = std::time::Instant::now();
 
@@ -99,29 +105,38 @@ async fn main() -> Result<()> {
 
         // Keep the connection alive
         sleep(Duration::from_secs(5)).await;
-        info!("Session monitoring active... State: {:?}", client.get_session_state().await);
+        info!(
+            "Session monitoring active... State: {:?}",
+            client.get_session_state().await
+        );
     }
 
     info!("Session monitoring completed");
 
     // Example 3: Disconnect and reconnect
     info!("=== Example 3: Disconnect and Reconnect ===");
-    
-    info!("Current session state before disconnect: {:?}", client.get_session_state().await);
-    
+
+    info!(
+        "Current session state before disconnect: {:?}",
+        client.get_session_state().await
+    );
+
     info!("Disconnecting from server...");
     client.disconnect().await?;
-    
-    info!("Session state after disconnect: {:?}", client.get_session_state().await);
-    
+
+    info!(
+        "Session state after disconnect: {:?}",
+        client.get_session_state().await
+    );
+
     sleep(Duration::from_secs(3)).await;
-    
+
     info!("Attempting to reconnect...");
-    
+
     match client.connect().await {
         Ok(_) => {
             info!("Reconnection successful");
-            
+
             // Wait for logon again
             info!("Waiting for logon after reconnection...");
             let reconnect_logon_result = timeout(Duration::from_secs(30), async {
@@ -144,7 +159,10 @@ async fn main() -> Result<()> {
             match reconnect_logon_result {
                 Ok(_) => {
                     info!("Reconnection and logon successful!");
-                    info!("Final session state: {:?}", client.get_session_state().await);
+                    info!(
+                        "Final session state: {:?}",
+                        client.get_session_state().await
+                    );
                 }
                 Err(_) => {
                     error!("Logon timeout after reconnection");
@@ -159,8 +177,11 @@ async fn main() -> Result<()> {
     // Final cleanup
     info!("Performing final disconnect...");
     client.disconnect().await?;
-    
-    info!("Final session state: {:?}", client.get_session_state().await);
+
+    info!(
+        "Final session state: {:?}",
+        client.get_session_state().await
+    );
 
     info!("Session management example completed successfully!");
     Ok(())

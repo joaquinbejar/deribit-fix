@@ -73,11 +73,11 @@ async fn main() -> Result<()> {
 
     // Request current positions
     info!("=== Requesting Current Positions ===");
-    
+
     match client.get_positions().await {
         Ok(positions) => {
             info!("Retrieved {} positions", positions.len());
-            
+
             if positions.is_empty() {
                 info!("No positions found");
             } else {

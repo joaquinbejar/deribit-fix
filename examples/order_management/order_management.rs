@@ -6,8 +6,8 @@
 //! 3. Cancel orders
 //! 4. Handle order-related errors
 
-use deribit_base::prelude::*;
 use deribit_base::prelude::TimeInForce; // Explicit import to resolve ambiguity
+use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 use std::time::Duration;
@@ -74,15 +74,14 @@ async fn main() -> Result<()> {
     let quantity = 10.0;
     let price = 50000.0;
 
-    let limit_order = NewOrderRequest::limit_buy(
-        instrument.to_string(),
-        quantity,
-        price,
-    )
-    .with_label("example_limit_buy".to_string())
-    .with_time_in_force(TimeInForce::GoodTillCancel);
+    let limit_order = NewOrderRequest::limit_buy(instrument.to_string(), quantity, price)
+        .with_label("example_limit_buy".to_string())
+        .with_time_in_force(TimeInForce::GoodTillCancel);
 
-    info!("Sending limit buy order: {} {} at ${}", quantity, instrument, price);
+    info!(
+        "Sending limit buy order: {} {} at ${}",
+        quantity, instrument, price
+    );
 
     match client.send_order(limit_order).await {
         Ok(order_id) => {
@@ -95,7 +94,7 @@ async fn main() -> Result<()> {
             // Cancel the order after 5 seconds
             sleep(Duration::from_secs(5)).await;
             info!("Cancelling limit buy order...");
-            
+
             match client.cancel_order(order_id.clone()).await {
                 Ok(_) => info!("Order {} cancelled successfully", order_id),
                 Err(e) => error!("Failed to cancel order {}: {}", order_id, e),
@@ -112,15 +111,14 @@ async fn main() -> Result<()> {
     info!("=== Example 2: Limit Sell Order ===");
     let sell_price = 55000.0;
 
-    let sell_order = NewOrderRequest::limit_sell(
-        instrument.to_string(),
-        quantity,
-        sell_price,
-    )
-    .with_label("example_limit_sell".to_string())
-    .with_time_in_force(TimeInForce::GoodTillCancel);
+    let sell_order = NewOrderRequest::limit_sell(instrument.to_string(), quantity, sell_price)
+        .with_label("example_limit_sell".to_string())
+        .with_time_in_force(TimeInForce::GoodTillCancel);
 
-    info!("Sending limit sell order: {} {} at ${}", quantity, instrument, sell_price);
+    info!(
+        "Sending limit sell order: {} {} at ${}",
+        quantity, instrument, sell_price
+    );
 
     match client.send_order(sell_order).await {
         Ok(order_id) => {
@@ -133,7 +131,7 @@ async fn main() -> Result<()> {
             // Cancel the order
             sleep(Duration::from_secs(2)).await;
             info!("Cancelling limit sell order...");
-            
+
             match client.cancel_order(order_id.clone()).await {
                 Ok(_) => info!("Order {} cancelled successfully", order_id),
                 Err(e) => error!("Failed to cancel order {}: {}", order_id, e),
@@ -148,7 +146,7 @@ async fn main() -> Result<()> {
 
     // Example 3: Demonstrate order rejection
     info!("=== Example 3: Order Rejection (Invalid Parameters) ===");
-    
+
     let invalid_order = NewOrderRequest::limit_buy(
         "INVALID-INSTRUMENT".to_string(),
         -10.0, // Invalid negative quantity

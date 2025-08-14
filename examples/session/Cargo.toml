@@ -1,0 +1,30 @@
+[package]
+name = "session"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "session_management"
+path = "session_management.rs"
+
+[[bin]]
+name = "heartbeat_example"
+path = "heartbeat_example.rs"
+
+[[bin]]
+name = "login_test"
+path = "login_test.rs"
+
+[[bin]]
+name = "test_request_example"
+path = "test_request_example.rs"
+
+[[bin]]
+name = "resend_request_example"
+path = "resend_request_example.rs"
+
+[dependencies]
+deribit-base = { workspace = true }
+deribit-fix = { workspace = true }
+tracing = { workspace = true }
+tokio = { workspace = true }

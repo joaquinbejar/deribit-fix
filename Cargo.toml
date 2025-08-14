@@ -60,6 +60,11 @@ path = "benches/benchmarks.rs"
 [workspace]
 members = [
     "examples/basic",
+    "examples/market_data",
+    "examples/order_management",
+    "examples/position_management",
+    "examples/session",
+    "examples/error_handling",
 ]
 
 [workspace.dependencies]

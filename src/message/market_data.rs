@@ -446,6 +446,18 @@ pub struct MdEntry {
     pub order_id: Option<String>,
     /// Secondary order ID (for trades)
     pub secondary_order_id: Option<String>,
+    /// Index price at trade moment (snapshot-only)
+    pub price: Option<f64>,
+    /// Trade sequence number (snapshot-only)
+    pub text: Option<String>,
+    /// Order status (snapshot-only)
+    pub ord_status: Option<char>,
+    /// User-defined order label (snapshot-only)
+    pub deribit_label: Option<String>,
+    /// Liquidation indicator (snapshot-only)
+    pub deribit_liquidation: Option<String>,
+    /// Block trade ID (snapshot-only)
+    pub trd_match_id: Option<String>,
 }
 
 impl MdEntry {
@@ -461,6 +473,12 @@ impl MdEntry {
             side: None,
             order_id: None,
             secondary_order_id: None,
+            price: None,
+            text: None,
+            ord_status: None,
+            deribit_label: None,
+            deribit_liquidation: None,
+            trd_match_id: None,
         }
     }
 
@@ -476,6 +494,12 @@ impl MdEntry {
             side: None,
             order_id: None,
             secondary_order_id: None,
+            price: None,
+            text: None,
+            ord_status: None,
+            deribit_label: None,
+            deribit_liquidation: None,
+            trd_match_id: None,
         }
     }
 
@@ -497,6 +521,12 @@ impl MdEntry {
             side: Some(side),
             order_id: None,
             secondary_order_id: None,
+            price: None,
+            text: None,
+            ord_status: None,
+            deribit_label: None,
+            deribit_liquidation: None,
+            trd_match_id: None,
         }
     }
 
@@ -701,6 +731,39 @@ impl MarketDataSnapshotFullRefresh {
 
             if let Some(side) = entry.side {
                 builder = builder.field(54, side.to_string()); // Side
+            }
+
+            // Snapshot-only optional fields
+            if let Some(price) = entry.price {
+                builder = builder.field(44, price.to_string()); // Price (index price at trade moment)
+            }
+
+            if let Some(ref text) = entry.text {
+                builder = builder.field(58, text.clone()); // Text (trade sequence number)
+            }
+
+            if let Some(ref order_id) = entry.order_id {
+                builder = builder.field(37, order_id.clone()); // OrderId (taker's matching order id)
+            }
+
+            if let Some(ref secondary_order_id) = entry.secondary_order_id {
+                builder = builder.field(198, secondary_order_id.clone()); // SecondaryOrderId (maker's matching order id)
+            }
+
+            if let Some(ord_status) = entry.ord_status {
+                builder = builder.field(39, ord_status.to_string()); // OrdStatus (order status)
+            }
+
+            if let Some(ref deribit_label) = entry.deribit_label {
+                builder = builder.field(100010, deribit_label.clone()); // DeribitLabel (user defined label)
+            }
+
+            if let Some(ref deribit_liquidation) = entry.deribit_liquidation {
+                builder = builder.field(100091, deribit_liquidation.clone()); // DeribitLiquidation (liquidation indicator)
+            }
+
+            if let Some(ref trd_match_id) = entry.trd_match_id {
+                builder = builder.field(880, trd_match_id.clone()); // TrdMatchID (block trade id)
             }
         }
 

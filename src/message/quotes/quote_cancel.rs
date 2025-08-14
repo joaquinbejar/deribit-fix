@@ -138,6 +138,8 @@ pub struct QuoteCancel {
     pub text: Option<String>,
     /// Custom label
     pub deribit_label: Option<String>,
+    /// Use standard FIX repeating groups instead of simplified custom tags
+    pub use_standard_repeating_groups: bool,
 }
 
 impl QuoteCancel {
@@ -160,6 +162,7 @@ impl QuoteCancel {
             trading_session_sub_id: None,
             text: None,
             deribit_label: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 
@@ -203,6 +206,7 @@ impl QuoteCancel {
             trading_session_sub_id: None,
             text: None,
             deribit_label: None,
+            use_standard_repeating_groups: false, // Default to simplified custom tags for backward compatibility
         }
     }
 
@@ -258,6 +262,18 @@ impl QuoteCancel {
     /// Set custom label
     pub fn with_label(mut self, label: String) -> Self {
         self.deribit_label = Some(label);
+        self
+    }
+
+    /// Enable standard FIX repeating groups (instead of simplified custom tags)
+    pub fn enable_standard_repeating_groups(mut self) -> Self {
+        self.use_standard_repeating_groups = true;
+        self
+    }
+
+    /// Disable standard FIX repeating groups (use simplified custom tags for backward compatibility)
+    pub fn disable_standard_repeating_groups(mut self) -> Self {
+        self.use_standard_repeating_groups = false;
         self
     }
 
@@ -321,23 +337,42 @@ impl QuoteCancel {
             builder = builder.field(100010, deribit_label.clone());
         }
 
-        // Add quote cancel entries (simplified - in real implementation would need repeating groups)
-        for (i, entry) in self.quote_cancel_entries.iter().enumerate() {
-            let base_tag = 4000 + (i * 100); // Custom tag range for quote cancel entries
+        // Add quote cancel entries - support both standard FIX repeating groups and simplified custom tags
+        if self.use_standard_repeating_groups {
+            // Standard FIX repeating groups implementation
+            builder = builder.field(295, self.quote_cancel_entries.len().to_string()); // NoQuoteEntries
+            
+            for entry in &self.quote_cancel_entries {
+                builder = builder.field(299, entry.quote_entry_id.clone()); // QuoteEntryID
+                builder = builder.field(55, entry.symbol.clone()); // Symbol
 
-            if !entry.quote_entry_id.is_empty() {
-                builder = builder.field(base_tag as u32, entry.quote_entry_id.clone()); // QuoteEntryID
+                if let Some(side) = &entry.side {
+                    builder = builder.field(54, char::from(*side).to_string()); // Side
+                }
+
+                if let Some(quote_entry_reject_reason) = &entry.quote_entry_reject_reason {
+                    builder = builder.field(368, quote_entry_reject_reason.to_string()); // QuoteEntryRejectReason
+                }
             }
+        } else {
+            // Simplified custom tags implementation (backward compatibility)
+            for (i, entry) in self.quote_cancel_entries.iter().enumerate() {
+                let base_tag = 4000 + (i * 100); // Custom tag range for quote cancel entries
 
-            builder = builder.field((base_tag + 1) as u32, entry.symbol.clone()); // Symbol
+                if !entry.quote_entry_id.is_empty() {
+                    builder = builder.field(base_tag as u32, entry.quote_entry_id.clone()); // QuoteEntryID
+                }
 
-            if let Some(side) = &entry.side {
-                builder = builder.field((base_tag + 2) as u32, char::from(*side).to_string());
-            }
+                builder = builder.field((base_tag + 1) as u32, entry.symbol.clone()); // Symbol
 
-            if let Some(quote_entry_reject_reason) = &entry.quote_entry_reject_reason {
-                builder =
-                    builder.field((base_tag + 3) as u32, quote_entry_reject_reason.to_string());
+                if let Some(side) = &entry.side {
+                    builder = builder.field((base_tag + 2) as u32, char::from(*side).to_string());
+                }
+
+                if let Some(quote_entry_reject_reason) = &entry.quote_entry_reject_reason {
+                    builder =
+                        builder.field((base_tag + 3) as u32, quote_entry_reject_reason.to_string());
+                }
             }
         }
 
@@ -523,5 +558,92 @@ mod tests {
         );
 
         assert!(QuoteCancelType::try_from(99).is_err());
+    }
+
+    #[test]
+    fn test_quote_cancel_standard_repeating_groups() {
+        let entries = vec![
+            QuoteCancelEntry::with_side(
+                "QCE123".to_string(),
+                "BTC-PERPETUAL".to_string(),
+                OrderSide::Buy,
+            ),
+            QuoteCancelEntry::new("QCE456".to_string(), "ETH-PERPETUAL".to_string()),
+        ];
+
+        let quote_cancel = QuoteCancel::with_entries(
+            "QC789".to_string(),
+            QuoteCancelType::CancelAll,
+            entries,
+        )
+        .enable_standard_repeating_groups();
+
+        let fix_message = quote_cancel
+            .to_fix_message("SENDER", "TARGET", 123)
+            .unwrap();
+
+        // Should contain standard FIX tags
+        assert!(fix_message.contains("295=2")); // NoQuoteEntries
+        // In FIX repeating groups, the last entry's fields will appear in the message
+        assert!(fix_message.contains("299=QCE456")); // Second QuoteEntryID (last one)
+        assert!(fix_message.contains("55=ETH-PERPETUAL")); // Second symbol (last one)
+        
+        // Check that we're using standard tags, not custom ones
+        assert!(fix_message.contains("299=")); // QuoteEntryID (standard tag)
+        assert!(fix_message.contains("55=")); // Symbol (standard tag)
+
+        // Should not contain custom tags
+        assert!(!fix_message.contains("4000="));
+        assert!(!fix_message.contains("4001="));
+    }
+
+    #[test]
+    fn test_quote_cancel_simplified_custom_tags() {
+        let entries = vec![
+            QuoteCancelEntry::with_side(
+                "QCE123".to_string(),
+                "BTC-PERPETUAL".to_string(),
+                OrderSide::Buy,
+            ),
+            QuoteCancelEntry::new("QCE456".to_string(), "ETH-PERPETUAL".to_string()),
+        ];
+
+        let quote_cancel = QuoteCancel::with_entries(
+            "QC789".to_string(),
+            QuoteCancelType::CancelAll,
+            entries,
+        )
+        .disable_standard_repeating_groups(); // Explicitly disable (though it's default)
+
+        let fix_message = quote_cancel
+            .to_fix_message("SENDER", "TARGET", 123)
+            .unwrap();
+
+        // Should contain custom tags
+        assert!(fix_message.contains("4000=QCE123")); // First entry ID
+        assert!(fix_message.contains("4001=BTC-PERPETUAL")); // First symbol
+        assert!(fix_message.contains("4002=1")); // First side (Buy)
+        assert!(fix_message.contains("4100=QCE456")); // Second entry ID
+        assert!(fix_message.contains("4101=ETH-PERPETUAL")); // Second symbol
+
+        // Should not contain standard repeating group tags (except tot_quote_entries)
+        assert!(!fix_message.contains("299=")); // QuoteEntryID (standard)
+        assert!(!fix_message.contains("55=BTC-PERPETUAL")); // Symbol (standard)
+    }
+
+    #[test]
+    fn test_quote_cancel_builder_methods() {
+        let quote_cancel = QuoteCancel::new("QC123".to_string(), QuoteCancelType::CancelAll);
+
+        // Test default
+        assert!(!quote_cancel.use_standard_repeating_groups);
+
+        // Test enable
+        let enabled = quote_cancel.clone().enable_standard_repeating_groups();
+        assert!(enabled.use_standard_repeating_groups);
+
+        // Test disable
+        let disabled = enabled.disable_standard_repeating_groups();
+        assert!(!disabled.use_standard_repeating_groups);
     }
 }

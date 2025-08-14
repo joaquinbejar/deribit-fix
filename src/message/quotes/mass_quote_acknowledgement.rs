@@ -343,6 +343,18 @@ impl MassQuoteAcknowledgement {
         self
     }
 
+    /// Enable standard FIX repeating groups (instead of simplified custom tags)
+    pub fn enable_standard_repeating_groups(mut self) -> Self {
+        self.use_standard_repeating_groups = true;
+        self
+    }
+
+    /// Disable standard FIX repeating groups (use simplified custom tags for backward compatibility)
+    pub fn disable_standard_repeating_groups(mut self) -> Self {
+        self.use_standard_repeating_groups = false;
+        self
+    }
+
     /// Convert to FIX message
     pub fn to_fix_message(
         &self,
@@ -395,47 +407,95 @@ impl MassQuoteAcknowledgement {
             builder = builder.field(100010, deribit_label.clone());
         }
 
-        // Add quote entry acknowledgements (simplified - in real implementation would need repeating groups)
-        for (i, entry_ack) in self.quote_entry_acks.iter().enumerate() {
-            let base_tag = 3000 + (i * 100); // Custom tag range for quote entry acks
+        // Add quote entry acknowledgements - support both standard FIX repeating groups and simplified custom tags
+        if self.use_standard_repeating_groups {
+            // Standard FIX repeating groups implementation
+            builder = builder.field(295, self.quote_entry_acks.len().to_string()); // NoQuoteEntries
+            
+            for entry_ack in &self.quote_entry_acks {
+                builder = builder
+                    .field(299, entry_ack.quote_entry_id.clone()) // QuoteEntryID
+                    .field(9020, i32::from(entry_ack.quote_ack_status).to_string()); // QuoteEntryType (0 = order, 1 = trade, 2 = error)
 
-            builder = builder
-                .field(base_tag as u32, entry_ack.quote_entry_id.clone()) // QuoteEntryID
-                .field((base_tag + 1) as u32, entry_ack.symbol.clone()) // Symbol
-                .field(
-                    (base_tag + 2) as u32,
-                    i32::from(entry_ack.quote_ack_status).to_string(),
-                ); // QuoteAckStatus
+                if let Some(quote_set_id) = &self.quote_set_id {
+                    builder = builder.field(302, quote_set_id.clone()); // QuoteSetID
+                }
 
-            if let Some(quote_reject_reason) = &entry_ack.quote_reject_reason {
-                builder = builder.field(
-                    (base_tag + 3) as u32,
-                    i32::from(*quote_reject_reason).to_string(),
-                );
+                builder = builder.field(1167, i32::from(entry_ack.quote_ack_status).to_string()); // QuoteEntryStatus
+
+                builder = builder.field(55, entry_ack.symbol.clone()); // Symbol
+
+                if let Some(side) = &entry_ack.side {
+                    builder = builder.field(54, char::from(*side).to_string()); // Side
+                }
+
+                if let Some(bid_px) = &entry_ack.bid_px {
+                    builder = builder.field(132, bid_px.to_string()); // BidPx
+                }
+
+                if let Some(offer_px) = &entry_ack.offer_px {
+                    builder = builder.field(133, offer_px.to_string()); // OfferPx
+                }
+
+                if let Some(bid_size) = &entry_ack.bid_size {
+                    builder = builder.field(134, bid_size.to_string()); // BidSize
+                }
+
+                if let Some(offer_size) = &entry_ack.offer_size {
+                    builder = builder.field(135, offer_size.to_string()); // OfferSize
+                }
+
+                if let Some(quote_reject_reason) = &entry_ack.quote_reject_reason {
+                    builder = builder.field(368, i32::from(*quote_reject_reason).to_string()); // QuoteEntryRejectReason
+                }
+
+                if let Some(text) = &entry_ack.text {
+                    builder = builder.field(58, text.clone()); // Text
+                }
             }
+        } else {
+            // Simplified custom tags implementation (backward compatibility)
+            for (i, entry_ack) in self.quote_entry_acks.iter().enumerate() {
+                let base_tag = 3000 + (i * 100); // Custom tag range for quote entry acks
 
-            if let Some(side) = &entry_ack.side {
-                builder = builder.field((base_tag + 4) as u32, char::from(*side).to_string());
-            }
+                builder = builder
+                    .field(base_tag as u32, entry_ack.quote_entry_id.clone()) // QuoteEntryID
+                    .field((base_tag + 1) as u32, entry_ack.symbol.clone()) // Symbol
+                    .field(
+                        (base_tag + 2) as u32,
+                        i32::from(entry_ack.quote_ack_status).to_string(),
+                    ); // QuoteAckStatus
 
-            if let Some(bid_px) = &entry_ack.bid_px {
-                builder = builder.field((base_tag + 10) as u32, bid_px.to_string());
-            }
+                if let Some(quote_reject_reason) = &entry_ack.quote_reject_reason {
+                    builder = builder.field(
+                        (base_tag + 3) as u32,
+                        i32::from(*quote_reject_reason).to_string(),
+                    );
+                }
 
-            if let Some(offer_px) = &entry_ack.offer_px {
-                builder = builder.field((base_tag + 11) as u32, offer_px.to_string());
-            }
+                if let Some(side) = &entry_ack.side {
+                    builder = builder.field((base_tag + 4) as u32, char::from(*side).to_string());
+                }
 
-            if let Some(bid_size) = &entry_ack.bid_size {
-                builder = builder.field((base_tag + 12) as u32, bid_size.to_string());
-            }
+                if let Some(bid_px) = &entry_ack.bid_px {
+                    builder = builder.field((base_tag + 10) as u32, bid_px.to_string());
+                }
 
-            if let Some(offer_size) = &entry_ack.offer_size {
-                builder = builder.field((base_tag + 13) as u32, offer_size.to_string());
-            }
+                if let Some(offer_px) = &entry_ack.offer_px {
+                    builder = builder.field((base_tag + 11) as u32, offer_px.to_string());
+                }
 
-            if let Some(text) = &entry_ack.text {
-                builder = builder.field((base_tag + 20) as u32, text.clone());
+                if let Some(bid_size) = &entry_ack.bid_size {
+                    builder = builder.field((base_tag + 12) as u32, bid_size.to_string());
+                }
+
+                if let Some(offer_size) = &entry_ack.offer_size {
+                    builder = builder.field((base_tag + 13) as u32, offer_size.to_string());
+                }
+
+                if let Some(text) = &entry_ack.text {
+                    builder = builder.field((base_tag + 20) as u32, text.clone());
+                }
             }
         }
 

@@ -17,18 +17,6 @@ use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType,
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
-#[tokio::test]
-async fn test_new_order_single_placeholder() -> std::result::Result<(), Box<dyn std::error::Error>> {
-    println!("TEST 10: NEW ORDER SINGLE - Implementation pending API clarification");
-    
-    // Placeholder test that always passes
-    // TODO: Implement actual order submission and validation tests
-    // This test validates the structure exists and follows the test description
-    
-    assert!(true, "Order submission test structure is ready for implementation");
-    
-    Ok(())
-}
 
 /// Check if .env file exists and contains required variables
 fn check_env_file() -> Result<()> {

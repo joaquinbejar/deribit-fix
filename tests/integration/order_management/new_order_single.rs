@@ -204,7 +204,9 @@ async fn test_new_order_single_limit_buy() -> Result<()> {
     // Note: In test environment, the server may not send ExecutionReports for orders
     // This test validates the order submission capability and ExecutionReport handling when available
     if !order_new_confirmed {
-        info!("ℹ️ Test server did not send ExecutionReport - order submission capability validated");
+        info!(
+            "ℹ️ Test server did not send ExecutionReport - order submission capability validated"
+        );
     } else {
         info!("✅ ExecutionReport received - order processing validated");
     }
@@ -396,7 +398,9 @@ async fn test_new_order_single_market_sell() -> Result<()> {
     // Note: In test environment, the server may not send ExecutionReports for market orders
     // This test validates the market order submission capability and ExecutionReport handling when available
     if !order_executed {
-        info!("ℹ️ Test server did not send ExecutionReport - market order submission capability validated");
+        info!(
+            "ℹ️ Test server did not send ExecutionReport - market order submission capability validated"
+        );
     } else {
         info!("✅ ExecutionReport received - market order execution validated");
     }

@@ -268,7 +268,9 @@ async fn test_cancel_filled_order_rejection() -> Result<()> {
     if !cancel_reject_received && cancel_result.is_err() {
         info!("✅ Cancel request properly rejected at client level for filled order");
     } else if !cancel_reject_received {
-        info!("ℹ️ Test server did not send OrderCancelReject - cancellation rejection capability validated");
+        info!(
+            "ℹ️ Test server did not send OrderCancelReject - cancellation rejection capability validated"
+        );
     } else {
         info!("✅ OrderCancelReject received and validated successfully");
     }

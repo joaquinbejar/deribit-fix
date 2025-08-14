@@ -93,7 +93,7 @@ coverage-html:
 	export LOGLEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
-	cargo tarpaulin --color Always --engine llvm --tests --all-targets --all-features --workspace --timeout 0 --out Html
+	cargo tarpaulin --color Always --engine llvm --lib --test unit_tests --all-features --workspace --timeout 0 --out Html
 
 .PHONY: open-coverage
 open-coverage:

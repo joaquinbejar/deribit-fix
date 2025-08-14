@@ -400,7 +400,7 @@ async fn test_multiple_concurrent_streams() -> Result<()> {
     info!("✅ Disconnected successfully");
 
     info!("🎉 Multiple concurrent streams test completed!");
-    
+
     // Assert that the multiple concurrent streams test completed successfully
     // This validates that multiple streams can be handled simultaneously
     assert!(
@@ -408,7 +408,7 @@ async fn test_multiple_concurrent_streams() -> Result<()> {
         "Multiple concurrent streams test should complete with valid stream count, got: {}",
         streams_active
     );
-    
+
     Ok(())
 }
 
@@ -574,7 +574,10 @@ async fn test_stream_isolation_and_correlation() -> Result<()> {
     // Assert that the stream isolation and correlation test completed successfully
     // This validates that streams can be properly isolated and correlated
     // total_correlated is u32, so it's always >= 0
-    info!("Stream isolation test completed with correlation count: {}", total_correlated);
+    info!(
+        "Stream isolation test completed with correlation count: {}",
+        total_correlated
+    );
 
     Ok(())
 }

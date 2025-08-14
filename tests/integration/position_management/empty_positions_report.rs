@@ -115,13 +115,10 @@ async fn test_empty_positions_report() -> Result<()> {
 
     // Step 5: Validate that we receive empty positions or handle the response appropriately
     info!("👁️ Validating positions response...");
-    
+
     // The positions should be empty or contain zero quantities
     let total_positions = positions.len();
-    let non_zero_positions = positions
-        .iter()
-        .filter(|pos| pos.quantity != 0.0)
-        .count();
+    let non_zero_positions = positions.iter().filter(|pos| pos.quantity != 0.0).count();
 
     info!("📊 Total position entries received: {}", total_positions);
     info!("📊 Non-zero position entries: {}", non_zero_positions);
@@ -133,16 +130,25 @@ async fn test_empty_positions_report() -> Result<()> {
         info!("✅ Empty positions confirmed - no position entries received");
     } else if non_zero_positions == 0 {
         info!("✅ Empty positions confirmed - all positions have zero quantity");
-        
+
         // Validate position structure for zero positions
         for position in &positions {
-            assert_eq!(position.quantity, 0.0, "Position quantity should be zero for empty positions");
-            info!("✅ Position for {} correctly shows zero quantity", position.symbol);
+            assert_eq!(
+                position.quantity, 0.0,
+                "Position quantity should be zero for empty positions"
+            );
+            info!(
+                "✅ Position for {} correctly shows zero quantity",
+                position.symbol
+            );
         }
     } else {
         // We have actual positions, which is acceptable but worth noting
-        info!("ℹ️  Account has {} active positions - this is valid but not the empty case", non_zero_positions);
-        
+        info!(
+            "ℹ️  Account has {} active positions - this is valid but not the empty case",
+            non_zero_positions
+        );
+
         // Still validate the response structure
         for position in &positions {
             info!("📊 Position: {} = {}", position.symbol, position.quantity);
@@ -159,27 +165,32 @@ async fn test_empty_positions_report() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "AP" { // PositionReport
-                        position_reports_received += 1;
-                        info!("📨 Received PositionReport #{}: {:?}", position_reports_received, message);
-                        
-                        // Validate PositionReport structure
-                        if let Some(pos_req_result) = message.get_field(728) {
-                            info!("✅ PosReqResult: {}", pos_req_result);
-                        }
-                        
-                        if let Some(no_positions) = message.get_field(702) {
-                            info!("✅ NoPositions: {}", no_positions);
-                            
-                            if let Ok(count) = no_positions.parse::<i32>() {
-                                if count == 0 {
-                                    info!("✅ PositionReport correctly indicates zero positions");
-                                } else {
-                                    info!("📊 PositionReport indicates {} positions", count);
-                                }
+                    && msg_type == "AP"
+                {
+                    // PositionReport
+                    position_reports_received += 1;
+                    info!(
+                        "📨 Received PositionReport #{}: {:?}",
+                        position_reports_received, message
+                    );
+
+                    // Validate PositionReport structure
+                    if let Some(pos_req_result) = message.get_field(728) {
+                        info!("✅ PosReqResult: {}", pos_req_result);
+                    }
+
+                    if let Some(no_positions) = message.get_field(702) {
+                        info!("✅ NoPositions: {}", no_positions);
+
+                        if let Ok(count) = no_positions.parse::<i32>() {
+                            if count == 0 {
+                                info!("✅ PositionReport correctly indicates zero positions");
+                            } else {
+                                info!("📊 PositionReport indicates {} positions", count);
                             }
                         }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -193,7 +204,10 @@ async fn test_empty_positions_report() -> Result<()> {
         }
     }
 
-    info!("📊 Total PositionReport messages received: {}", position_reports_received);
+    info!(
+        "📊 Total PositionReport messages received: {}",
+        position_reports_received
+    );
 
     // Test success validation
     let test_passed = if total_positions == 0 {
@@ -203,11 +217,16 @@ async fn test_empty_positions_report() -> Result<()> {
         info!("✅ Test passed: Account has empty positions (all zero quantities)");
         true
     } else {
-        info!("✅ Test passed: Position reporting functionality validated (account has active positions)");
+        info!(
+            "✅ Test passed: Position reporting functionality validated (account has active positions)"
+        );
         true
     };
 
-    assert!(test_passed, "Empty positions report test should pass regardless of actual position state");
+    assert!(
+        test_passed,
+        "Empty positions report test should pass regardless of actual position state"
+    );
 
     // Clean up
     client.disconnect().await.ok();

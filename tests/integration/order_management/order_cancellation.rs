@@ -13,7 +13,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -123,8 +123,14 @@ async fn test_order_cancellation_success() -> Result<()> {
         time_in_force: TimeInForce::GoodTillCancel,
         post_only: Some(true), // Ensure it won't fill immediately
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_CANCEL_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_CANCEL_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_CANCEL_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_CANCEL_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -135,8 +141,10 @@ async fn test_order_cancellation_success() -> Result<()> {
 
     // Send the order
     let order_id = client.send_order(order_request).await?;
-    info!("📤 Limit order sent for cancellation test: OrderID={}, Symbol={}, Price={}, Qty={}", 
-          order_id, symbol, price, quantity);
+    info!(
+        "📤 Limit order sent for cancellation test: OrderID={}, Symbol={}, Price={}, Qty={}",
+        order_id, symbol, price, quantity
+    );
 
     // Step 5: Wait for ExecutionReport confirming order is New
     info!("👁️ Waiting for ExecutionReport confirming order is New...");
@@ -148,17 +156,21 @@ async fn test_order_cancellation_success() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && ord_status == "0" { // New
-                                        info!("✅ Order confirmed as New, ready for cancellation");
-                                        order_new_confirmed = true;
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && ord_status == "0"
+                    {
+                        // New
+                        info!("✅ Order confirmed as New, ready for cancellation");
+                        order_new_confirmed = true;
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -172,12 +184,18 @@ async fn test_order_cancellation_success() -> Result<()> {
         }
     }
 
-    assert!(order_new_confirmed, "Expected ExecutionReport with New order status was not received");
+    assert!(
+        order_new_confirmed,
+        "Expected ExecutionReport with New order status was not received"
+    );
 
     // Step 6: Cancel the order
     info!("🚫 Sending order cancellation request...");
     client.cancel_order(order_id.clone()).await?;
-    info!("📤 Order cancellation request sent for OrderID: {}", order_id);
+    info!(
+        "📤 Order cancellation request sent for OrderID: {}",
+        order_id
+    );
 
     // Step 7: Wait for ExecutionReport confirming order is Canceled
     info!("👁️ Waiting for ExecutionReport confirming order is Canceled...");
@@ -188,28 +206,32 @@ async fn test_order_cancellation_success() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && ord_status == "4" { // Canceled
-                                        info!("✅ Order status confirmed as Canceled: {}", ord_status);
-                                        order_canceled_confirmed = true;
-                                        
-                                        // Additional validation for canceled order
-                                        if let Some(exec_type) = message.get_field(150) {
-                                            assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
-                                            info!("✅ ExecType confirmed as Canceled: {}", exec_type);
-                                        }
-                                        
-                                        if let Some(recv_symbol) = message.get_field(55) {
-                                            assert_eq!(recv_symbol, &symbol, "Symbol should match");
-                                            info!("✅ Symbol confirmed: {}", recv_symbol);
-                                        }
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && ord_status == "4"
+                    {
+                        // Canceled
+                        info!("✅ Order status confirmed as Canceled: {}", ord_status);
+                        order_canceled_confirmed = true;
+
+                        // Additional validation for canceled order
+                        if let Some(exec_type) = message.get_field(150) {
+                            assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
+                            info!("✅ ExecType confirmed as Canceled: {}", exec_type);
+                        }
+
+                        if let Some(recv_symbol) = message.get_field(55) {
+                            assert_eq!(recv_symbol, &symbol, "Symbol should match");
+                            info!("✅ Symbol confirmed: {}", recv_symbol);
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -223,7 +245,10 @@ async fn test_order_cancellation_success() -> Result<()> {
         }
     }
 
-    assert!(order_canceled_confirmed, "Expected ExecutionReport with Canceled order status was not received");
+    assert!(
+        order_canceled_confirmed,
+        "Expected ExecutionReport with Canceled order status was not received"
+    );
 
     // Clean up
     client.disconnect().await.ok();
@@ -293,11 +318,11 @@ async fn test_order_cancellation_unknown_order() -> Result<()> {
     // Step 4: Try to cancel a non-existent order
     info!("🚫 Attempting to cancel non-existent order...");
     let fake_order_id = format!("FAKE_ORDER_{}", chrono::Utc::now().timestamp_millis());
-    
+
     // This should either fail or we should receive an OrderCancelReject
     let cancel_result = client.cancel_order(fake_order_id.clone()).await;
     info!("📤 Cancel request sent for fake OrderID: {}", fake_order_id);
-    
+
     // Step 5: Wait for OrderCancelReject message
     info!("👁️ Waiting for OrderCancelReject message...");
     let mut cancel_reject_received = false;
@@ -308,21 +333,29 @@ async fn test_order_cancellation_unknown_order() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "9" { // OrderCancelReject
-                        info!("📨 Received OrderCancelReject: {:?}", message);
-                        cancel_reject_received = true;
-                        
-                        // Validate OrderCancelReject fields
-                        if let Some(cxl_rej_reason) = message.get_field(102) {
-                            info!("✅ CxlRejReason: {}", cxl_rej_reason);
-                            assert!(!cxl_rej_reason.is_empty(), "CxlRejReason should not be empty");
-                        }
-                        
-                        if let Some(text) = message.get_field(58) {
-                            info!("✅ Rejection text: {}", text);
-                            assert!(!text.is_empty(), "Text field should contain rejection reason");
-                        }
+                    && msg_type == "9"
+                {
+                    // OrderCancelReject
+                    info!("📨 Received OrderCancelReject: {:?}", message);
+                    cancel_reject_received = true;
+
+                    // Validate OrderCancelReject fields
+                    if let Some(cxl_rej_reason) = message.get_field(102) {
+                        info!("✅ CxlRejReason: {}", cxl_rej_reason);
+                        assert!(
+                            !cxl_rej_reason.is_empty(),
+                            "CxlRejReason should not be empty"
+                        );
                     }
+
+                    if let Some(text) = message.get_field(58) {
+                        info!("✅ Rejection text: {}", text);
+                        assert!(
+                            !text.is_empty(),
+                            "Text field should contain rejection reason"
+                        );
+                    }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -341,7 +374,10 @@ async fn test_order_cancellation_unknown_order() -> Result<()> {
     if !cancel_reject_received && cancel_result.is_err() {
         info!("✅ Cancel request properly rejected at client level");
     } else {
-        assert!(cancel_reject_received, "Expected OrderCancelReject message for unknown order was not received");
+        assert!(
+            cancel_reject_received,
+            "Expected OrderCancelReject message for unknown order was not received"
+        );
     }
 
     // Clean up

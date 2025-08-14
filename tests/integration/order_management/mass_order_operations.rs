@@ -13,7 +13,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -118,7 +118,7 @@ async fn test_mass_order_operations() -> Result<()> {
 
     for i in 0..num_orders {
         let price = base_price + (i as f64 * 100.0); // Different prices to avoid conflicts
-        
+
         let order_request = NewOrderRequest {
             instrument_name: symbol.clone(),
             side: OrderSide::Buy,
@@ -128,8 +128,16 @@ async fn test_mass_order_operations() -> Result<()> {
             time_in_force: TimeInForce::GoodTillCancel,
             post_only: Some(true), // Ensure they won't fill immediately
             reduce_only: Some(false),
-            client_order_id: Some(format!("TEST_MASS_{}_{}", i, chrono::Utc::now().timestamp_millis())),
-            label: Some(format!("TEST_MASS_{}_{}", i, chrono::Utc::now().timestamp_millis())),
+            client_order_id: Some(format!(
+                "TEST_MASS_{}_{}",
+                i,
+                chrono::Utc::now().timestamp_millis()
+            )),
+            label: Some(format!(
+                "TEST_MASS_{}_{}",
+                i,
+                chrono::Utc::now().timestamp_millis()
+            )),
             stop_price: None,
             trigger: None,
             advanced: None,
@@ -141,7 +149,12 @@ async fn test_mass_order_operations() -> Result<()> {
         // Send the order
         let order_id = client.send_order(order_request).await?;
         order_ids.push(order_id.clone());
-        info!("📤 Order {} placed: OrderID={}, Price={}", i + 1, order_id, price);
+        info!(
+            "📤 Order {} placed: OrderID={}, Price={}",
+            i + 1,
+            order_id,
+            price
+        );
 
         // Small delay between orders
         sleep(Duration::from_millis(100)).await;
@@ -157,17 +170,22 @@ async fn test_mass_order_operations() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && order_ids.contains(recv_cl_ord_id) && !confirmed_orders.contains(recv_cl_ord_id)
-                                && let Some(ord_status) = message.get_field(39)
-                                    && ord_status == "0" { // New
-                                        confirmed_orders.insert(recv_cl_ord_id.clone());
-                                        info!("✅ Order {} confirmed as New", recv_cl_ord_id);
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && order_ids.contains(recv_cl_ord_id)
+                        && !confirmed_orders.contains(recv_cl_ord_id)
+                        && let Some(ord_status) = message.get_field(39)
+                        && ord_status == "0"
+                    {
+                        // New
+                        confirmed_orders.insert(recv_cl_ord_id.clone());
+                        info!("✅ Order {} confirmed as New", recv_cl_ord_id);
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -181,20 +199,24 @@ async fn test_mass_order_operations() -> Result<()> {
         }
     }
 
-    info!("📊 Confirmed {} out of {} orders as New", confirmed_orders.len(), order_ids.len());
-    
+    info!(
+        "📊 Confirmed {} out of {} orders as New",
+        confirmed_orders.len(),
+        order_ids.len()
+    );
+
     // Note: For testing purposes, we'll proceed with mass cancel even if not all orders are confirmed
     // In a real scenario, you might want to assert that all orders are confirmed
 
     // Step 6: Send OrderMassCancelRequest for the instrument
     info!("🚫 Sending mass cancel request for instrument: {}", symbol);
-    
+
     // Note: The client doesn't currently have a direct mass cancel method
     // For this test, we'll simulate the behavior by canceling orders individually
     // In a real implementation, you would have a dedicated mass cancel method
-    
+
     let mut canceled_orders = std::collections::HashSet::new();
-    
+
     // Individual cancel requests (simulating mass cancel behavior)
     for order_id in &order_ids {
         if let Ok(()) = client.cancel_order(order_id.clone()).await {
@@ -211,36 +233,41 @@ async fn test_mass_order_operations() -> Result<()> {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35) {
                     match msg_type.as_str() {
-                        "8" => { // ExecutionReport
+                        "8" => {
+                            // ExecutionReport
                             debug!("📊 Received ExecutionReport: {:?}", message);
-                            
+
                             if let Some(recv_cl_ord_id) = message.get_field(11)
                                 && order_ids.contains(recv_cl_ord_id)
-                                    && let Some(ord_status) = message.get_field(39)
-                                        && ord_status == "4" { // Canceled
-                                            canceled_orders.insert(recv_cl_ord_id.clone());
-                                            info!("✅ Order {} confirmed as Canceled", recv_cl_ord_id);
-                                            
-                                            // Validate cancellation details
-                                            if let Some(exec_type) = message.get_field(150) {
-                                                assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
-                                            }
-                                        }
-                        }
-                        "9" => { // OrderCancelReject
-                            info!("📨 Received OrderCancelReject: {:?}", message);
-                            
-                            if let Some(recv_cl_ord_id) = message.get_field(11)
-                                && order_ids.contains(recv_cl_ord_id) {
-                                    info!("⚠️  Cancel rejected for order: {}", recv_cl_ord_id);
-                                    
-                                    if let Some(cxl_rej_reason) = message.get_field(102) {
-                                        info!("CxlRejReason: {}", cxl_rej_reason);
-                                    }
-                                    if let Some(text) = message.get_field(58) {
-                                        info!("Rejection text: {}", text);
-                                    }
+                                && let Some(ord_status) = message.get_field(39)
+                                && ord_status == "4"
+                            {
+                                // Canceled
+                                canceled_orders.insert(recv_cl_ord_id.clone());
+                                info!("✅ Order {} confirmed as Canceled", recv_cl_ord_id);
+
+                                // Validate cancellation details
+                                if let Some(exec_type) = message.get_field(150) {
+                                    assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
                                 }
+                            }
+                        }
+                        "9" => {
+                            // OrderCancelReject
+                            info!("📨 Received OrderCancelReject: {:?}", message);
+
+                            if let Some(recv_cl_ord_id) = message.get_field(11)
+                                && order_ids.contains(recv_cl_ord_id)
+                            {
+                                info!("⚠️  Cancel rejected for order: {}", recv_cl_ord_id);
+
+                                if let Some(cxl_rej_reason) = message.get_field(102) {
+                                    info!("CxlRejReason: {}", cxl_rej_reason);
+                                }
+                                if let Some(text) = message.get_field(58) {
+                                    info!("Rejection text: {}", text);
+                                }
+                            }
                         }
                         _ => {}
                     }
@@ -258,21 +285,27 @@ async fn test_mass_order_operations() -> Result<()> {
         }
     }
 
-    info!("📊 Canceled {} out of {} orders", canceled_orders.len(), order_ids.len());
+    info!(
+        "📊 Canceled {} out of {} orders",
+        canceled_orders.len(),
+        order_ids.len()
+    );
 
     // Step 8: Test mass status request behavior (simulated)
     info!("📋 Simulating mass status request validation...");
-    
+
     // In a real implementation, you would send an OrderMassStatusRequest (AF)
     // and receive ExecutionReports for all orders matching the criteria
     // For this test, we'll validate that we can track the status of our orders
-    
+
     let mut final_status_count = std::collections::HashMap::new();
-    
+
     // Count the final statuses we observed
     for order_id in &order_ids {
         if canceled_orders.contains(order_id) {
-            *final_status_count.entry("Canceled".to_string()).or_insert(0) += 1;
+            *final_status_count
+                .entry("Canceled".to_string())
+                .or_insert(0) += 1;
         } else if confirmed_orders.contains(order_id) {
             *final_status_count.entry("New".to_string()).or_insert(0) += 1;
         } else {
@@ -292,8 +325,11 @@ async fn test_mass_order_operations() -> Result<()> {
         "Expected to process at least half of the orders in mass operations"
     );
 
-    info!("✅ Mass order operations validated - processed {}/{} orders", 
-          total_processed, order_ids.len());
+    info!(
+        "✅ Mass order operations validated - processed {}/{} orders",
+        total_processed,
+        order_ids.len()
+    );
 
     // Clean up
     client.disconnect().await.ok();
@@ -303,7 +339,7 @@ async fn test_mass_order_operations() -> Result<()> {
 }
 
 #[tokio::test]
-#[serial] 
+#[serial]
 async fn test_mass_cancel_empty_instrument() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
@@ -362,13 +398,13 @@ async fn test_mass_cancel_empty_instrument() -> Result<()> {
 
     // Step 4: Test mass cancel on instrument with no open orders
     info!("🚫 Testing mass cancel behavior with no open orders...");
-    
+
     // Note: Since we don't have open orders, any mass cancel request should
     // either return immediately or indicate no orders were canceled
     // This validates the edge case handling of mass operations
-    
+
     info!("✅ Mass cancel with empty instrument - edge case behavior validated");
-    
+
     // For this test, we mainly validate that the system handles the case gracefully
     // without throwing errors when there are no orders to cancel
 

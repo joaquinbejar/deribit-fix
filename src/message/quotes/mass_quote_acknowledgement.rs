@@ -411,7 +411,7 @@ impl MassQuoteAcknowledgement {
         if self.use_standard_repeating_groups {
             // Standard FIX repeating groups implementation
             builder = builder.field(295, self.quote_entry_acks.len().to_string()); // NoQuoteEntries
-            
+
             for entry_ack in &self.quote_entry_acks {
                 builder = builder
                     .field(299, entry_ack.quote_entry_id.clone()) // QuoteEntryID

@@ -12,7 +12,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -121,8 +121,14 @@ async fn test_trade_capture_report() -> Result<()> {
         time_in_force: TimeInForce::ImmediateOrCancel,
         post_only: Some(false),
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_TRADE_CAPTURE_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_TRADE_CAPTURE_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_TRADE_CAPTURE_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_TRADE_CAPTURE_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -133,8 +139,10 @@ async fn test_trade_capture_report() -> Result<()> {
 
     // Send the order to generate trade data
     let order_id = client.send_order(order_request).await?;
-    info!("📤 Market order sent: OrderID={}, Symbol={}, Qty={}", 
-          order_id, symbol, quantity);
+    info!(
+        "📤 Market order sent: OrderID={}, Symbol={}, Qty={}",
+        order_id, symbol, quantity
+    );
 
     // Step 5: Wait briefly for trade execution
     info!("👁️ Waiting for trade execution...");
@@ -146,17 +154,21 @@ async fn test_trade_capture_report() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && (ord_status == "2" || ord_status == "1") { // Filled or PartiallyFilled
-                                        info!("✅ Trade executed successfully: status {}", ord_status);
-                                        trade_executed = true;
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && (ord_status == "2" || ord_status == "1")
+                    {
+                        // Filled or PartiallyFilled
+                        info!("✅ Trade executed successfully: status {}", ord_status);
+                        trade_executed = true;
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -174,11 +186,11 @@ async fn test_trade_capture_report() -> Result<()> {
     // Note: The current client doesn't have a direct method for TradeCaptureReportRequest
     // In a real implementation, there would be a method like client.request_trade_capture_report()
     // For this test, we'll simulate the behavior by monitoring for trade-related messages
-    
+
     info!("📊 Monitoring for trade capture reports and trade-related messages...");
     let monitor_duration = Duration::from_secs(30);
     let start_time = std::time::Instant::now();
-    
+
     let mut trade_capture_reports = 0;
     let mut execution_reports_received = 0;
     let mut trade_details = Vec::new();
@@ -188,79 +200,89 @@ async fn test_trade_capture_report() -> Result<()> {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35) {
                     match msg_type.as_str() {
-                        "AE" => { // TradeCaptureReport
+                        "AE" => {
+                            // TradeCaptureReport
                             trade_capture_reports += 1;
-                            info!("📨 Received TradeCaptureReport #{}: {:?}", trade_capture_reports, message);
-                            
+                            info!(
+                                "📨 Received TradeCaptureReport #{}: {:?}",
+                                trade_capture_reports, message
+                            );
+
                             // Validate TradeCaptureReport structure
                             if let Some(trade_report_id) = message.get_field(571) {
                                 info!("✅ TradeReportID: {}", trade_report_id);
                             }
-                            
+
                             if let Some(trade_id) = message.get_field(1003) {
                                 info!("✅ TradeID: {}", trade_id);
                             }
-                            
+
                             if let Some(exec_id) = message.get_field(17) {
                                 info!("✅ ExecID: {}", exec_id);
                             }
-                            
+
                             if let Some(symbol_field) = message.get_field(55) {
                                 info!("✅ Symbol: {}", symbol_field);
                             }
-                            
+
                             if let Some(side) = message.get_field(54) {
                                 info!("✅ Side: {}", side);
                             }
-                            
+
                             if let Some(qty) = message.get_field(32) {
                                 info!("✅ Quantity: {}", qty);
                             }
-                            
+
                             if let Some(price) = message.get_field(31) {
                                 info!("✅ Price: {}", price);
                             }
-                            
+
                             if let Some(trade_date) = message.get_field(75) {
                                 info!("✅ TradeDate: {}", trade_date);
                             }
-                            
+
                             if let Some(transact_time) = message.get_field(60) {
                                 info!("✅ TransactTime: {}", transact_time);
                             }
                         }
-                        "8" => { // ExecutionReport (also contains trade info)
+                        "8" => {
+                            // ExecutionReport (also contains trade info)
                             execution_reports_received += 1;
-                            debug!("📊 Received ExecutionReport #{}: {:?}", execution_reports_received, message);
-                            
+                            debug!(
+                                "📊 Received ExecutionReport #{}: {:?}",
+                                execution_reports_received, message
+                            );
+
                             // Extract trade details from execution reports
                             if let Some(ord_status) = message.get_field(39)
-                                && (ord_status == "2" || ord_status == "1") { // Filled or PartiallyFilled
-                                    let mut trade_detail = std::collections::HashMap::new();
-                                    
-                                    if let Some(symbol_field) = message.get_field(55) {
-                                        trade_detail.insert("symbol".to_string(), symbol_field.clone());
-                                    }
-                                    
-                                    if let Some(side) = message.get_field(54) {
-                                        trade_detail.insert("side".to_string(), side.clone());
-                                    }
-                                    
-                                    if let Some(qty) = message.get_field(32) {
-                                        trade_detail.insert("quantity".to_string(), qty.clone());
-                                    }
-                                    
-                                    if let Some(price) = message.get_field(31) {
-                                        trade_detail.insert("price".to_string(), price.clone());
-                                    }
-                                    
-                                    if let Some(exec_id) = message.get_field(17) {
-                                        trade_detail.insert("exec_id".to_string(), exec_id.clone());
-                                    }
-                                    
-                                    trade_details.push(trade_detail);
-                                    info!("📊 Extracted trade details from ExecutionReport");
+                                && (ord_status == "2" || ord_status == "1")
+                            {
+                                // Filled or PartiallyFilled
+                                let mut trade_detail = std::collections::HashMap::new();
+
+                                if let Some(symbol_field) = message.get_field(55) {
+                                    trade_detail.insert("symbol".to_string(), symbol_field.clone());
                                 }
+
+                                if let Some(side) = message.get_field(54) {
+                                    trade_detail.insert("side".to_string(), side.clone());
+                                }
+
+                                if let Some(qty) = message.get_field(32) {
+                                    trade_detail.insert("quantity".to_string(), qty.clone());
+                                }
+
+                                if let Some(price) = message.get_field(31) {
+                                    trade_detail.insert("price".to_string(), price.clone());
+                                }
+
+                                if let Some(exec_id) = message.get_field(17) {
+                                    trade_detail.insert("exec_id".to_string(), exec_id.clone());
+                                }
+
+                                trade_details.push(trade_detail);
+                                info!("📊 Extracted trade details from ExecutionReport");
+                            }
                         }
                         _ => {
                             debug!("📨 Received other message type: {}", msg_type);
@@ -282,49 +304,61 @@ async fn test_trade_capture_report() -> Result<()> {
 
     info!("📊 Monitoring completed:");
     info!("  - TradeCaptureReport messages: {}", trade_capture_reports);
-    info!("  - ExecutionReport messages: {}", execution_reports_received);
+    info!(
+        "  - ExecutionReport messages: {}",
+        execution_reports_received
+    );
     info!("  - Trade details extracted: {}", trade_details.len());
 
     // Step 7: Validate trade capture functionality
     if trade_capture_reports > 0 {
         info!("✅ Trade capture reports received and validated");
-        
+
         // Additional validation could include:
         // - Verifying trade details match expected values
         // - Checking timestamps are reasonable
         // - Validating trade IDs are unique
-        
-        assert!(trade_capture_reports > 0, "Should have received at least one TradeCaptureReport");
-        
+
+        assert!(
+            trade_capture_reports > 0,
+            "Should have received at least one TradeCaptureReport"
+        );
     } else if !trade_details.is_empty() {
         info!("✅ Trade information captured through ExecutionReports");
-        
+
         // Validate trade details structure
         for (i, trade) in trade_details.iter().enumerate() {
             info!("Trade #{}: {:?}", i + 1, trade);
-            
+
             // Basic validation
             assert!(trade.contains_key("symbol"), "Trade should have symbol");
             assert!(trade.contains_key("side"), "Trade should have side");
-            
+
             if let Some(symbol_val) = trade.get("symbol") {
                 assert!(!symbol_val.is_empty(), "Symbol should not be empty");
             }
-            
+
             if let Some(side_val) = trade.get("side") {
-                assert!(side_val == "1" || side_val == "2", "Side should be Buy (1) or Sell (2)");
+                assert!(
+                    side_val == "1" || side_val == "2",
+                    "Side should be Buy (1) or Sell (2)"
+                );
             }
         }
-        
     } else if trade_executed {
-        info!("ℹ️  Trade executed but no detailed trade capture data received - this may be normal depending on server configuration");
+        info!(
+            "ℹ️  Trade executed but no detailed trade capture data received - this may be normal depending on server configuration"
+        );
     } else {
-        info!("ℹ️  No trades executed during test - trade capture functionality structure validated");
+        info!(
+            "ℹ️  No trades executed during test - trade capture functionality structure validated"
+        );
     }
 
     // Test success validation
-    let test_passed = trade_capture_reports > 0 || !trade_details.is_empty() || execution_reports_received > 0;
-    
+    let test_passed =
+        trade_capture_reports > 0 || !trade_details.is_empty() || execution_reports_received > 0;
+
     if test_passed {
         info!("✅ Test passed: Trade capture functionality validated");
     } else {

@@ -111,9 +111,9 @@ async fn test_security_status() -> Result<()> {
     // In a real implementation, there would be a method like client.request_security_status()
     // For this test, we'll simulate the behavior by monitoring for security status messages
     // and using market data subscription as a way to interact with the specific instrument
-    
+
     info!("📊 Requesting security status (simulating via market data interaction)...");
-    
+
     // Subscribe to market data for a known instrument to trigger status-related messages
     let test_symbol = "BTC-PERPETUAL".to_string();
     client.subscribe_market_data(test_symbol.clone()).await?;
@@ -123,7 +123,7 @@ async fn test_security_status() -> Result<()> {
     info!("👁️ Monitoring for SecurityStatus and status-related messages...");
     let monitor_duration = Duration::from_secs(45);
     let start_time = std::time::Instant::now();
-    
+
     let mut security_status_received = 0;
     let mut trading_sessions_found = Vec::new();
     let mut security_statuses_found = Vec::new();
@@ -134,36 +134,46 @@ async fn test_security_status() -> Result<()> {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35) {
                     match msg_type.as_str() {
-                        "f" => { // SecurityStatus
+                        "f" => {
+                            // SecurityStatus
                             security_status_received += 1;
-                            info!("📨 Received SecurityStatus #{}: {:?}", security_status_received, message);
-                            
+                            info!(
+                                "📨 Received SecurityStatus #{}: {:?}",
+                                security_status_received, message
+                            );
+
                             // Validate SecurityStatus structure
                             if let Some(security_status_req_id) = message.get_field(324) {
                                 info!("✅ SecurityStatusReqID: {}", security_status_req_id);
                             }
-                            
+
                             if let Some(symbol) = message.get_field(55) {
                                 info!("✅ Symbol: {}", symbol);
-                                assert_eq!(symbol, &test_symbol, "Symbol should match requested instrument");
+                                assert_eq!(
+                                    symbol, &test_symbol,
+                                    "Symbol should match requested instrument"
+                                );
                             }
-                            
+
                             // Validate TradingSessionID (required field)
                             if let Some(trading_session_id) = message.get_field(336) {
                                 info!("✅ TradingSessionID: {}", trading_session_id);
                                 trading_sessions_found.push(trading_session_id.clone());
-                                
+
                                 // Validate trading session ID format
-                                assert!(!trading_session_id.is_empty(), "TradingSessionID should not be empty");
+                                assert!(
+                                    !trading_session_id.is_empty(),
+                                    "TradingSessionID should not be empty"
+                                );
                             } else {
                                 warn!("❌ TradingSessionID field missing from SecurityStatus");
                             }
-                            
+
                             // Validate SecurityTradingStatus (required field)
                             if let Some(security_trading_status) = message.get_field(326) {
                                 info!("✅ SecurityTradingStatus: {}", security_trading_status);
                                 security_statuses_found.push(security_trading_status.clone());
-                                
+
                                 // Validate security trading status values
                                 match security_trading_status.as_str() {
                                     "1" => info!("  Status: Opening delay"),
@@ -182,62 +192,81 @@ async fn test_security_status() -> Result<()> {
                                     "17" => info!("  Status: New price indication"),
                                     "18" => info!("  Status: Trade dissemination time"),
                                     "20" => info!("  Status: Ready to trade (start of session)"),
-                                    "21" => info!("  Status: Not available for trading (end of session)"),
+                                    "21" => info!(
+                                        "  Status: Not available for trading (end of session)"
+                                    ),
                                     "22" => info!("  Status: Not traded on this market"),
                                     "23" => info!("  Status: Unknown or Invalid"),
-                                    _ => info!("  Status: Other/Custom ({})", security_trading_status),
+                                    _ => info!(
+                                        "  Status: Other/Custom ({})",
+                                        security_trading_status
+                                    ),
                                 }
-                                
-                                assert!(!security_trading_status.is_empty(), "SecurityTradingStatus should not be empty");
+
+                                assert!(
+                                    !security_trading_status.is_empty(),
+                                    "SecurityTradingStatus should not be empty"
+                                );
                             } else {
                                 warn!("❌ SecurityTradingStatus field missing from SecurityStatus");
                             }
-                            
+
                             // Additional optional fields
                             if let Some(trading_session_sub_id) = message.get_field(625) {
                                 info!("✅ TradingSessionSubID: {}", trading_session_sub_id);
                             }
-                            
+
                             if let Some(security_trading_event) = message.get_field(1174) {
                                 info!("✅ SecurityTradingEvent: {}", security_trading_event);
                             }
-                            
+
                             if let Some(halt_reason) = message.get_field(327) {
                                 info!("✅ HaltReason: {}", halt_reason);
                             }
-                            
+
                             if let Some(in_view_of_common) = message.get_field(328) {
                                 info!("✅ InViewOfCommon: {}", in_view_of_common);
                             }
-                            
+
                             if let Some(due_to_related) = message.get_field(329) {
                                 info!("✅ DueToRelated: {}", due_to_related);
                             }
                         }
-                        "W" => { // MarketDataSnapshotFullRefresh (may contain status info)
+                        "W" => {
+                            // MarketDataSnapshotFullRefresh (may contain status info)
                             market_data_messages += 1;
-                            debug!("📊 Received MarketDataSnapshot #{}: {:?}", market_data_messages, message);
-                            
+                            debug!(
+                                "📊 Received MarketDataSnapshot #{}: {:?}",
+                                market_data_messages, message
+                            );
+
                             // Extract status-related information from market data
                             if let Some(symbol) = message.get_field(55)
-                                && symbol == &test_symbol {
-                                    info!("📊 Market data received for target instrument: {}", symbol);
-                                    
-                                    // Check for trading session information in market data
-                                    if let Some(trading_session_id) = message.get_field(336)
-                                        && !trading_sessions_found.contains(trading_session_id) {
-                                            trading_sessions_found.push(trading_session_id.clone());
-                                            info!("📊 Found TradingSessionID from market data: {}", trading_session_id);
-                                        }
+                                && symbol == &test_symbol
+                            {
+                                info!("📊 Market data received for target instrument: {}", symbol);
+
+                                // Check for trading session information in market data
+                                if let Some(trading_session_id) = message.get_field(336)
+                                    && !trading_sessions_found.contains(trading_session_id)
+                                {
+                                    trading_sessions_found.push(trading_session_id.clone());
+                                    info!(
+                                        "📊 Found TradingSessionID from market data: {}",
+                                        trading_session_id
+                                    );
                                 }
+                            }
                         }
-                        "X" => { // MarketDataIncrementalRefresh (may contain status updates)
+                        "X" => {
+                            // MarketDataIncrementalRefresh (may contain status updates)
                             debug!("📊 Received MarketDataIncrementalRefresh");
-                            
+
                             if let Some(symbol) = message.get_field(55)
-                                && symbol == &test_symbol {
-                                    debug!("📊 Incremental data for target instrument: {}", symbol);
-                                }
+                                && symbol == &test_symbol
+                            {
+                                debug!("📊 Incremental data for target instrument: {}", symbol);
+                            }
                         }
                         _ => {
                             debug!("📨 Received other message type: {}", msg_type);
@@ -260,45 +289,72 @@ async fn test_security_status() -> Result<()> {
     info!("📊 Monitoring completed:");
     info!("  - SecurityStatus messages: {}", security_status_received);
     info!("  - Market data messages: {}", market_data_messages);
-    info!("  - Trading sessions found: {}", trading_sessions_found.len());
-    info!("  - Security statuses found: {}", security_statuses_found.len());
+    info!(
+        "  - Trading sessions found: {}",
+        trading_sessions_found.len()
+    );
+    info!(
+        "  - Security statuses found: {}",
+        security_statuses_found.len()
+    );
 
     // Step 6: Validate security status functionality
     if security_status_received > 0 {
         info!("✅ SecurityStatus messages received and validated");
-        
+
         // Validate required fields were present
-        assert!(security_status_received > 0, "Should have received at least one SecurityStatus message");
-        
+        assert!(
+            security_status_received > 0,
+            "Should have received at least one SecurityStatus message"
+        );
+
         if !trading_sessions_found.is_empty() {
-            info!("✅ TradingSessionID fields validated: {:?}", trading_sessions_found);
+            info!(
+                "✅ TradingSessionID fields validated: {:?}",
+                trading_sessions_found
+            );
             for session_id in &trading_sessions_found {
-                assert!(!session_id.is_empty(), "TradingSessionID should not be empty");
+                assert!(
+                    !session_id.is_empty(),
+                    "TradingSessionID should not be empty"
+                );
             }
         }
-        
+
         if !security_statuses_found.is_empty() {
-            info!("✅ SecurityTradingStatus fields validated: {:?}", security_statuses_found);
+            info!(
+                "✅ SecurityTradingStatus fields validated: {:?}",
+                security_statuses_found
+            );
             for status in &security_statuses_found {
-                assert!(!status.is_empty(), "SecurityTradingStatus should not be empty");
+                assert!(
+                    !status.is_empty(),
+                    "SecurityTradingStatus should not be empty"
+                );
                 // Additional validation: status should be numeric or valid enum value
                 if let Ok(status_num) = status.parse::<i32>() {
-                    assert!((1..=25).contains(&status_num), "SecurityTradingStatus should be valid enum value");
+                    assert!(
+                        (1..=25).contains(&status_num),
+                        "SecurityTradingStatus should be valid enum value"
+                    );
                 }
             }
         }
-        
     } else if market_data_messages > 0 {
         info!("✅ Security status functionality validated through market data interaction");
-        
+
         // Even without direct SecurityStatus messages, receiving market data indicates
         // that the instrument is accessible and likely has status information available
         if !trading_sessions_found.is_empty() {
-            info!("✅ Trading session information found in market data: {:?}", trading_sessions_found);
+            info!(
+                "✅ Trading session information found in market data: {:?}",
+                trading_sessions_found
+            );
         }
-        
     } else {
-        warn!("⚠️  No security status or market data received - this may indicate server configuration issues");
+        warn!(
+            "⚠️  No security status or market data received - this may indicate server configuration issues"
+        );
     }
 
     // Additional validation: Check if we can infer instrument status
@@ -308,29 +364,42 @@ async fn test_security_status() -> Result<()> {
     }
 
     // Test success validation
-    let test_passed = security_status_received > 0 || 
-                     market_data_messages > 0 ||
-                     !trading_sessions_found.is_empty() ||
-                     !security_statuses_found.is_empty();
-    
+    let test_passed = security_status_received > 0
+        || market_data_messages > 0
+        || !trading_sessions_found.is_empty()
+        || !security_statuses_found.is_empty();
+
     if test_passed {
         info!("✅ Test passed: Security status functionality validated");
-        
+
         if security_status_received > 0 {
-            info!("  - Direct SecurityStatus messages: {}", security_status_received);
+            info!(
+                "  - Direct SecurityStatus messages: {}",
+                security_status_received
+            );
         }
         if market_data_messages > 0 {
-            info!("  - Market data responses (indicating active instrument): {}", market_data_messages);
+            info!(
+                "  - Market data responses (indicating active instrument): {}",
+                market_data_messages
+            );
         }
         if !trading_sessions_found.is_empty() {
-            info!("  - Trading sessions identified: {}", trading_sessions_found.len());
+            info!(
+                "  - Trading sessions identified: {}",
+                trading_sessions_found.len()
+            );
         }
         if !security_statuses_found.is_empty() {
-            info!("  - Security statuses captured: {}", security_statuses_found.len());
+            info!(
+                "  - Security statuses captured: {}",
+                security_statuses_found.len()
+            );
         }
-        
     } else {
-        info!("✅ Test passed: Security status request structure validated (no active data received)");
+        info!(
+            "✅ Test passed: Security status request structure validated (no active data received)"
+        );
     }
 
     // Clean up

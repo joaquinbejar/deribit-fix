@@ -263,14 +263,14 @@ async fn test_market_data_streaming_subscription() -> Result<()> {
     info!("✅ Disconnected successfully");
 
     info!("🎉 Market data streaming test completed!");
-    
+
     // Assert that the streaming test completed successfully
     // This validates that the streaming subscription mechanism is working
     assert!(
         snapshot_received || incremental_messages_received >= 0,
         "Market data streaming test should complete successfully with or without received messages"
     );
-    
+
     Ok(())
 }
 

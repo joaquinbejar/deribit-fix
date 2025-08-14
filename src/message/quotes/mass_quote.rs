@@ -384,7 +384,7 @@ impl MassQuote {
         if self.use_standard_repeating_groups {
             // Standard FIX repeating groups implementation
             builder = builder.field(295, self.quote_entries.len().to_string()); // NoQuoteEntries (using 295 to avoid conflict with 296)
-            
+
             for entry in &self.quote_entries {
                 builder = builder
                     .field(299, entry.quote_entry_id.clone()) // QuoteEntryID

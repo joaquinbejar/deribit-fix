@@ -19,7 +19,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -117,11 +117,11 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     // Step 3: Request security list to find tradable instruments
     info!("📊 Step 2: Finding tradable instruments...");
     let target_symbol = "BTC-PERPETUAL".to_string(); // Known tradable instrument
-    
+
     // Subscribe to market data as a way to validate instrument availability
     client.subscribe_market_data(target_symbol.clone()).await?;
     info!("📤 Market data subscription sent for: {}", target_symbol);
-    
+
     // Monitor for market data to confirm instrument is available
     let mut instrument_confirmed = false;
     let mut market_price: Option<f64> = None;
@@ -132,25 +132,29 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "W" { // MarketDataSnapshotFullRefresh
-                        if let Some(symbol) = message.get_field(55)
-                            && symbol == &target_symbol {
-                                info!("✅ Step 2 completed: Found tradable instrument: {}", symbol);
-                                instrument_confirmed = true;
-                                
-                                // Extract market price for limit order placement
-                                if let Some(entries) = message.get_field(268) {
-                                    debug!("Market data entries: {}", entries);
-                                }
-                                
-                                // Try to extract a reasonable price level
-                                if let Some(price_field) = message.get_field(270)
-                                    && let Ok(price) = price_field.parse::<f64>() {
-                                        market_price = Some(price);
-                                        info!("📊 Market price reference: {}", price);
-                                    }
-                            }
+                    && msg_type == "W"
+                {
+                    // MarketDataSnapshotFullRefresh
+                    if let Some(symbol) = message.get_field(55)
+                        && symbol == &target_symbol
+                    {
+                        info!("✅ Step 2 completed: Found tradable instrument: {}", symbol);
+                        instrument_confirmed = true;
+
+                        // Extract market price for limit order placement
+                        if let Some(entries) = message.get_field(268) {
+                            debug!("Market data entries: {}", entries);
+                        }
+
+                        // Try to extract a reasonable price level
+                        if let Some(price_field) = message.get_field(270)
+                            && let Ok(price) = price_field.parse::<f64>()
+                        {
+                            market_price = Some(price);
+                            info!("📊 Market price reference: {}", price);
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -168,11 +172,14 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         info!("✅ Step 2 completed: Using default instrument (market data validation optional)");
     }
 
-    info!("📊 Step 3: Market data subscription active for: {}", target_symbol);
+    info!(
+        "📊 Step 3: Market data subscription active for: {}",
+        target_symbol
+    );
 
     // Step 4: Place a limit order below market price
     info!("📤 Step 4: Placing limit order below market price...");
-    
+
     let limit_price = market_price.map(|p| p * 0.8).unwrap_or(40000.0); // 20% below market or default
     let quantity = 0.001; // Small quantity for testing
 
@@ -185,8 +192,14 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         time_in_force: TimeInForce::GoodTillCancel,
         post_only: Some(true), // Ensure it won't fill immediately
         reduce_only: Some(false),
-        client_order_id: Some(format!("LIMIT_ORDER_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("LIMIT_ORDER_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "LIMIT_ORDER_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "LIMIT_ORDER_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -196,8 +209,10 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     };
 
     let limit_order_id = client.send_order(limit_order_request).await?;
-    info!("📤 Limit order sent: OrderID={}, Price={}, Qty={}", 
-          limit_order_id, limit_price, quantity);
+    info!(
+        "📤 Limit order sent: OrderID={}, Price={}, Qty={}",
+        limit_order_id, limit_price, quantity
+    );
 
     // Wait for order confirmation
     let mut limit_order_confirmed = false;
@@ -208,15 +223,19 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &limit_order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && ord_status == "0" { // New
-                                        info!("✅ Step 4 completed: Limit order confirmed as New");
-                                        limit_order_confirmed = true;
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &limit_order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && ord_status == "0"
+                    {
+                        // New
+                        info!("✅ Step 4 completed: Limit order confirmed as New");
+                        limit_order_confirmed = true;
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -248,15 +267,19 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &limit_order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && ord_status == "4" { // Canceled
-                                        info!("✅ Step 6 completed: Order cancel confirmed");
-                                        cancel_confirmed = true;
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &limit_order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && ord_status == "4"
+                    {
+                        // Canceled
+                        info!("✅ Step 6 completed: Order cancel confirmed");
+                        cancel_confirmed = true;
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -276,7 +299,7 @@ async fn test_full_trade_lifecycle() -> Result<()> {
 
     // Step 7: Place a market order
     info!("📤 Step 7: Placing market order...");
-    
+
     let market_order_request = NewOrderRequest {
         instrument_name: target_symbol.clone(),
         side: OrderSide::Buy,
@@ -286,8 +309,14 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         time_in_force: TimeInForce::ImmediateOrCancel,
         post_only: Some(false),
         reduce_only: Some(false),
-        client_order_id: Some(format!("MARKET_ORDER_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("MARKET_ORDER_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "MARKET_ORDER_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "MARKET_ORDER_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -297,7 +326,10 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     };
 
     let market_order_id = client.send_order(market_order_request).await?;
-    info!("📤 Market order sent: OrderID={}, Qty={}", market_order_id, quantity);
+    info!(
+        "📤 Market order sent: OrderID={}, Qty={}",
+        market_order_id, quantity
+    );
 
     // Step 8: Wait for fill confirmation
     info!("👁️ Step 8: Waiting for fill confirmation...");
@@ -309,26 +341,31 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &market_order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && (ord_status == "2" || ord_status == "1") { // Filled or PartiallyFilled
-                                        info!("✅ Step 8 completed: Market order filled");
-                                        fill_confirmed = true;
-                                        
-                                        // Extract fill details
-                                        if let Some(last_px) = message.get_field(31)
-                                            && let Ok(price) = last_px.parse::<f64>() {
-                                                fill_price = Some(price);
-                                                info!("📊 Fill price: {}", price);
-                                            }
-                                        
-                                        if let Some(last_qty) = message.get_field(32) {
-                                            info!("📊 Fill quantity: {}", last_qty);
-                                        }
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &market_order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && (ord_status == "2" || ord_status == "1")
+                    {
+                        // Filled or PartiallyFilled
+                        info!("✅ Step 8 completed: Market order filled");
+                        fill_confirmed = true;
+
+                        // Extract fill details
+                        if let Some(last_px) = message.get_field(31)
+                            && let Ok(price) = last_px.parse::<f64>()
+                        {
+                            fill_price = Some(price);
+                            info!("📊 Fill price: {}", price);
+                        }
+
+                        if let Some(last_qty) = message.get_field(32) {
+                            info!("📊 Fill quantity: {}", last_qty);
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -352,34 +389,45 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     info!("📤 Position request completed successfully");
 
     // Verify position for our instrument
-    let target_position = positions
-        .iter()
-        .find(|pos| pos.symbol == target_symbol);
+    let target_position = positions.iter().find(|pos| pos.symbol == target_symbol);
 
     if let Some(position) = target_position {
-        info!("✅ Step 9 completed: Position found for {}: quantity = {}", 
-              position.symbol, position.quantity);
-        
+        info!(
+            "✅ Step 9 completed: Position found for {}: quantity = {}",
+            position.symbol, position.quantity
+        );
+
         // Validate position details
         if position.quantity != 0.0 {
             info!("📊 Position quantity: {}", position.quantity);
             info!("📊 Position average price: {}", position.average_price);
-            
+
             if let Some(expected_fill_price) = fill_price {
-                info!("📊 Comparing position avg price {} with fill price {}", 
-                      position.average_price, expected_fill_price);
+                info!(
+                    "📊 Comparing position avg price {} with fill price {}",
+                    position.average_price, expected_fill_price
+                );
             }
         } else {
             info!("ℹ️  Position quantity is zero (order may not have filled)");
         }
     } else {
-        info!("ℹ️  No position found for {} (order may not have filled)", target_symbol);
+        info!(
+            "ℹ️  No position found for {} (order may not have filled)",
+            target_symbol
+        );
     }
 
     // Log all positions for completeness
     info!("📊 Total positions in account: {}", positions.len());
     for (i, pos) in positions.iter().enumerate() {
-        info!("Position #{}: {} = {} @ {}", i + 1, pos.symbol, pos.quantity, pos.average_price);
+        info!(
+            "Position #{}: {} = {} @ {}",
+            i + 1,
+            pos.symbol,
+            pos.quantity,
+            pos.average_price
+        );
     }
 
     // Step 10: Logout

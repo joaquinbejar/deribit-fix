@@ -112,9 +112,9 @@ async fn test_security_list_request() -> Result<()> {
     // In a real implementation, there would be a method like client.request_security_list()
     // For this test, we'll simulate the behavior by monitoring for security-related messages
     // and using market data subscription as a way to interact with instruments
-    
+
     info!("📊 Requesting security list (simulating via market data interactions)...");
-    
+
     // Subscribe to market data for a known instrument to trigger security-related messages
     let test_symbol = "BTC-PERPETUAL".to_string();
     client.subscribe_market_data(test_symbol.clone()).await?;
@@ -124,7 +124,7 @@ async fn test_security_list_request() -> Result<()> {
     info!("👁️ Monitoring for SecurityList and security-related messages...");
     let monitor_duration = Duration::from_secs(45);
     let start_time = std::time::Instant::now();
-    
+
     let mut security_lists_received = 0;
     let mut securities_found = Vec::new();
     let mut market_data_messages = 0;
@@ -134,86 +134,97 @@ async fn test_security_list_request() -> Result<()> {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35) {
                     match msg_type.as_str() {
-                        "y" => { // SecurityList
+                        "y" => {
+                            // SecurityList
                             security_lists_received += 1;
-                            info!("📨 Received SecurityList #{}: {:?}", security_lists_received, message);
-                            
+                            info!(
+                                "📨 Received SecurityList #{}: {:?}",
+                                security_lists_received, message
+                            );
+
                             // Validate SecurityList structure
                             if let Some(security_req_id) = message.get_field(320) {
                                 info!("✅ SecurityReqID: {}", security_req_id);
                             }
-                            
+
                             if let Some(security_response_id) = message.get_field(322) {
                                 info!("✅ SecurityResponseID: {}", security_response_id);
                             }
-                            
+
                             if let Some(security_request_result) = message.get_field(560) {
                                 info!("✅ SecurityRequestResult: {}", security_request_result);
                             }
-                            
+
                             // Parse securities in the list
                             if let Some(no_related_sym) = message.get_field(146) {
                                 info!("✅ NoRelatedSym: {}", no_related_sym);
-                                
+
                                 if let Ok(count) = no_related_sym.parse::<i32>()
-                                    && count > 0 {
-                                        info!("📊 SecurityList contains {} securities", count);
-                                    }
+                                    && count > 0
+                                {
+                                    info!("📊 SecurityList contains {} securities", count);
+                                }
                             }
-                            
+
                             // Extract security details
                             if let Some(symbol) = message.get_field(55) {
                                 info!("✅ Security Symbol: {}", symbol);
                                 securities_found.push(symbol.clone());
-                                
+
                                 // Additional security details
                                 if let Some(security_type) = message.get_field(167) {
                                     info!("✅ SecurityType: {}", security_type);
                                 }
-                                
+
                                 if let Some(currency) = message.get_field(15) {
                                     info!("✅ Currency: {}", currency);
                                 }
-                                
+
                                 if let Some(market_id) = message.get_field(1301) {
                                     info!("✅ MarketID: {}", market_id);
                                 }
-                                
+
                                 if let Some(min_trade_vol) = message.get_field(562) {
                                     info!("✅ MinTradeVol: {}", min_trade_vol);
                                 }
-                                
+
                                 if let Some(tick_size) = message.get_field(969) {
                                     info!("✅ TickSize: {}", tick_size);
                                 }
                             }
                         }
-                        "W" => { // MarketDataSnapshotFullRefresh (contains instrument info)
+                        "W" => {
+                            // MarketDataSnapshotFullRefresh (contains instrument info)
                             market_data_messages += 1;
-                            debug!("📊 Received MarketDataSnapshot #{}: {:?}", market_data_messages, message);
-                            
+                            debug!(
+                                "📊 Received MarketDataSnapshot #{}: {:?}",
+                                market_data_messages, message
+                            );
+
                             // Extract instrument details from market data
                             if let Some(symbol) = message.get_field(55) {
                                 info!("📊 Market data for instrument: {}", symbol);
-                                
+
                                 if !securities_found.contains(symbol) {
                                     securities_found.push(symbol.clone());
                                 }
-                                
+
                                 // Extract additional instrument metadata if available
                                 if let Some(security_id) = message.get_field(48) {
                                     info!("✅ SecurityID from market data: {}", security_id);
                                 }
                             }
                         }
-                        "X" => { // MarketDataIncrementalRefresh (also contains instrument info)
+                        "X" => {
+                            // MarketDataIncrementalRefresh (also contains instrument info)
                             debug!("📊 Received MarketDataIncrementalRefresh");
-                            
+
                             if let Some(symbol) = message.get_field(55)
-                                && !securities_found.contains(symbol) {
-                                    securities_found.push(symbol.clone());
-                                    info!("📊 Found instrument from incremental data: {}", symbol);
-                                }
+                                && !securities_found.contains(symbol)
+                            {
+                                securities_found.push(symbol.clone());
+                                info!("📊 Found instrument from incremental data: {}", symbol);
+                            }
                         }
                         _ => {
                             debug!("📨 Received other message type: {}", msg_type);
@@ -241,43 +252,57 @@ async fn test_security_list_request() -> Result<()> {
     // Step 6: Validate security list functionality
     if security_lists_received > 0 {
         info!("✅ SecurityList messages received and validated");
-        
-        assert!(security_lists_received > 0, "Should have received at least one SecurityList message");
-        assert!(!securities_found.is_empty(), "Should have found at least one security");
-        
+
+        assert!(
+            security_lists_received > 0,
+            "Should have received at least one SecurityList message"
+        );
+        assert!(
+            !securities_found.is_empty(),
+            "Should have found at least one security"
+        );
     } else if !securities_found.is_empty() {
         info!("✅ Securities information captured from market data messages");
-        
+
         // Validate securities structure
         for (i, security) in securities_found.iter().enumerate() {
             info!("Security #{}: {}", i + 1, security);
-            
+
             // Basic validation
             assert!(!security.is_empty(), "Security symbol should not be empty");
-            assert!(security.contains("-") || security.len() >= 3, "Security symbol should be valid format");
+            assert!(
+                security.contains("-") || security.len() >= 3,
+                "Security symbol should be valid format"
+            );
         }
-        
+
         // Validate at least one known instrument is present
-        let has_btc_perpetual = securities_found.iter().any(|s| s.contains("BTC") && s.contains("PERPETUAL"));
+        let has_btc_perpetual = securities_found
+            .iter()
+            .any(|s| s.contains("BTC") && s.contains("PERPETUAL"));
         if has_btc_perpetual {
             info!("✅ Found expected BTC-PERPETUAL instrument");
         }
-        
     } else {
-        warn!("⚠️  No securities found - this may indicate server configuration or permission issues");
+        warn!(
+            "⚠️  No securities found - this may indicate server configuration or permission issues"
+        );
     }
 
     // Parse key details for at least one instrument if we have any
     if !securities_found.is_empty() {
         let sample_security = &securities_found[0];
         info!("📋 Analyzing sample security: {}", sample_security);
-        
+
         // Basic parsing of instrument name
         if sample_security.contains("-") {
             let parts: Vec<&str> = sample_security.split("-").collect();
             if parts.len() >= 2 {
-                info!("✅ Parsed instrument - Base: {}, Type: {}", parts[0], parts[1]);
-                
+                info!(
+                    "✅ Parsed instrument - Base: {}, Type: {}",
+                    parts[0], parts[1]
+                );
+
                 // Additional parsing for perpetuals, options, etc.
                 match parts[1] {
                     "PERPETUAL" => {
@@ -292,19 +317,29 @@ async fn test_security_list_request() -> Result<()> {
                 }
             }
         }
-        
+
         // Validate symbol format
-        assert!(!sample_security.is_empty(), "Sample security should not be empty");
-        assert!(sample_security.len() >= 3, "Sample security should have reasonable length");
+        assert!(
+            !sample_security.is_empty(),
+            "Sample security should not be empty"
+        );
+        assert!(
+            sample_security.len() >= 3,
+            "Sample security should have reasonable length"
+        );
     }
 
     // Test success validation
-    let test_passed = security_lists_received > 0 || !securities_found.is_empty() || market_data_messages > 0;
-    
+    let test_passed =
+        security_lists_received > 0 || !securities_found.is_empty() || market_data_messages > 0;
+
     if test_passed {
         info!("✅ Test passed: Security list functionality validated");
         if security_lists_received > 0 {
-            info!("  - Direct SecurityList messages received: {}", security_lists_received);
+            info!(
+                "  - Direct SecurityList messages received: {}",
+                security_lists_received
+            );
         }
         if !securities_found.is_empty() {
             info!("  - Securities discovered: {}", securities_found.len());
@@ -313,7 +348,9 @@ async fn test_security_list_request() -> Result<()> {
             info!("  - Market data responses: {}", market_data_messages);
         }
     } else {
-        info!("✅ Test passed: Security list request structure validated (no active data received)");
+        info!(
+            "✅ Test passed: Security list request structure validated (no active data received)"
+        );
     }
 
     // Clean up

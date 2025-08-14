@@ -12,7 +12,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -123,8 +123,14 @@ async fn test_post_only_order_rejection() -> Result<()> {
         time_in_force: TimeInForce::GoodTillCancel,
         post_only: Some(true), // This should prevent immediate execution
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_POSTONLY_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_POSTONLY_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_POSTONLY_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_POSTONLY_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -135,8 +141,10 @@ async fn test_post_only_order_rejection() -> Result<()> {
 
     // Send the order
     let order_id = client.send_order(order_request).await?;
-    info!("📤 PostOnly order sent: OrderID={}, Symbol={}, Price={}, Qty={}", 
-          order_id, symbol, aggressive_price, quantity);
+    info!(
+        "📤 PostOnly order sent: OrderID={}, Symbol={}, Price={}, Qty={}",
+        order_id, symbol, aggressive_price, quantity
+    );
 
     // Step 5: Wait for ExecutionReport - should be rejected or not filled
     info!("👁️ Monitoring ExecutionReport for PostOnly order behavior...");
@@ -148,43 +156,58 @@ async fn test_post_only_order_rejection() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id {
-                                info!("✅ ExecutionReport received for PostOnly order: {}", order_id);
-                                
-                                if let Some(ord_status) = message.get_field(39) {
-                                    match ord_status.as_str() {
-                                        "0" => {
-                                            // Order is New - PostOnly worked correctly, order didn't execute
-                                            info!("✅ PostOnly order correctly placed as New without immediate execution");
-                                            order_handled = true;
-                                        }
-                                        "8" => {
-                                            // Order rejected - PostOnly prevented immediate execution
-                                            info!("✅ PostOnly order correctly rejected to prevent immediate execution");
-                                            order_handled = true;
-                                            
-                                            if let Some(text) = message.get_field(58) {
-                                                info!("✅ Rejection reason: {}", text);
-                                                assert!(!text.is_empty(), "Rejection reason should be provided");
-                                            }
-                                        }
-                                        "2" | "1" => {
-                                            // If the order filled despite PostOnly, this might indicate the order
-                                            // was placed at a price that didn't require immediate execution
-                                            warn!("⚠️  PostOnly order filled - price may not have required immediate execution");
-                                            order_handled = true;
-                                        }
-                                        _ => {
-                                            debug!("📊 Other order status received: {}", ord_status);
-                                        }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                    {
+                        info!(
+                            "✅ ExecutionReport received for PostOnly order: {}",
+                            order_id
+                        );
+
+                        if let Some(ord_status) = message.get_field(39) {
+                            match ord_status.as_str() {
+                                "0" => {
+                                    // Order is New - PostOnly worked correctly, order didn't execute
+                                    info!(
+                                        "✅ PostOnly order correctly placed as New without immediate execution"
+                                    );
+                                    order_handled = true;
+                                }
+                                "8" => {
+                                    // Order rejected - PostOnly prevented immediate execution
+                                    info!(
+                                        "✅ PostOnly order correctly rejected to prevent immediate execution"
+                                    );
+                                    order_handled = true;
+
+                                    if let Some(text) = message.get_field(58) {
+                                        info!("✅ Rejection reason: {}", text);
+                                        assert!(
+                                            !text.is_empty(),
+                                            "Rejection reason should be provided"
+                                        );
                                     }
                                 }
+                                "2" | "1" => {
+                                    // If the order filled despite PostOnly, this might indicate the order
+                                    // was placed at a price that didn't require immediate execution
+                                    warn!(
+                                        "⚠️  PostOnly order filled - price may not have required immediate execution"
+                                    );
+                                    order_handled = true;
+                                }
+                                _ => {
+                                    debug!("📊 Other order status received: {}", ord_status);
+                                }
                             }
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -198,7 +221,10 @@ async fn test_post_only_order_rejection() -> Result<()> {
         }
     }
 
-    assert!(order_handled, "Expected ExecutionReport for PostOnly order was not received");
+    assert!(
+        order_handled,
+        "Expected ExecutionReport for PostOnly order was not received"
+    );
 
     // Clean up
     client.disconnect().await.ok();
@@ -280,8 +306,14 @@ async fn test_immediate_or_cancel_behavior() -> Result<()> {
         time_in_force: TimeInForce::ImmediateOrCancel,
         post_only: Some(false),
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_IOC_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_IOC_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_IOC_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_IOC_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -292,8 +324,10 @@ async fn test_immediate_or_cancel_behavior() -> Result<()> {
 
     // Send the order
     let order_id = client.send_order(order_request).await?;
-    info!("📤 IOC order sent: OrderID={}, Symbol={}, Price={}, Qty={}", 
-          order_id, symbol, price, quantity);
+    info!(
+        "📤 IOC order sent: OrderID={}, Symbol={}, Price={}, Qty={}",
+        order_id, symbol, price, quantity
+    );
 
     // Step 5: Wait for ExecutionReport - should be canceled if not filled
     info!("👁️ Monitoring ExecutionReport for IOC order behavior...");
@@ -305,42 +339,50 @@ async fn test_immediate_or_cancel_behavior() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id {
-                                info!("✅ ExecutionReport received for IOC order: {}", order_id);
-                                
-                                if let Some(ord_status) = message.get_field(39) {
-                                    match ord_status.as_str() {
-                                        "4" => {
-                                            // Order canceled - IOC behavior correct (not filled, so canceled)
-                                            info!("✅ IOC order correctly canceled (not filled immediately)");
-                                            order_handled = true;
-                                            
-                                            if let Some(exec_type) = message.get_field(150) {
-                                                assert_eq!(exec_type, "4", "ExecType should be Canceled (4) for IOC");
-                                                info!("✅ ExecType confirmed as Canceled: {}", exec_type);
-                                            }
-                                        }
-                                        "2" | "1" => {
-                                            // Order filled - IOC worked correctly (filled what it could)
-                                            info!("✅ IOC order filled (or partially filled)");
-                                            order_handled = true;
-                                        }
-                                        "0" => {
-                                            // This shouldn't happen with IOC as it should execute immediately or cancel
-                                            warn!("⚠️  IOC order status is New - unexpected behavior");
-                                            order_handled = true;
-                                        }
-                                        _ => {
-                                            debug!("📊 Other order status received: {}", ord_status);
-                                        }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                    {
+                        info!("✅ ExecutionReport received for IOC order: {}", order_id);
+
+                        if let Some(ord_status) = message.get_field(39) {
+                            match ord_status.as_str() {
+                                "4" => {
+                                    // Order canceled - IOC behavior correct (not filled, so canceled)
+                                    info!(
+                                        "✅ IOC order correctly canceled (not filled immediately)"
+                                    );
+                                    order_handled = true;
+
+                                    if let Some(exec_type) = message.get_field(150) {
+                                        assert_eq!(
+                                            exec_type, "4",
+                                            "ExecType should be Canceled (4) for IOC"
+                                        );
+                                        info!("✅ ExecType confirmed as Canceled: {}", exec_type);
                                     }
                                 }
+                                "2" | "1" => {
+                                    // Order filled - IOC worked correctly (filled what it could)
+                                    info!("✅ IOC order filled (or partially filled)");
+                                    order_handled = true;
+                                }
+                                "0" => {
+                                    // This shouldn't happen with IOC as it should execute immediately or cancel
+                                    warn!("⚠️  IOC order status is New - unexpected behavior");
+                                    order_handled = true;
+                                }
+                                _ => {
+                                    debug!("📊 Other order status received: {}", ord_status);
+                                }
                             }
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -354,7 +396,10 @@ async fn test_immediate_or_cancel_behavior() -> Result<()> {
         }
     }
 
-    assert!(order_handled, "Expected ExecutionReport for IOC order was not received");
+    assert!(
+        order_handled,
+        "Expected ExecutionReport for IOC order was not received"
+    );
 
     // Clean up
     client.disconnect().await.ok();
@@ -436,8 +481,14 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
         time_in_force: TimeInForce::FillOrKill,
         post_only: Some(false),
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_FOK_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_FOK_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_FOK_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_FOK_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -448,8 +499,10 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
 
     // Send the order
     let order_id = client.send_order(order_request).await?;
-    info!("📤 FOK order sent: OrderID={}, Symbol={}, Price={}, Qty={}", 
-          order_id, symbol, price, quantity);
+    info!(
+        "📤 FOK order sent: OrderID={}, Symbol={}, Price={}, Qty={}",
+        order_id, symbol, price, quantity
+    );
 
     // Step 5: Wait for ExecutionReport - should be canceled if not completely filled
     info!("👁️ Monitoring ExecutionReport for FOK order behavior...");
@@ -461,55 +514,68 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id {
-                                info!("✅ ExecutionReport received for FOK order: {}", order_id);
-                                
-                                if let Some(ord_status) = message.get_field(39) {
-                                    match ord_status.as_str() {
-                                        "4" => {
-                                            // Order canceled - FOK behavior correct (couldn't fill completely)
-                                            info!("✅ FOK order correctly canceled (couldn't fill completely)");
-                                            order_handled = true;
-                                            
-                                            if let Some(exec_type) = message.get_field(150) {
-                                                assert_eq!(exec_type, "4", "ExecType should be Canceled (4) for FOK");
-                                                info!("✅ ExecType confirmed as Canceled: {}", exec_type);
-                                            }
-                                        }
-                                        "2" => {
-                                            // Order filled completely - FOK worked correctly
-                                            info!("✅ FOK order filled completely");
-                                            order_handled = true;
-                                            
-                                            // Validate that it was completely filled
-                                            if let Some(cum_qty) = message.get_field(14)
-                                                && let Ok(cum_qty_val) = cum_qty.parse::<f64>() {
-                                                    assert!((cum_qty_val - quantity).abs() < 0.0001, 
-                                                           "FOK should fill completely or not at all");
-                                                    info!("✅ FOK order completely filled: {}", cum_qty);
-                                                }
-                                        }
-                                        "1" => {
-                                            // Partial fill should not happen with FOK
-                                            warn!("❌ FOK order partially filled - this violates FOK behavior");
-                                            panic!("FOK orders should not be partially filled");
-                                        }
-                                        "0" => {
-                                            // This shouldn't happen with FOK
-                                            warn!("⚠️  FOK order status is New - unexpected behavior");
-                                            order_handled = true;
-                                        }
-                                        _ => {
-                                            debug!("📊 Other order status received: {}", ord_status);
-                                        }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                    {
+                        info!("✅ ExecutionReport received for FOK order: {}", order_id);
+
+                        if let Some(ord_status) = message.get_field(39) {
+                            match ord_status.as_str() {
+                                "4" => {
+                                    // Order canceled - FOK behavior correct (couldn't fill completely)
+                                    info!(
+                                        "✅ FOK order correctly canceled (couldn't fill completely)"
+                                    );
+                                    order_handled = true;
+
+                                    if let Some(exec_type) = message.get_field(150) {
+                                        assert_eq!(
+                                            exec_type, "4",
+                                            "ExecType should be Canceled (4) for FOK"
+                                        );
+                                        info!("✅ ExecType confirmed as Canceled: {}", exec_type);
                                     }
                                 }
+                                "2" => {
+                                    // Order filled completely - FOK worked correctly
+                                    info!("✅ FOK order filled completely");
+                                    order_handled = true;
+
+                                    // Validate that it was completely filled
+                                    if let Some(cum_qty) = message.get_field(14)
+                                        && let Ok(cum_qty_val) = cum_qty.parse::<f64>()
+                                    {
+                                        assert!(
+                                            (cum_qty_val - quantity).abs() < 0.0001,
+                                            "FOK should fill completely or not at all"
+                                        );
+                                        info!("✅ FOK order completely filled: {}", cum_qty);
+                                    }
+                                }
+                                "1" => {
+                                    // Partial fill should not happen with FOK
+                                    warn!(
+                                        "❌ FOK order partially filled - this violates FOK behavior"
+                                    );
+                                    panic!("FOK orders should not be partially filled");
+                                }
+                                "0" => {
+                                    // This shouldn't happen with FOK
+                                    warn!("⚠️  FOK order status is New - unexpected behavior");
+                                    order_handled = true;
+                                }
+                                _ => {
+                                    debug!("📊 Other order status received: {}", ord_status);
+                                }
                             }
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -523,7 +589,10 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
         }
     }
 
-    assert!(order_handled, "Expected ExecutionReport for FOK order was not received");
+    assert!(
+        order_handled,
+        "Expected ExecutionReport for FOK order was not received"
+    );
 
     // Clean up
     client.disconnect().await.ok();

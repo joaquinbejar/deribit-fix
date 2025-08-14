@@ -341,7 +341,7 @@ impl QuoteCancel {
         if self.use_standard_repeating_groups {
             // Standard FIX repeating groups implementation
             builder = builder.field(295, self.quote_cancel_entries.len().to_string()); // NoQuoteEntries
-            
+
             for entry in &self.quote_cancel_entries {
                 builder = builder.field(299, entry.quote_entry_id.clone()); // QuoteEntryID
                 builder = builder.field(55, entry.symbol.clone()); // Symbol
@@ -571,12 +571,9 @@ mod tests {
             QuoteCancelEntry::new("QCE456".to_string(), "ETH-PERPETUAL".to_string()),
         ];
 
-        let quote_cancel = QuoteCancel::with_entries(
-            "QC789".to_string(),
-            QuoteCancelType::CancelAll,
-            entries,
-        )
-        .enable_standard_repeating_groups();
+        let quote_cancel =
+            QuoteCancel::with_entries("QC789".to_string(), QuoteCancelType::CancelAll, entries)
+                .enable_standard_repeating_groups();
 
         let fix_message = quote_cancel
             .to_fix_message("SENDER", "TARGET", 123)
@@ -587,7 +584,7 @@ mod tests {
         // In FIX repeating groups, the last entry's fields will appear in the message
         assert!(fix_message.contains("299=QCE456")); // Second QuoteEntryID (last one)
         assert!(fix_message.contains("55=ETH-PERPETUAL")); // Second symbol (last one)
-        
+
         // Check that we're using standard tags, not custom ones
         assert!(fix_message.contains("299=")); // QuoteEntryID (standard tag)
         assert!(fix_message.contains("55=")); // Symbol (standard tag)
@@ -608,12 +605,9 @@ mod tests {
             QuoteCancelEntry::new("QCE456".to_string(), "ETH-PERPETUAL".to_string()),
         ];
 
-        let quote_cancel = QuoteCancel::with_entries(
-            "QC789".to_string(),
-            QuoteCancelType::CancelAll,
-            entries,
-        )
-        .disable_standard_repeating_groups(); // Explicitly disable (though it's default)
+        let quote_cancel =
+            QuoteCancel::with_entries("QC789".to_string(), QuoteCancelType::CancelAll, entries)
+                .disable_standard_repeating_groups(); // Explicitly disable (though it's default)
 
         let fix_message = quote_cancel
             .to_fix_message("SENDER", "TARGET", 123)

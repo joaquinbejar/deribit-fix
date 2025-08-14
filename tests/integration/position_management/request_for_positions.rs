@@ -12,7 +12,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::{setup_logger, NewOrderRequest, OrderSide, OrderType, TimeInForce};
+use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 
@@ -121,8 +121,14 @@ async fn test_request_for_positions() -> Result<()> {
         time_in_force: TimeInForce::ImmediateOrCancel,
         post_only: Some(false),
         reduce_only: Some(false),
-        client_order_id: Some(format!("TEST_POSITION_{}", chrono::Utc::now().timestamp_millis())),
-        label: Some(format!("TEST_POSITION_{}", chrono::Utc::now().timestamp_millis())),
+        client_order_id: Some(format!(
+            "TEST_POSITION_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
+        label: Some(format!(
+            "TEST_POSITION_{}",
+            chrono::Utc::now().timestamp_millis()
+        )),
         stop_price: None,
         trigger: None,
         advanced: None,
@@ -133,8 +139,10 @@ async fn test_request_for_positions() -> Result<()> {
 
     // Send the order
     let order_id = client.send_order(order_request).await?;
-    info!("📤 Market order sent: OrderID={}, Symbol={}, Qty={}", 
-          order_id, symbol, quantity);
+    info!(
+        "📤 Market order sent: OrderID={}, Symbol={}, Qty={}",
+        order_id, symbol, quantity
+    );
 
     // Step 5: Wait for order execution confirmation
     info!("👁️ Waiting for order execution...");
@@ -146,25 +154,29 @@ async fn test_request_for_positions() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "8" { // ExecutionReport
-                        debug!("📊 Received ExecutionReport: {:?}", message);
-                        
-                        if let Some(recv_cl_ord_id) = message.get_field(11)
-                            && recv_cl_ord_id == &order_id
-                                && let Some(ord_status) = message.get_field(39)
-                                    && (ord_status == "2" || ord_status == "1") { // Filled or PartiallyFilled
-                                        info!("✅ Order executed successfully: status {}", ord_status);
-                                        order_executed = true;
-                                        
-                                        // Log execution details
-                                        if let Some(last_px) = message.get_field(31) {
-                                            info!("✅ Execution price: {}", last_px);
-                                        }
-                                        if let Some(last_qty) = message.get_field(32) {
-                                            info!("✅ Execution quantity: {}", last_qty);
-                                        }
-                                    }
+                    && msg_type == "8"
+                {
+                    // ExecutionReport
+                    debug!("📊 Received ExecutionReport: {:?}", message);
+
+                    if let Some(recv_cl_ord_id) = message.get_field(11)
+                        && recv_cl_ord_id == &order_id
+                        && let Some(ord_status) = message.get_field(39)
+                        && (ord_status == "2" || ord_status == "1")
+                    {
+                        // Filled or PartiallyFilled
+                        info!("✅ Order executed successfully: status {}", ord_status);
+                        order_executed = true;
+
+                        // Log execution details
+                        if let Some(last_px) = message.get_field(31) {
+                            info!("✅ Execution price: {}", last_px);
+                        }
+                        if let Some(last_qty) = message.get_field(32) {
+                            info!("✅ Execution quantity: {}", last_qty);
+                        }
                     }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -189,43 +201,55 @@ async fn test_request_for_positions() -> Result<()> {
     info!("📊 Total position entries received: {}", total_positions);
 
     // Find position for our instrument if it exists
-    let target_position = positions
-        .iter()
-        .find(|pos| pos.symbol == symbol);
+    let target_position = positions.iter().find(|pos| pos.symbol == symbol);
 
     if let Some(position) = target_position {
-        info!("✅ Position found for {}: quantity = {}", position.symbol, position.quantity);
-        
+        info!(
+            "✅ Position found for {}: quantity = {}",
+            position.symbol, position.quantity
+        );
+
         // Validate position fields are present and reasonable
-        assert!(!position.symbol.is_empty(), "Position symbol should not be empty");
+        assert!(
+            !position.symbol.is_empty(),
+            "Position symbol should not be empty"
+        );
         info!("✅ Position symbol validated: {}", position.symbol);
-        
+
         // Check if position quantity is non-zero (if order executed)
         if order_executed && position.quantity != 0.0 {
-            info!("✅ Position quantity reflects executed order: {}", position.quantity);
+            info!(
+                "✅ Position quantity reflects executed order: {}",
+                position.quantity
+            );
         }
-        
+
         // Validate average price if present
         if position.average_price != 0.0 {
             info!("✅ Position average price: {}", position.average_price);
         }
-        
+
         // Log unrealized P&L if available
         if position.unrealized_pnl != 0.0 {
             info!("📊 Position unrealized P&L: {}", position.unrealized_pnl);
         }
-        
+
         // Log realized P&L if available
         if position.realized_pnl != 0.0 {
             info!("📊 Position realized P&L: {}", position.realized_pnl);
         }
-        
     } else if order_executed {
         // If order executed but no position found, it might have been a reduce-only order
         // or the position might be very small
-        warn!("⚠️  Order executed but no position found for {} - position might be zero or very small", symbol);
+        warn!(
+            "⚠️  Order executed but no position found for {} - position might be zero or very small",
+            symbol
+        );
     } else {
-        info!("ℹ️  No position found for {} (order may not have executed)", symbol);
+        info!(
+            "ℹ️  No position found for {} (order may not have executed)",
+            symbol
+        );
     }
 
     // Step 8: Monitor for any PositionReport messages
@@ -238,32 +262,37 @@ async fn test_request_for_positions() -> Result<()> {
         match timeout(Duration::from_millis(500), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
-                    && msg_type == "AP" { // PositionReport
-                        position_reports_received += 1;
-                        info!("📨 Received PositionReport #{}: {:?}", position_reports_received, message);
-                        
-                        // Validate PositionReport structure
-                        if let Some(pos_req_result) = message.get_field(728) {
-                            info!("✅ PosReqResult: {}", pos_req_result);
-                        }
-                        
-                        if let Some(no_positions) = message.get_field(702) {
-                            info!("✅ NoPositions: {}", no_positions);
-                        }
-                        
-                        // Look for position details in the report
-                        if let Some(symbol_field) = message.get_field(55) {
-                            info!("✅ Position symbol in report: {}", symbol_field);
-                        }
-                        
-                        if let Some(long_qty) = message.get_field(704) {
-                            info!("✅ Long quantity: {}", long_qty);
-                        }
-                        
-                        if let Some(short_qty) = message.get_field(705) {
-                            info!("✅ Short quantity: {}", short_qty);
-                        }
+                    && msg_type == "AP"
+                {
+                    // PositionReport
+                    position_reports_received += 1;
+                    info!(
+                        "📨 Received PositionReport #{}: {:?}",
+                        position_reports_received, message
+                    );
+
+                    // Validate PositionReport structure
+                    if let Some(pos_req_result) = message.get_field(728) {
+                        info!("✅ PosReqResult: {}", pos_req_result);
                     }
+
+                    if let Some(no_positions) = message.get_field(702) {
+                        info!("✅ NoPositions: {}", no_positions);
+                    }
+
+                    // Look for position details in the report
+                    if let Some(symbol_field) = message.get_field(55) {
+                        info!("✅ Position symbol in report: {}", symbol_field);
+                    }
+
+                    if let Some(long_qty) = message.get_field(704) {
+                        info!("✅ Long quantity: {}", long_qty);
+                    }
+
+                    if let Some(short_qty) = message.get_field(705) {
+                        info!("✅ Short quantity: {}", short_qty);
+                    }
+                }
             }
             Ok(Ok(None)) => {
                 debug!("⏳ No message received, continuing to wait...");
@@ -277,17 +306,25 @@ async fn test_request_for_positions() -> Result<()> {
         }
     }
 
-    info!("📊 Total PositionReport messages received: {}", position_reports_received);
+    info!(
+        "📊 Total PositionReport messages received: {}",
+        position_reports_received
+    );
 
     // Test success validation - The test passes if we successfully request positions
     // and receive a reasonable response structure
     // total_positions is usize (from Vec::len()), so it's always >= 0
-    info!("Position request completed with {} positions", total_positions);
+    info!(
+        "Position request completed with {} positions",
+        total_positions
+    );
 
     if order_executed {
         info!("✅ Test passed: Order executed and positions successfully requested");
     } else {
-        info!("✅ Test passed: Position request functionality validated (order execution not required)");
+        info!(
+            "✅ Test passed: Position request functionality validated (order execution not required)"
+        );
     }
 
     // Clean up

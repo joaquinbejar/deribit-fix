@@ -299,9 +299,9 @@ async fn test_trade_data_streaming() -> Result<()> {
     info!("✅ Disconnected successfully");
 
     info!("🎉 Trade data streaming test completed!");
-    
+
     // Test completed successfully - trade data streaming mechanism validated
-    
+
     Ok(())
 }
 

@@ -76,7 +76,7 @@ async fn main() -> Result<()> {
 
     let limit_order = NewOrderRequest::limit_buy(instrument.to_string(), quantity, price)
         .with_label("example_limit_buy".to_string())
-        .with_time_in_force(TimeInForce::GoodTillCancel);
+        .with_time_in_force(TimeInForce::GoodTilCancelled);
 
     info!(
         "Sending limit buy order: {} {} at ${}",
@@ -113,7 +113,7 @@ async fn main() -> Result<()> {
 
     let sell_order = NewOrderRequest::limit_sell(instrument.to_string(), quantity, sell_price)
         .with_label("example_limit_sell".to_string())
-        .with_time_in_force(TimeInForce::GoodTillCancel);
+        .with_time_in_force(TimeInForce::GoodTilCancelled);
 
     info!(
         "Sending limit sell order: {} {} at ${}",

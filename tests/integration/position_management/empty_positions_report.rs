@@ -118,7 +118,7 @@ async fn test_empty_positions_report() -> Result<()> {
 
     // The positions should be empty or contain zero quantities
     let total_positions = positions.len();
-    let non_zero_positions = positions.iter().filter(|pos| pos.quantity != 0.0).count();
+    let non_zero_positions = positions.iter().filter(|pos| pos.size != 0.0).count();
 
     info!("📊 Total position entries received: {}", total_positions);
     info!("📊 Non-zero position entries: {}", non_zero_positions);
@@ -134,12 +134,12 @@ async fn test_empty_positions_report() -> Result<()> {
         // Validate position structure for zero positions
         for position in &positions {
             assert_eq!(
-                position.quantity, 0.0,
+                position.size, 0.0,
                 "Position quantity should be zero for empty positions"
             );
             info!(
                 "✅ Position for {} correctly shows zero quantity",
-                position.symbol
+                position.instrument_name
             );
         }
     } else {
@@ -151,7 +151,10 @@ async fn test_empty_positions_report() -> Result<()> {
 
         // Still validate the response structure
         for position in &positions {
-            info!("📊 Position: {} = {}", position.symbol, position.quantity);
+            info!(
+                "📊 Position: {} = {}",
+                position.instrument_name, position.size
+            );
         }
     }
 

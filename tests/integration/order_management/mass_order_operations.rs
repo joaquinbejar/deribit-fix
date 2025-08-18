@@ -125,7 +125,7 @@ async fn test_mass_order_operations() -> Result<()> {
             order_type: OrderType::Limit,
             amount: quantity,
             price: Some(price),
-            time_in_force: TimeInForce::GoodTillCancel,
+            time_in_force: TimeInForce::GoodTilCancelled,
             post_only: Some(true), // Ensure they won't fill immediately
             reduce_only: Some(false),
             client_order_id: Some(format!(

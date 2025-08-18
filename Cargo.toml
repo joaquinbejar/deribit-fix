@@ -1,6 +1,6 @@
 [package]
 name = "deribit-fix"
-version = "0.2.0"
+version = "0.2.1"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "This crate provides a client for the Deribit Markets API using the FIX protocol."
@@ -69,8 +69,8 @@ members = [
 
 [workspace.dependencies]
 deribit-fix=  { path = "." }
-#deribit-base = { path = "../deribit-base" }
-deribit-base = "0.1.1"
+deribit-base = { path = "../deribit-base" }
+#deribit-base = "0.2"
 tokio = { version = "1.47", features = ["rt", "rt-multi-thread", "macros", "time", "signal"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"

@@ -120,7 +120,7 @@ async fn test_order_cancellation_success() -> Result<()> {
         order_type: OrderType::Limit,
         amount: quantity,
         price: Some(price),
-        time_in_force: TimeInForce::GoodTillCancel,
+        time_in_force: TimeInForce::GoodTilCancelled,
         post_only: Some(true), // Ensure it won't fill immediately
         reduce_only: Some(false),
         client_order_id: Some(format!(

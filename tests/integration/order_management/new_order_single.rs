@@ -120,7 +120,7 @@ async fn test_new_order_single_limit_buy() -> Result<()> {
         order_type: OrderType::Limit,
         amount: quantity,
         price: Some(price),
-        time_in_force: TimeInForce::GoodTillCancel,
+        time_in_force: TimeInForce::GoodTilCancelled,
         post_only: Some(false),
         reduce_only: Some(false),
         client_order_id: Some(format!(

@@ -77,7 +77,7 @@ async fn main() -> Result<()> {
             for position in positions {
                 info!(
                     "Position: {} - Qty: {}, Avg Price: {}",
-                    position.symbol, position.quantity, position.average_price
+                    position.instrument_name, position.size, position.average_price
                 );
             }
         }

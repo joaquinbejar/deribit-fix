@@ -120,7 +120,7 @@ async fn test_post_only_order_rejection() -> Result<()> {
         order_type: OrderType::Limit,
         amount: quantity,
         price: Some(aggressive_price),
-        time_in_force: TimeInForce::GoodTillCancel,
+        time_in_force: TimeInForce::GoodTilCancelled,
         post_only: Some(true), // This should prevent immediate execution
         reduce_only: Some(false),
         client_order_id: Some(format!(

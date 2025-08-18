@@ -189,7 +189,7 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         order_type: OrderType::Limit,
         amount: quantity,
         price: Some(limit_price),
-        time_in_force: TimeInForce::GoodTillCancel,
+        time_in_force: TimeInForce::GoodTilCancelled,
         post_only: Some(true), // Ensure it won't fill immediately
         reduce_only: Some(false),
         client_order_id: Some(format!(
@@ -389,17 +389,19 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     info!("📤 Position request completed successfully");
 
     // Verify position for our instrument
-    let target_position = positions.iter().find(|pos| pos.symbol == target_symbol);
+    let target_position = positions
+        .iter()
+        .find(|pos| pos.instrument_name == target_symbol);
 
     if let Some(position) = target_position {
         info!(
             "✅ Step 9 completed: Position found for {}: quantity = {}",
-            position.symbol, position.quantity
+            position.instrument_name, position.size
         );
 
         // Validate position details
-        if position.quantity != 0.0 {
-            info!("📊 Position quantity: {}", position.quantity);
+        if position.size != 0.0 {
+            info!("📊 Position size: {}", position.size);
             info!("📊 Position average price: {}", position.average_price);
 
             if let Some(expected_fill_price) = fill_price {
@@ -424,8 +426,8 @@ async fn test_full_trade_lifecycle() -> Result<()> {
         info!(
             "Position #{}: {} = {} @ {}",
             i + 1,
-            pos.symbol,
-            pos.quantity,
+            pos.instrument_name,
+            pos.size,
             pos.average_price
         );
     }

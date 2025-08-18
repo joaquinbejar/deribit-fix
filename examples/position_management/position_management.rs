@@ -83,13 +83,13 @@ async fn main() -> Result<()> {
             } else {
                 for (index, position) in positions.iter().enumerate() {
                     info!(
-                        "Position {}: {} - Qty: {}, Avg Price: {}, Unrealized PnL: {}, Realized PnL: {}",
+                        "Position {}: {} - Qty: {}, Avg Price: {}, Unrealized PnL: {:?}, Realized PnL: {:?}",
                         index + 1,
-                        position.symbol,
-                        position.quantity,
+                        position.instrument_name,
+                        position.size,
                         position.average_price,
-                        position.unrealized_pnl,
-                        position.realized_pnl
+                        position.unrealized_profit_loss,
+                        position.realized_profit_loss
                     );
                 }
             }

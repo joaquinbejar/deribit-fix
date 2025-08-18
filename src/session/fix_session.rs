@@ -394,15 +394,9 @@ impl Session {
                             if pos_req_id == &request_id {
                                 debug!("Received PositionReport for request: {}", request_id);
 
-                                match PositionReport::from_fix_message(&message) {
-                                    Ok(position_report) => {
-                                        let position = position_report.to_position();
-                                        debug!(
-                                            "Parsed position: {} - Qty: {}, Avg Price: {}",
-                                            position.symbol,
-                                            position.quantity,
-                                            position.average_price
-                                        );
+                                match PositionReport::try_from_fix_message(&message) {
+                                    Ok(position) => {
+                                        debug!("Successfully parsed position: {:?}", position);
                                         positions.push(position);
                                     }
                                     Err(e) => {

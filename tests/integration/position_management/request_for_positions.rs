@@ -201,26 +201,29 @@ async fn test_request_for_positions() -> Result<()> {
     info!("📊 Total position entries received: {}", total_positions);
 
     // Find position for our instrument if it exists
-    let target_position = positions.iter().find(|pos| pos.symbol == symbol);
+    let target_position = positions.iter().find(|pos| pos.instrument_name == symbol);
 
     if let Some(position) = target_position {
         info!(
-            "✅ Position found for {}: quantity = {}",
-            position.symbol, position.quantity
+            "✅ Position found for {}: size = {}",
+            position.instrument_name, position.size
         );
 
         // Validate position fields are present and reasonable
         assert!(
-            !position.symbol.is_empty(),
-            "Position symbol should not be empty"
+            !position.instrument_name.is_empty(),
+            "Position instrument_name should not be empty"
         );
-        info!("✅ Position symbol validated: {}", position.symbol);
+        info!(
+            "✅ Position instrument_name validated: {}",
+            position.instrument_name
+        );
 
         // Check if position quantity is non-zero (if order executed)
-        if order_executed && position.quantity != 0.0 {
+        if order_executed && position.size != 0.0 {
             info!(
-                "✅ Position quantity reflects executed order: {}",
-                position.quantity
+                "✅ Position size reflects executed order: {}",
+                position.size
             );
         }
 
@@ -230,13 +233,17 @@ async fn test_request_for_positions() -> Result<()> {
         }
 
         // Log unrealized P&L if available
-        if position.unrealized_pnl != 0.0 {
-            info!("📊 Position unrealized P&L: {}", position.unrealized_pnl);
+        if let Some(unrealized_pnl) = position.unrealized_profit_loss
+            && unrealized_pnl != 0.0
+        {
+            info!("📊 Position unrealized P&L: {}", unrealized_pnl);
         }
 
         // Log realized P&L if available
-        if position.realized_pnl != 0.0 {
-            info!("📊 Position realized P&L: {}", position.realized_pnl);
+        if let Some(realized_pnl) = position.realized_profit_loss
+            && realized_pnl != 0.0
+        {
+            info!("📊 Position realized P&L: {}", realized_pnl);
         }
     } else if order_executed {
         // If order executed but no position found, it might have been a reduce-only order

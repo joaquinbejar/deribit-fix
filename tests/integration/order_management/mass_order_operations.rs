@@ -248,7 +248,11 @@ async fn test_mass_order_operations() -> Result<()> {
 
                                 // Validate cancellation details
                                 if let Some(exec_type) = message.get_field(150) {
-                                    assert!(exec_type == "4" || exec_type == "I", "ExecType should be Canceled (4) or Deribit custom (I), got: {}", exec_type);
+                                    assert!(
+                                        exec_type == "4" || exec_type == "I",
+                                        "ExecType should be Canceled (4) or Deribit custom (I), got: {}",
+                                        exec_type
+                                    );
                                 }
                             }
                         }

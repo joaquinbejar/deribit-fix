@@ -349,7 +349,9 @@ async fn test_cancel_nonexistent_order_rejection() -> Result<()> {
     );
     let symbol = "BTC-PERPETUAL".to_string();
 
-    let cancel_result = client.cancel_order_with_symbol(fake_order_id.clone(), Some(symbol)).await;
+    let cancel_result = client
+        .cancel_order_with_symbol(fake_order_id.clone(), Some(symbol))
+        .await;
     info!("📤 Cancel request sent for fake OrderID: {}", fake_order_id);
 
     // Step 5: Wait for OrderCancelReject message

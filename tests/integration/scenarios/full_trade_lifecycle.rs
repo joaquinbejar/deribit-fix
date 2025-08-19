@@ -255,7 +255,9 @@ async fn test_full_trade_lifecycle() -> Result<()> {
 
     // Step 5: Send cancel request for the limit order
     info!("🚫 Step 5: Sending cancel request for limit order...");
-    client.cancel_order_with_symbol(limit_order_id.clone(), Some(target_symbol.clone())).await?;
+    client
+        .cancel_order_with_symbol(limit_order_id.clone(), Some(target_symbol.clone()))
+        .await?;
     info!("📤 Cancel request sent for OrderID: {}", limit_order_id);
 
     // Step 6: Wait for cancel confirmation

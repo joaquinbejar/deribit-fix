@@ -91,7 +91,11 @@ fn validate_execution_report(message: &FixMessage, expected_status: &str, order_
         "0" => {
             // New order - validate ExecType
             if let Some(exec_type) = message.get_field(150) {
-                assert!(exec_type == "0" || exec_type == "I", "ExecType should be New (0) for new order or Deribit custom (I), got: {}", exec_type);
+                assert!(
+                    exec_type == "0" || exec_type == "I",
+                    "ExecType should be New (0) for new order or Deribit custom (I), got: {}",
+                    exec_type
+                );
                 info!("✅ ExecType validated for New order: {}", exec_type);
             }
         }

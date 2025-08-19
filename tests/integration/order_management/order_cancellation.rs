@@ -170,7 +170,10 @@ async fn test_order_cancellation_success() -> Result<()> {
                         // New - capture the server-assigned OrderID
                         if let Some(server_ord_id) = message.get_field(37) {
                             server_order_id = Some(server_ord_id.clone());
-                            info!("✅ Order confirmed as New, server OrderID: {}", server_ord_id);
+                            info!(
+                                "✅ Order confirmed as New, server OrderID: {}",
+                                server_ord_id
+                            );
                         }
                         info!("✅ Order confirmed as New, ready for cancellation");
                         order_new_confirmed = true;
@@ -198,7 +201,9 @@ async fn test_order_cancellation_success() -> Result<()> {
 
     // Step 6: Cancel the order
     info!("🚫 Sending order cancellation request...");
-    client.cancel_order_with_symbol(cancel_order_id.clone(), Some(symbol.clone())).await?;
+    client
+        .cancel_order_with_symbol(cancel_order_id.clone(), Some(symbol.clone()))
+        .await?;
     info!(
         "📤 Order cancellation request sent for OrderID: {}",
         cancel_order_id
@@ -333,7 +338,9 @@ async fn test_order_cancellation_unknown_order() -> Result<()> {
     let symbol = "BTC-PERPETUAL".to_string();
 
     // This should either fail or we should receive an OrderCancelReject
-    let cancel_result = client.cancel_order_with_symbol(fake_order_id.clone(), Some(symbol)).await;
+    let cancel_result = client
+        .cancel_order_with_symbol(fake_order_id.clone(), Some(symbol))
+        .await;
     info!("📤 Cancel request sent for fake OrderID: {}", fake_order_id);
 
     // Step 5: Wait for OrderCancelReject message

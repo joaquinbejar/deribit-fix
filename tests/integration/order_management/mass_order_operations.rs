@@ -55,7 +55,7 @@ fn check_env_file() -> Result<()> {
 async fn test_mass_order_operations() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 
@@ -343,7 +343,7 @@ async fn test_mass_order_operations() -> Result<()> {
 async fn test_mass_cancel_empty_instrument() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 

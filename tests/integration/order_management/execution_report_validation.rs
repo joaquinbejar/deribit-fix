@@ -185,7 +185,7 @@ fn validate_execution_report(message: &FixMessage, expected_status: &str, order_
 async fn test_execution_report_new_order_validation() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 

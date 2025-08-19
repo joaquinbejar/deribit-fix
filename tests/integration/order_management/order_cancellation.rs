@@ -55,7 +55,7 @@ fn check_env_file() -> Result<()> {
 async fn test_order_cancellation_success() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 
@@ -262,7 +262,7 @@ async fn test_order_cancellation_success() -> Result<()> {
 async fn test_order_cancellation_unknown_order() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 

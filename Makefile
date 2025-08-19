@@ -20,12 +20,12 @@ release:
 # Run unit tests only
 .PHONY: test
 test:
-	LOGLEVEL=WARN cargo test --lib --test unit_tests
+	DERIBIT_LOG_LEVEL=WARN cargo test --lib --test unit_tests
 
 # Run integration tests
 .PHONY: integration-test
 integration-test:
-	LOGLEVEL=WARN cargo test --test lib
+	DERIBIT_LOG_LEVEL=WARN cargo test --test lib
 
 # Format the code
 .PHONY: fmt
@@ -83,21 +83,21 @@ publish: readme
 
 .PHONY: coverage
 coverage:
-	export LOGLEVEL=WARN
+	export DERIBIT_LOG_LEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
 	cargo tarpaulin --verbose --all-features --workspace --timeout 0 --out Xml
 
 .PHONY: coverage-html
 coverage-html:
-	export LOGLEVEL=WARN
+	export DERIBIT_LOG_LEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
 	cargo tarpaulin --color Always --engine llvm --lib --test unit_tests --all-features --workspace --timeout 0 --out Html
 
 .PHONY: coverage-lcov
 coverage-lcov:
-	export LOGLEVEL=WARN
+	export DERIBIT_LOG_LEVEL=WARN
 	cargo install cargo-tarpaulin
 	mkdir -p coverage
 	cargo tarpaulin \

@@ -56,7 +56,7 @@ fn check_env_file() -> Result<()> {
 async fn test_logon_logout_flow() -> Result<()> {
     // Setup logging for test visibility
     unsafe {
-        std::env::set_var("LOGLEVEL", "debug");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "debug");
     }
     setup_logger();
 

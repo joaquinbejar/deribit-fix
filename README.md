@@ -21,7 +21,7 @@
 [![Downloads](https://img.shields.io/crates/d/deribit-fix.svg)](https://crates.io/crates/deribit-fix)
 [![Documentation](https://img.shields.io/badge/docs-latest-blue.svg)](https://docs.rs/deribit-fix)
 
-**Version:** 0.2.0 | **Status:** Production Ready | **Repository:** <https://github.com/joaquinbejar/deribit-fix>
+**Version:** 0.2.1 | **Status:** Production Ready | **Repository:** <https://github.com/joaquinbejar/deribit-fix>
 
 A comprehensive, production-ready FIX protocol client framework for Deribit cryptocurrency exchange.
 This library provides a complete, type-safe, and async foundation for building sophisticated trading applications
@@ -29,7 +29,7 @@ that connect to Deribit using the FIX 4.4 protocol with custom extensions.
 
 ### 🏗️ Project Status
 
-**Current Version: 0.2.0** - Feature Complete & Production Ready
+**Current Version: 0.2.1** - Feature Complete & Production Ready
 
 This release represents a complete implementation of the Deribit FIX specification with:
 - ✅ Full FIX 4.4 protocol support with Deribit extensions
@@ -45,7 +45,7 @@ This release represents a complete implementation of the Deribit FIX specificati
 Add to your `Cargo.toml`:
 ```toml
 [dependencies]
-deribit-fix = "0.2.0"
+deribit-fix = "0.2.1"
 ```
 
 Basic usage:
@@ -58,7 +58,7 @@ async fn main() -> Result<()> {
         .with_credentials("your_key".to_string(), "your_secret".to_string())
         .with_heartbeat_interval(30);
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     client.connect().await?;
 
     // Start trading!

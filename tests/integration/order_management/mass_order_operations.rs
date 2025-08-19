@@ -112,7 +112,7 @@ async fn test_mass_order_operations() -> Result<()> {
     info!("📤 Placing multiple limit orders for mass operations test...");
     let symbol = "BTC-PERPETUAL".to_string();
     let base_price = 25000.0; // Far from market to avoid fills
-    let quantity = 0.001;
+    let quantity = 10.0;
     let num_orders = 3;
     let mut order_ids = Vec::new();
 
@@ -175,15 +175,15 @@ async fn test_mass_order_operations() -> Result<()> {
                     // ExecutionReport
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && order_ids.contains(recv_cl_ord_id)
-                        && !confirmed_orders.contains(recv_cl_ord_id)
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && order_ids.contains(orig_cl_ord_id)
+                        && !confirmed_orders.contains(orig_cl_ord_id)
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "0"
                     {
                         // New
-                        confirmed_orders.insert(recv_cl_ord_id.clone());
-                        info!("✅ Order {} confirmed as New", recv_cl_ord_id);
+                        confirmed_orders.insert(orig_cl_ord_id.clone());
+                        info!("✅ Order {} confirmed as New", orig_cl_ord_id);
                     }
                 }
             }
@@ -237,18 +237,18 @@ async fn test_mass_order_operations() -> Result<()> {
                             // ExecutionReport
                             debug!("📊 Received ExecutionReport: {:?}", message);
 
-                            if let Some(recv_cl_ord_id) = message.get_field(11)
-                                && order_ids.contains(recv_cl_ord_id)
+                            if let Some(orig_cl_ord_id) = message.get_field(41)
+                                && order_ids.contains(orig_cl_ord_id)
                                 && let Some(ord_status) = message.get_field(39)
                                 && ord_status == "4"
                             {
                                 // Canceled
-                                canceled_orders.insert(recv_cl_ord_id.clone());
-                                info!("✅ Order {} confirmed as Canceled", recv_cl_ord_id);
+                                canceled_orders.insert(orig_cl_ord_id.clone());
+                                info!("✅ Order {} confirmed as Canceled", orig_cl_ord_id);
 
                                 // Validate cancellation details
                                 if let Some(exec_type) = message.get_field(150) {
-                                    assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
+                                    assert!(exec_type == "4" || exec_type == "I", "ExecType should be Canceled (4) or Deribit custom (I), got: {}", exec_type);
                                 }
                             }
                         }
@@ -256,10 +256,10 @@ async fn test_mass_order_operations() -> Result<()> {
                             // OrderCancelReject
                             info!("📨 Received OrderCancelReject: {:?}", message);
 
-                            if let Some(recv_cl_ord_id) = message.get_field(11)
-                                && order_ids.contains(recv_cl_ord_id)
+                            if let Some(orig_cl_ord_id) = message.get_field(41)
+                                && order_ids.contains(orig_cl_ord_id)
                             {
-                                info!("⚠️  Cancel rejected for order: {}", recv_cl_ord_id);
+                                info!("⚠️  Cancel rejected for order: {}", orig_cl_ord_id);
 
                                 if let Some(cxl_rej_reason) = message.get_field(102) {
                                     info!("CxlRejReason: {}", cxl_rej_reason);

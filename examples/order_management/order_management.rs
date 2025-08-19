@@ -49,6 +49,12 @@ async fn main() -> Result<()> {
 
     let logon_result = timeout(logon_timeout, async {
         loop {
+            // Try to receive messages from server to process logon response
+            if let Ok(Some(message)) = client.receive_message().await {
+                info!("Received message: {:?}", message);
+            }
+
+            // Check session state
             if let Some(state) = client.get_session_state().await {
                 if state == SessionState::LoggedOn {
                     return Ok::<(), DeribitFixError>(());

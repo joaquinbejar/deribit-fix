@@ -63,8 +63,8 @@ fn validate_execution_report(message: &FixMessage, expected_status: &str, order_
     }
 
     // Check if this is for our order
-    if let Some(recv_cl_ord_id) = message.get_field(11) {
-        if recv_cl_ord_id != order_id {
+    if let Some(orig_cl_ord_id) = message.get_field(41) {
+        if orig_cl_ord_id != order_id {
             return false;
         }
     } else {
@@ -91,7 +91,7 @@ fn validate_execution_report(message: &FixMessage, expected_status: &str, order_
         "0" => {
             // New order - validate ExecType
             if let Some(exec_type) = message.get_field(150) {
-                assert_eq!(exec_type, "0", "ExecType should be New (0) for new order");
+                assert!(exec_type == "0" || exec_type == "I", "ExecType should be New (0) for new order or Deribit custom (I), got: {}", exec_type);
                 info!("✅ ExecType validated for New order: {}", exec_type);
             }
         }
@@ -264,7 +264,7 @@ async fn test_execution_report_new_order_validation() -> Result<()> {
 
                     // Try to validate different order statuses
                     if let Some(ord_status) = message.get_field(39)
-                        && let Some(cl_ord_id) = message.get_field(11)
+                        && let Some(cl_ord_id) = message.get_field(41)
                     {
                         match ord_status.as_str() {
                             "0" if !new_order_validated => {

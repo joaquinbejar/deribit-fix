@@ -112,7 +112,7 @@ async fn test_cancel_filled_order_rejection() -> Result<()> {
     // Step 4: Submit a small market order that should fill immediately
     info!("📤 Creating and sending market order that should fill immediately...");
     let symbol = "BTC-PERPETUAL".to_string();
-    let quantity = 0.001; // Very small quantity for testing
+    let quantity = 10.0; // Very small quantity for testing
 
     let order_request = NewOrderRequest {
         instrument_name: symbol.clone(),
@@ -161,8 +161,8 @@ async fn test_cancel_filled_order_rejection() -> Result<()> {
                     // ExecutionReport
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &order_id
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "2"
                     {
@@ -172,9 +172,10 @@ async fn test_cancel_filled_order_rejection() -> Result<()> {
 
                         // Additional validation for filled order
                         if let Some(exec_type) = message.get_field(150) {
+                            // Deribit uses "I" as a custom ExecType for various order states including fills
                             assert!(
-                                exec_type == "F" || exec_type == "1",
-                                "ExecType should be Trade (F) or PartialFill (1), got: {}",
+                                exec_type == "F" || exec_type == "1" || exec_type == "I",
+                                "ExecType should be Trade (F), PartialFill (1), or Deribit custom (I), got: {}",
                                 exec_type
                             );
                             info!("✅ ExecType confirmed: {}", exec_type);
@@ -245,9 +246,9 @@ async fn test_cancel_filled_order_rejection() -> Result<()> {
                         );
                     }
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11) {
-                        assert_eq!(recv_cl_ord_id, &order_id, "ClOrdID should match our order");
-                        info!("✅ ClOrdID confirmed: {}", recv_cl_ord_id);
+                    if let Some(orig_cl_ord_id) = message.get_field(41) {
+                        assert_eq!(orig_cl_ord_id, &order_id, "ClOrdID should match our order");
+                        info!("✅ ClOrdID confirmed: {}", orig_cl_ord_id);
                     }
                 }
             }
@@ -346,8 +347,9 @@ async fn test_cancel_nonexistent_order_rejection() -> Result<()> {
         "NONEXISTENT_ORDER_{}",
         chrono::Utc::now().timestamp_millis()
     );
+    let symbol = "BTC-PERPETUAL".to_string();
 
-    let cancel_result = client.cancel_order(fake_order_id.clone()).await;
+    let cancel_result = client.cancel_order_with_symbol(fake_order_id.clone(), Some(symbol)).await;
     info!("📤 Cancel request sent for fake OrderID: {}", fake_order_id);
 
     // Step 5: Wait for OrderCancelReject message
@@ -392,12 +394,14 @@ async fn test_cancel_nonexistent_order_rejection() -> Result<()> {
                         );
                     }
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11) {
+                    // Note: Field 41 in OrderCancelReject contains the cancel request ID, not the original order ID
+                    // The original order ID being cancelled is in field 11 (ClOrdID)
+                    if let Some(cl_ord_id) = message.get_field(11) {
                         assert_eq!(
-                            recv_cl_ord_id, &fake_order_id,
+                            cl_ord_id, &fake_order_id,
                             "ClOrdID should match our fake order ID"
                         );
-                        info!("✅ ClOrdID confirmed: {}", recv_cl_ord_id);
+                        info!("✅ ClOrdID confirmed: {}", cl_ord_id);
                     }
                 }
             }

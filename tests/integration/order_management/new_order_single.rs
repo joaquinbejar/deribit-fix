@@ -112,7 +112,7 @@ async fn test_new_order_single_limit_buy() -> Result<()> {
     info!("📤 Creating and sending limit buy order...");
     let symbol = "BTC-PERPETUAL".to_string();
     let price = 50000.0; // Set limit price
-    let quantity = 0.001; // Small quantity for testing
+    let quantity = 10.0; // Small quantity for testing
 
     let order_request = NewOrderRequest {
         instrument_name: symbol.clone(),
@@ -162,8 +162,8 @@ async fn test_new_order_single_limit_buy() -> Result<()> {
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
                     // Check if this is for our order
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &order_id
                     {
                         info!("✅ ExecutionReport received for our order: {}", order_id);
 
@@ -178,8 +178,13 @@ async fn test_new_order_single_limit_buy() -> Result<()> {
 
                         // Additional validations
                         if let Some(exec_type) = message.get_field(150) {
-                            assert_eq!(exec_type, "0", "ExecType should be New (0)");
-                            info!("✅ ExecType confirmed as New: {}", exec_type);
+                            // Deribit uses "I" as a custom ExecType for various order states
+                            assert!(
+                                exec_type == "0" || exec_type == "I",
+                                "ExecType should be New (0) or Deribit custom (I), got: {}",
+                                exec_type
+                            );
+                            info!("✅ ExecType confirmed: {}", exec_type);
                         }
 
                         if let Some(recv_symbol) = message.get_field(55) {
@@ -279,7 +284,7 @@ async fn test_new_order_single_market_sell() -> Result<()> {
     // Step 4: Create and send a market sell order
     info!("📤 Creating and sending market sell order...");
     let symbol = "BTC-PERPETUAL".to_string();
-    let quantity = 0.001; // Small quantity for testing
+    let quantity = 10.0; // Small quantity for testing
 
     let order_request = NewOrderRequest {
         instrument_name: symbol.clone(),
@@ -329,8 +334,8 @@ async fn test_new_order_single_market_sell() -> Result<()> {
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
                     // Check if this is for our order
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &order_id
                     {
                         info!("✅ ExecutionReport received for our order: {}", order_id);
 
@@ -357,9 +362,10 @@ async fn test_new_order_single_market_sell() -> Result<()> {
 
                         // Additional validations for fills
                         if let Some(exec_type) = message.get_field(150) {
+                            // Deribit uses "I" as a custom ExecType for various order states including fills
                             assert!(
-                                exec_type == "F" || exec_type == "1",
-                                "ExecType should be Trade (F) or PartialFill (1), got: {}",
+                                exec_type == "F" || exec_type == "1" || exec_type == "I",
+                                "ExecType should be Trade (F), PartialFill (1), or Deribit custom (I), got: {}",
                                 exec_type
                             );
                             info!("✅ ExecType confirmed: {}", exec_type);

@@ -260,7 +260,7 @@ mod tests {
             // Test methods that don't require actual network operations
 
             // Test cancel_order (doesn't actually send, just prepares message)
-            let cancel_result = session.cancel_order("ORDER_123".to_string());
+            let cancel_result = session.cancel_order("ORDER_123".to_string()).await;
             assert!(cancel_result.is_ok());
 
             // Test calculate_app_signature (private method tested indirectly)

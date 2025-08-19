@@ -110,7 +110,7 @@ async fn test_trade_capture_report() -> Result<()> {
     // Step 4: Execute a trade to generate some trade data (optional, for testing)
     info!("📤 Executing a trade to generate trade data...");
     let symbol = "BTC-PERPETUAL".to_string();
-    let quantity = 0.001; // Very small quantity for testing
+    let quantity = 10.0; // Very small quantity for testing
 
     let order_request = NewOrderRequest {
         instrument_name: symbol.clone(),
@@ -159,8 +159,8 @@ async fn test_trade_capture_report() -> Result<()> {
                     // ExecutionReport
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &order_id
                         && let Some(ord_status) = message.get_field(39)
                         && (ord_status == "2" || ord_status == "1")
                     {

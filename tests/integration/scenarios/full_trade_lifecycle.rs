@@ -181,7 +181,7 @@ async fn test_full_trade_lifecycle() -> Result<()> {
     info!("📤 Step 4: Placing limit order below market price...");
 
     let limit_price = market_price.map(|p| p * 0.8).unwrap_or(40000.0); // 20% below market or default
-    let quantity = 0.001; // Small quantity for testing
+    let quantity = 10.0; // Small quantity for testing
 
     let limit_order_request = NewOrderRequest {
         instrument_name: target_symbol.clone(),
@@ -226,8 +226,8 @@ async fn test_full_trade_lifecycle() -> Result<()> {
                     && msg_type == "8"
                 {
                     // ExecutionReport
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &limit_order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &limit_order_id
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "0"
                     {
@@ -255,7 +255,7 @@ async fn test_full_trade_lifecycle() -> Result<()> {
 
     // Step 5: Send cancel request for the limit order
     info!("🚫 Step 5: Sending cancel request for limit order...");
-    client.cancel_order(limit_order_id.clone()).await?;
+    client.cancel_order_with_symbol(limit_order_id.clone(), Some(target_symbol.clone())).await?;
     info!("📤 Cancel request sent for OrderID: {}", limit_order_id);
 
     // Step 6: Wait for cancel confirmation
@@ -270,8 +270,8 @@ async fn test_full_trade_lifecycle() -> Result<()> {
                     && msg_type == "8"
                 {
                     // ExecutionReport
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &limit_order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &limit_order_id
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "4"
                     {
@@ -344,8 +344,8 @@ async fn test_full_trade_lifecycle() -> Result<()> {
                     && msg_type == "8"
                 {
                     // ExecutionReport
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &market_order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &market_order_id
                         && let Some(ord_status) = message.get_field(39)
                         && (ord_status == "2" || ord_status == "1")
                     {

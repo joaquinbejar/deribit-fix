@@ -112,7 +112,7 @@ async fn test_order_cancellation_success() -> Result<()> {
     info!("📤 Creating and sending limit order for cancellation test...");
     let symbol = "BTC-PERPETUAL".to_string();
     let price = 20000.0; // Far below market price to avoid immediate fill
-    let quantity = 0.001;
+    let quantity = 10.0;
 
     let order_request = NewOrderRequest {
         instrument_name: symbol.clone(),
@@ -149,6 +149,7 @@ async fn test_order_cancellation_success() -> Result<()> {
     // Step 5: Wait for ExecutionReport confirming order is New
     info!("👁️ Waiting for ExecutionReport confirming order is New...");
     let mut order_new_confirmed = false;
+    let mut server_order_id: Option<String> = None;
     let monitor_duration = Duration::from_secs(30);
     let start_time = std::time::Instant::now();
 
@@ -161,12 +162,16 @@ async fn test_order_cancellation_success() -> Result<()> {
                     // ExecutionReport
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(orig_cl_ord_id) = message.get_field(41)
+                        && orig_cl_ord_id == &order_id
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "0"
                     {
-                        // New
+                        // New - capture the server-assigned OrderID
+                        if let Some(server_ord_id) = message.get_field(37) {
+                            server_order_id = Some(server_ord_id.clone());
+                            info!("✅ Order confirmed as New, server OrderID: {}", server_ord_id);
+                        }
                         info!("✅ Order confirmed as New, ready for cancellation");
                         order_new_confirmed = true;
                     }
@@ -189,12 +194,14 @@ async fn test_order_cancellation_success() -> Result<()> {
         "Expected ExecutionReport with New order status was not received"
     );
 
+    let cancel_order_id = server_order_id.unwrap_or(order_id.clone());
+
     // Step 6: Cancel the order
     info!("🚫 Sending order cancellation request...");
-    client.cancel_order(order_id.clone()).await?;
+    client.cancel_order_with_symbol(cancel_order_id.clone(), Some(symbol.clone())).await?;
     info!(
         "📤 Order cancellation request sent for OrderID: {}",
-        order_id
+        cancel_order_id
     );
 
     // Step 7: Wait for ExecutionReport confirming order is Canceled
@@ -211,8 +218,8 @@ async fn test_order_cancellation_success() -> Result<()> {
                     // ExecutionReport
                     debug!("📊 Received ExecutionReport: {:?}", message);
 
-                    if let Some(recv_cl_ord_id) = message.get_field(11)
-                        && recv_cl_ord_id == &order_id
+                    if let Some(server_ord_id) = message.get_field(37)
+                        && server_ord_id == &cancel_order_id
                         && let Some(ord_status) = message.get_field(39)
                         && ord_status == "4"
                     {
@@ -222,8 +229,13 @@ async fn test_order_cancellation_success() -> Result<()> {
 
                         // Additional validation for canceled order
                         if let Some(exec_type) = message.get_field(150) {
-                            assert_eq!(exec_type, "4", "ExecType should be Canceled (4)");
-                            info!("✅ ExecType confirmed as Canceled: {}", exec_type);
+                            // Deribit uses "I" as a custom ExecType for various order states including cancellation
+                            assert!(
+                                exec_type == "4" || exec_type == "I",
+                                "ExecType should be Canceled (4) or Deribit custom (I), got: {}",
+                                exec_type
+                            );
+                            info!("✅ ExecType confirmed: {}", exec_type);
                         }
 
                         if let Some(recv_symbol) = message.get_field(55) {
@@ -318,9 +330,10 @@ async fn test_order_cancellation_unknown_order() -> Result<()> {
     // Step 4: Try to cancel a non-existent order
     info!("🚫 Attempting to cancel non-existent order...");
     let fake_order_id = format!("FAKE_ORDER_{}", chrono::Utc::now().timestamp_millis());
+    let symbol = "BTC-PERPETUAL".to_string();
 
     // This should either fail or we should receive an OrderCancelReject
-    let cancel_result = client.cancel_order(fake_order_id.clone()).await;
+    let cancel_result = client.cancel_order_with_symbol(fake_order_id.clone(), Some(symbol)).await;
     info!("📤 Cancel request sent for fake OrderID: {}", fake_order_id);
 
     // Step 5: Wait for OrderCancelReject message

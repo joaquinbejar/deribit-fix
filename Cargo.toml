@@ -39,6 +39,7 @@ sha2 =  { workspace = true }
 tokio-native-tls =  { workspace = true }
 native-tls =  { workspace = true }
 rand = { workspace = true }
+nanoid = { workspace = true }
 
 [dev-dependencies]
 serial_test = "3.2"
@@ -82,3 +83,4 @@ base64 = "0.22"
 sha2 = "0.10"
 tokio-native-tls = "0.3"
 native-tls = "0.2"
+nanoid = "0.4"

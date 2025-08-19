@@ -267,5 +267,6 @@ pub mod prelude {
         message::orders::*,
         message::security_list::*,
         model::*,
+        config::gen_id
     };
 }

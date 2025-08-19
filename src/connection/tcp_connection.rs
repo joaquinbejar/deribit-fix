@@ -6,16 +6,18 @@ use crate::{
     config::DeribitFixConfig,
     error::{DeribitFixError, Result},
 };
+use std::collections::VecDeque;
 use std::str::FromStr;
 use tokio::{net::TcpStream, time::timeout};
 use tokio_native_tls::TlsConnector;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, trace};
 
 /// TCP/TLS connection to Deribit FIX server
 pub struct Connection {
     stream: Stream,
     config: DeribitFixConfig,
     buffer: Vec<u8>,
+    message_queue: VecDeque<FixMessage>,
     connected: bool,
 }
 
@@ -32,6 +34,7 @@ impl Connection {
             stream,
             config: config.clone(),
             buffer: Vec::with_capacity(8192),
+            message_queue: VecDeque::new(),
             connected: true,
         })
     }
@@ -117,10 +120,14 @@ impl Connection {
             ));
         }
 
+        // Check if we have queued messages first
+        if let Some(message) = self.message_queue.pop_front() {
+            return Ok(Some(message));
+        }
+
         // Try to parse any existing buffered data first
-        if !self.buffer.is_empty()
-            && let Some(message) = self.try_parse_message()?
-        {
+        self.parse_all_messages_from_buffer()?;
+        if let Some(message) = self.message_queue.pop_front() {
             return Ok(Some(message));
         }
 
@@ -141,12 +148,15 @@ impl Connection {
                 Ok(None)
             }
             Ok(Ok(n)) => {
-                debug!("Received {} bytes from server", n);
-                debug!("Raw bytes: {:?}", &temp_buffer[..n]);
+                trace!("Received {} bytes from server", n);
+                trace!("Raw bytes: {:?}", &temp_buffer[..n]);
                 self.buffer.extend_from_slice(&temp_buffer[..n]);
 
-                // Try to parse the new data
-                self.try_parse_message()
+                // Parse all complete messages from buffer and queue them
+                self.parse_all_messages_from_buffer()?;
+
+                // Return the first message from queue
+                Ok(self.message_queue.pop_front())
             }
             Ok(Err(e)) => {
                 if e.kind() == std::io::ErrorKind::WouldBlock {
@@ -165,10 +175,18 @@ impl Connection {
         }
     }
 
+    /// Parse all complete messages from buffer and add to queue
+    fn parse_all_messages_from_buffer(&mut self) -> Result<()> {
+        while let Some(message) = self.try_parse_message()? {
+            self.message_queue.push_back(message);
+        }
+        Ok(())
+    }
+
     /// Try to parse a complete FIX message from the buffer
     fn try_parse_message(&mut self) -> Result<Option<FixMessage>> {
         if !self.buffer.is_empty() {
-            debug!(
+            trace!(
                 "Buffer contains {} bytes: {:?}",
                 self.buffer.len(),
                 String::from_utf8_lossy(&self.buffer)
@@ -178,31 +196,138 @@ impl Connection {
         // Look for SOH (Start of Header) character which delimits FIX fields
         const SOH: u8 = 0x01;
 
-        // Find the end of a complete message (looking for checksum field)
+        // Find the beginning of a FIX message (looking for BeginString field)
         let buffer_str = String::from_utf8_lossy(&self.buffer);
-        if let Some(checksum_pos) = buffer_str.find("10=") {
-            debug!("Found checksum field at position {}", checksum_pos);
-            // Find the SOH after the checksum (3 digits + SOH)
-            if let Some(end_pos) = buffer_str[checksum_pos..].find(char::from(SOH)) {
-                let message_end = checksum_pos + end_pos + 1;
-                let message_bytes = self.buffer.drain(..message_end).collect::<Vec<u8>>();
-                let message_str = String::from_utf8_lossy(&message_bytes);
 
-                debug!("Received FIX message: {}", message_str);
+        // Look for the start of a FIX message with BeginString (8=FIX.4.4)
+        if let Some(msg_start) = buffer_str.find("8=FIX.4.4") {
+            // For FIX messages, we need to check the BodyLength (tag 9) to know the complete message size
+            let message_from_start = &buffer_str[msg_start..];
 
-                // Parse the message
-                match FixMessage::from_str(&message_str) {
-                    Ok(message) => Ok(Some(message)),
-                    Err(e) => Err(DeribitFixError::MessageParsing(format!(
-                        "Failed to parse FIX message: {e}"
-                    ))),
+            // Parse the BodyLength to determine the complete message size
+            if let Some(body_length_start) = message_from_start.find("9=")
+                && let Some(body_length_end) =
+                    message_from_start[body_length_start + 2..].find(char::from(SOH))
+            {
+                let body_length_str = &message_from_start
+                    [body_length_start + 2..body_length_start + 2 + body_length_end];
+                if let Ok(body_length) = body_length_str.parse::<usize>() {
+                    // Calculate the total message length:
+                    // "8=FIX.4.4\x01" + body_length + checksum field
+                    let header_length = body_length_start + 2 + body_length_end + 1; // Up to and including SOH after BodyLength
+                    let expected_total_length = msg_start + header_length + body_length;
+
+                    // Check if we have the complete message
+                    if self.buffer.len() >= expected_total_length {
+                        let message_bytes = self
+                            .buffer
+                            .drain(msg_start..expected_total_length)
+                            .collect::<Vec<u8>>();
+                        let message_str = String::from_utf8_lossy(&message_bytes);
+
+                        debug!(
+                            "Received complete FIX message ({} bytes): {}",
+                            message_bytes.len(),
+                            message_str
+                        );
+
+                        // Parse the message
+                        match FixMessage::from_str(&message_str) {
+                            Ok(message) => return Ok(Some(message)),
+                            Err(e) => {
+                                return Err(DeribitFixError::MessageParsing(format!(
+                                    "Failed to parse FIX message: {e}"
+                                )));
+                            }
+                        }
+                    } else {
+                        debug!(
+                            "Incomplete message: have {} bytes, need {}",
+                            self.buffer.len(),
+                            expected_total_length
+                        );
+                        return Ok(None);
+                    }
+                }
+            }
+
+            // Fallback to old checksum-based parsing if BodyLength parsing fails
+            if let Some(checksum_pos) = message_from_start.find("10=") {
+                debug!(
+                    "Found checksum field at position {}",
+                    msg_start + checksum_pos
+                );
+
+                // Find the SOH after the checksum (should be 3 digits + SOH)
+                let checksum_section = &message_from_start[checksum_pos..];
+                if let Some(end_pos) = checksum_section.find(char::from(SOH)) {
+                    // Make sure we have the full 3-digit checksum
+                    if end_pos >= 4 {
+                        // "10=" + 3 digits = 7 chars minimum, but we'll be more lenient
+                        let message_end = msg_start + checksum_pos + end_pos + 1;
+                        let message_bytes = self
+                            .buffer
+                            .drain(msg_start..message_end)
+                            .collect::<Vec<u8>>();
+                        let message_str = String::from_utf8_lossy(&message_bytes);
+
+                        debug!("Received FIX message (fallback): {}", message_str);
+
+                        // Parse the message
+                        match FixMessage::from_str(&message_str) {
+                            Ok(message) => Ok(Some(message)),
+                            Err(e) => Err(DeribitFixError::MessageParsing(format!(
+                                "Failed to parse FIX message: {e}"
+                            ))),
+                        }
+                    } else {
+                        // Incomplete checksum
+                        Ok(None)
+                    }
+                } else {
+                    // Incomplete message - checksum field found but no terminating SOH
+                    Ok(None)
                 }
             } else {
-                // Incomplete message
+                // No complete message yet - found start but no checksum
                 Ok(None)
             }
         } else {
-            // No complete message yet
+            // No message start found yet - might be just leftover data or waiting for more
+            // Clear any non-message data from the beginning of buffer
+            if !buffer_str.is_empty() && !buffer_str.starts_with("8=FIX") {
+                // Find if there's a message start somewhere in the buffer
+                if let Some(start_pos) = buffer_str.find("8=FIX") {
+                    // Remove garbage data before the message start
+                    debug!(
+                        "Removing {} bytes of garbage data before message start",
+                        start_pos
+                    );
+                    self.buffer.drain(..start_pos);
+                } else {
+                    // No message start found, could be fragment - keep if small, discard if too large
+                    if self.buffer.len() > 1000 {
+                        debug!(
+                            "Clearing large buffer ({} bytes) with no message start",
+                            self.buffer.len()
+                        );
+                        self.buffer.clear();
+                    } else if self.buffer.len() > 10 && !buffer_str.trim().is_empty() {
+                        // Check if this looks like invalid data (not starting with FIX fields)
+                        let trimmed = buffer_str.trim();
+                        // Valid FIX fragments should contain field numbers like "10=", "35=", etc.
+                        // or be very short (under certain threshold)
+                        if !trimmed.contains('=') || (!trimmed.starts_with(char::is_numeric) && self.buffer.len() > 20) {
+                            // This looks like invalid data, not a FIX message fragment
+                            return Err(DeribitFixError::MessageParsing(format!(
+                                "Failed to parse invalid message data: {}",
+                                trimmed
+                            )));
+                        }
+                    }
+                    // Keep smaller fragments or those that look like valid FIX field fragments
+                }
+            }
             Ok(None)
         }
     }
@@ -236,6 +361,7 @@ impl Connection {
 
         self.stream = stream;
         self.buffer.clear();
+        self.message_queue.clear();
         self.connected = true;
 
         info!("Successfully reconnected");

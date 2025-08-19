@@ -12,3 +12,4 @@ deribit-base = { workspace = true }
 deribit-fix = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }
+chrono = { workspace = true }

@@ -129,7 +129,7 @@ impl DeribitFixClient {
     pub async fn send_order(&self, order: NewOrderRequest) -> Result<String> {
         if let Some(session) = &self.session {
             let mut session_guard = session.lock().await;
-            session_guard.send_new_order(order)
+            session_guard.send_new_order(order).await
         } else {
             Err(DeribitFixError::Session("Not connected".to_string()))
         }

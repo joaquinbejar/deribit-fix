@@ -17,7 +17,7 @@ use tracing::{error, info};
 async fn main() -> Result<()> {
     // Setup logging
     unsafe {
-        std::env::set_var("LOGLEVEL", "info");
+        std::env::set_var("DERIBIT_LOG_LEVEL", "DEBUG");
     }
     setup_logger();
 

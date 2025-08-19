@@ -177,6 +177,8 @@ impl std::fmt::Debug for FixMessage {
                 554 => "Password",
                 584 => "MassStatusReqID",
                 585 => "MassStatusReqType",
+                710 => "PosReqID",
+                721 => "PosMaintRptID",
                 _ => "Unknown",
             };
             field_descriptions.push(format!("{field_name}({tag})={value}"));

@@ -160,12 +160,12 @@ async fn test_empty_positions_report() -> Result<()> {
 
     // Additional validation: Monitor for any position-related messages
     info!("👁️ Monitoring for PositionReport messages...");
-    let monitor_duration = Duration::from_secs(10);
+    let monitor_duration = Duration::from_secs(60);
     let start_time = std::time::Instant::now();
     let mut position_reports_received = 0;
 
     while start_time.elapsed() < monitor_duration {
-        match timeout(Duration::from_millis(500), client.receive_message()).await {
+        match timeout(Duration::from_millis(5000), client.receive_message()).await {
             Ok(Ok(Some(message))) => {
                 if let Some(msg_type) = message.get_field(35)
                     && msg_type == "AP"

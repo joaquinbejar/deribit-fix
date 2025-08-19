@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tracing::{debug, info};
+use tracing::{debug, error, info, trace};
 
 /// FIX session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -253,12 +253,25 @@ impl Session {
     }
 
     /// Send a new order
-    pub fn send_new_order(&mut self, order: NewOrderRequest) -> Result<String> {
+    pub async fn send_new_order(&mut self, order: NewOrderRequest) -> Result<String> {
         info!("Sending new order: {:?}", order);
 
-        let order_id = format!("ORDER_{}", chrono::Utc::now().timestamp_millis());
+        // Use the client order ID if provided, otherwise generate one
+        let order_id = order
+            .client_order_id
+            .clone()
+            .unwrap_or_else(|| format!("ORDER_{}", chrono::Utc::now().timestamp_millis()));
 
-        let _order_message = MessageBuilder::new()
+        // Determine order type
+        let ord_type = match order.order_type {
+            OrderType::Market => "1",     // Market
+            OrderType::Limit => "2",      // Limit
+            OrderType::StopLimit => "4",  // Stop Limit
+            OrderType::StopMarket => "3", // Stop Market
+            _ => "2",                     // Default to Limit for other types
+        };
+
+        let mut builder = MessageBuilder::new()
             .msg_type(MsgType::NewOrderSingle)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
@@ -274,14 +287,46 @@ impl Session {
             ) // Side
             .field(60, Utc::now().format("%Y%m%d-%H:%M:%S%.3f").to_string()) // TransactTime
             .field(38, order.amount.to_string()) // OrderQty
-            .field(40, "2".to_string()) // OrdType (2 = Limit)
-            .field(44, order.price.unwrap_or(0.0).to_string()) // Price
-            .build()?;
+            .field(40, ord_type.to_string()); // OrdType
 
-        // In a real implementation, you would send this message
+        // Add price for limit orders
+        if order.order_type == OrderType::Limit || order.price.is_some() {
+            builder = builder.field(44, order.price.unwrap_or(0.0).to_string()); // Price
+        }
+
+        // Add time in force
+        let tif = match order.time_in_force {
+            TimeInForce::GoodTilCancelled => "1",
+            TimeInForce::ImmediateOrCancel => "3",
+            TimeInForce::FillOrKill => "4",
+            TimeInForce::GoodTilDay => "6",
+        };
+        builder = builder.field(59, tif.to_string()); // TimeInForce
+
+        // Add execution instructions
+        let mut exec_inst = String::new();
+        if order.post_only == Some(true) {
+            exec_inst.push('6'); // Participate don't initiate
+        }
+        if order.reduce_only == Some(true) {
+            exec_inst.push('E'); // Reduce only
+        }
+        if !exec_inst.is_empty() {
+            builder = builder.field(18, exec_inst); // ExecInst
+        }
+
+        // Add label if provided
+        if let Some(label) = &order.label {
+            builder = builder.field(100010, label.clone()); // Deribit label
+        }
+
+        let order_message = builder.build()?;
+
+        // Actually send the message
+        self.send_message(order_message).await?;
         self.outgoing_seq_num += 1;
 
-        info!("New order message prepared with ID: {}", order_id);
+        info!("New order message sent with ID: {}", order_id);
         Ok(order_id)
     }
 
@@ -394,6 +439,20 @@ impl Session {
                             if pos_req_id == &request_id {
                                 debug!("Received PositionReport for request: {}", request_id);
 
+                                // Check if this is an empty position report (no instrument name)
+                                if message.get_field(55).is_none() {
+                                    info!(
+                                        "Received empty position report - indicates no active positions for this request"
+                                    );
+                                    debug!(
+                                        "Empty PositionReport details: PosReqID={}, PosMaintRptID={:?}",
+                                        request_id,
+                                        message.get_field(721)
+                                    );
+                                    // This is an end-of-positions marker indicating no positions, continue waiting
+                                    continue;
+                                }
+
                                 match PositionReport::try_from_fix_message(&message) {
                                     Ok(position) => {
                                         debug!("Successfully parsed position: {:?}", position);
@@ -401,6 +460,7 @@ impl Session {
                                     }
                                     Err(e) => {
                                         warn!("Failed to parse PositionReport: {}", e);
+                                        debug!("Message fields: {:?}", message);
                                     }
                                 }
                             } else {
@@ -461,12 +521,12 @@ impl Session {
         let mut auth_data = raw_data.as_bytes().to_vec();
         auth_data.extend_from_slice(access_secret.as_bytes());
 
-        debug!("Timestamp: {}", timestamp);
-        debug!("Nonce length: {} bytes", nonce_bytes.len());
-        debug!("Nonce (base64): {}", nonce_b64);
-        debug!("RawData: {}", raw_data);
-        debug!("Access secret: {}", access_secret);
-        debug!("Auth data length: {} bytes", auth_data.len());
+        debug!("Auth Data at Timestamp: {}", timestamp);
+        trace!("Nonce length: {} bytes", nonce_bytes.len());
+        trace!("Nonce (base64): {}", nonce_b64);
+        trace!("RawData: {}", raw_data);
+        trace!("Access secret: {}", access_secret);
+        trace!("Auth data length: {} bytes", auth_data.len());
 
         let mut hasher = Sha256::new();
         hasher.update(&auth_data);
@@ -503,6 +563,13 @@ impl Session {
 
         // Get message type
         let msg_type_str = message.get_field(35).unwrap_or(&String::new()).clone();
+
+        // Skip messages with empty or missing message type
+        if msg_type_str.is_empty() {
+            debug!("Skipping message with empty message type");
+            return Ok(());
+        }
+
         let msg_type = MsgType::from_str(&msg_type_str).map_err(|_| {
             DeribitFixError::MessageParsing(format!("Unknown message type: {msg_type_str}"))
         })?;
@@ -523,6 +590,18 @@ impl Session {
                 debug!("Received test request, sending heartbeat response");
                 let test_req_id = message.get_field(112);
                 self.send_heartbeat(test_req_id.cloned()).await?;
+            }
+            MsgType::ExecutionReport => {
+                debug!("Received ExecutionReport: {:?}", message);
+                // ExecutionReport processing - let the client handle the details
+            }
+            MsgType::PositionReport => {
+                debug!("Received PositionReport: {:?}", message);
+                // PositionReport processing - let the client handle the details
+            }
+            MsgType::Reject => {
+                error!("Received Reject message: {:?}", message);
+                // Reject message processing
             }
             _ => {
                 debug!("Received message type: {:?}", msg_type);

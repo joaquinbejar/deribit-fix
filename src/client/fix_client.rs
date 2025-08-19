@@ -137,9 +137,21 @@ impl DeribitFixClient {
 
     /// Cancel an order
     pub async fn cancel_order(&self, order_id: String) -> Result<()> {
+        self.cancel_order_with_symbol(order_id, None).await
+    }
+
+    /// Cancel an order with optional symbol specification
+    /// 
+    /// # Arguments
+    /// * `order_id` - The order identifier (OrigClOrdID) to cancel
+    /// * `symbol` - Optional instrument symbol (e.g., "BTC-PERPETUAL").
+    ///   Required when canceling by ClOrdID or DeribitLabel,
+    ///   but not required when using OrigClOrdID (fastest approach)
+    ///
+    pub async fn cancel_order_with_symbol(&self, order_id: String, symbol: Option<String>) -> Result<()> {
         if let Some(session) = &self.session {
             let mut session_guard = session.lock().await;
-            session_guard.cancel_order(order_id)
+            session_guard.cancel_order_with_symbol(order_id, symbol).await
         } else {
             Err(DeribitFixError::Session("Not connected".to_string()))
         }

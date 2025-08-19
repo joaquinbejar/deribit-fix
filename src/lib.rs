@@ -261,12 +261,12 @@ pub mod prelude {
     pub use crate::{
         client::DeribitFixClient,
         config::DeribitFixConfig,
+        config::gen_id,
         error::{DeribitFixError, Result},
         message::admin::*,
         message::market_data::*,
         message::orders::*,
         message::security_list::*,
         model::*,
-        config::gen_id
     };
 }

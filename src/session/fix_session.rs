@@ -1,5 +1,6 @@
 //! FIX session management
 
+use crate::config::gen_id;
 use crate::model::message::FixMessage;
 use crate::model::types::MsgType;
 use crate::{
@@ -17,7 +18,6 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, trace};
-use crate::config::gen_id;
 
 /// FIX session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -332,7 +332,7 @@ impl Session {
     }
 
     /// Cancel an order
-    /// 
+    ///
     /// # Arguments
     /// * `order_id` - The order identifier (OrigClOrdID) to cancel
     /// * `symbol` - Optional instrument symbol. Required when canceling by ClOrdID or DeribitLabel,
@@ -343,17 +343,21 @@ impl Session {
     }
 
     /// Cancel an order with optional symbol specification
-    /// 
+    ///
     /// According to Deribit FIX documentation:
     /// - Canceling by OrigClOrdId is fastest and recommended when possible
     /// - Symbol is required only when OrigClOrdId is absent (canceling by ClOrdID or DeribitLabel)
     /// - Currency can optionally speed up searches by DeribitLabel or ClOrdID
-    /// 
+    ///
     /// # Arguments
     /// * `order_id` - The order identifier (OrigClOrdID) to cancel
     /// * `symbol` - Optional instrument symbol (e.g., "BTC-PERPETUAL")
     /// * `currency` - Optional currency to speed up search
-    pub async fn cancel_order_with_symbol(&mut self, order_id: String, symbol: Option<String>) -> Result<()> {
+    pub async fn cancel_order_with_symbol(
+        &mut self,
+        order_id: String,
+        symbol: Option<String>,
+    ) -> Result<()> {
         info!("Cancelling order: {} with symbol: {:?}", order_id, symbol);
 
         // Generate a proper unique cancel ID using random number instead of timestamp

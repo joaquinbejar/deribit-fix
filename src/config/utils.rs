@@ -33,12 +33,33 @@ where
     }
 }
 
+/// Generates a unique, random identifier using a custom character set.
+///
+/// This function creates a 30-character-long identifier composed of
+/// uppercase English letters ('A'-'Z') and digits ('0'-'9'). The generated
+/// identifier is suitable for use in scenarios where a non-collision and
+/// easy-to-read identifier is required, such as database keys, tokens,
+/// or URLs.
+///
+/// # Returns
+///
+/// A `String` containing the randomly generated identifier.
+///
+/// # Example
+///
+/// ```rust
+/// use deribit_fix::config::gen_id;
+/// let id = gen_id();
+/// println!("Generated ID: {}", id); // Example output: "A1B2C3D4E5F6G7H8I9J0KLMNOPQRSTU"
+/// ```
+///
+/// # Dependencies
+///
+/// This function uses the `nanoid` crate to generate the random identifier.
 pub fn gen_id() -> String {
     let alphabet: [char; 36] = [
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J',
-        'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
-        'U', 'V', 'W', 'X', 'Y', 'Z'
+        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+        'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z',
     ];
 
     nanoid::nanoid!(30, &alphabet)

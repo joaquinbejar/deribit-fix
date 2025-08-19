@@ -62,7 +62,7 @@ async fn main() -> Result<()> {
     match invalid_host_config.validate() {
         Ok(_) => {
             info!("Creating client with invalid host configuration...");
-            match DeribitFixClient::new(invalid_host_config).await {
+            match DeribitFixClient::new(&invalid_host_config).await {
                 Ok(mut client) => {
                     info!("Client created, attempting connection to invalid host...");
                     match client.connect().await {
@@ -108,7 +108,7 @@ async fn main() -> Result<()> {
     match config.validate() {
         Ok(_) => {
             info!("Creating client for basic error testing...");
-            let mut client = DeribitFixClient::new(config).await?;
+            let mut client = DeribitFixClient::new(&config).await?;
 
             info!("Connecting to server...");
             match client.connect().await {

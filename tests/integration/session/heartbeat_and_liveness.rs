@@ -73,7 +73,7 @@ async fn test_heartbeat_response_to_test_request() -> Result<()> {
     );
 
     // Step 2: Create client and connect
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 3: Connect and perform logon
@@ -229,7 +229,7 @@ async fn test_session_liveness_with_inactivity() -> Result<()> {
     config.heartbeat_interval = 5; // 5 seconds for faster testing
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and logon
     client.connect().await?;
@@ -339,7 +339,7 @@ async fn test_heartbeat_interval_configuration() -> Result<()> {
         config.heartbeat_interval = interval;
         config.validate()?;
 
-        let mut client = DeribitFixClient::new(config).await?;
+        let mut client = DeribitFixClient::new(&config).await?;
 
         // Quick connect/disconnect test to verify the configuration is accepted
         match client.connect().await {

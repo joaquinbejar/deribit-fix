@@ -68,7 +68,7 @@ async fn test_basic_connection_recovery() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config.clone()).await?;
+    let mut client = DeribitFixClient::new(&config.clone()).await?;
     info!("✅ Initial client created successfully");
 
     // Step 2: Establish initial connection
@@ -139,7 +139,7 @@ async fn test_basic_connection_recovery() -> Result<()> {
 
     // Step 6: Attempt to recover connection
     info!("🔄 Attempting connection recovery...");
-    let mut recovery_client = DeribitFixClient::new(config).await?;
+    let mut recovery_client = DeribitFixClient::new(&config).await?;
 
     let recovery_result = recovery_client.connect().await;
     match recovery_result {
@@ -230,7 +230,7 @@ async fn test_connection_resilience() -> Result<()> {
     for cycle in 1..=connection_cycles {
         info!("🔄 Connection cycle {}/{}", cycle, connection_cycles);
 
-        let mut client = DeribitFixClient::new(config.clone()).await?;
+        let mut client = DeribitFixClient::new(&config.clone()).await?;
 
         // Connect
         let connect_result = client.connect().await;
@@ -287,7 +287,7 @@ async fn test_session_state_after_reconnection() -> Result<()> {
 
     // First connection - establish baseline
     info!("🔌 Establishing baseline connection...");
-    let mut client1 = DeribitFixClient::new(config.clone()).await?;
+    let mut client1 = DeribitFixClient::new(&config.clone()).await?;
 
     match client1.connect().await {
         Ok(_) => {
@@ -324,7 +324,7 @@ async fn test_session_state_after_reconnection() -> Result<()> {
 
             // Second connection - test recovery
             info!("🔄 Testing reconnection session state...");
-            let mut client2 = DeribitFixClient::new(config).await?;
+            let mut client2 = DeribitFixClient::new(&config).await?;
 
             match client2.connect().await {
                 Ok(_) => {
@@ -398,7 +398,7 @@ async fn test_rapid_connect_disconnect_cycles() -> Result<()> {
     for cycle in 1..=rapid_cycles {
         info!("⚡ Rapid cycle {}/{}", cycle, rapid_cycles);
 
-        let mut client = DeribitFixClient::new(config.clone()).await?;
+        let mut client = DeribitFixClient::new(&config.clone()).await?;
 
         // Quick connect
         match client.connect().await {

@@ -38,7 +38,7 @@ async fn main() -> Result<()> {
     }
 
     info!("Creating Deribit FIX client...");
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     info!("Connecting to Deribit FIX server...");
     client.connect().await?;

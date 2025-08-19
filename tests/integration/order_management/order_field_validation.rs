@@ -68,7 +68,7 @@ async fn test_post_only_order_rejection() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -252,7 +252,7 @@ async fn test_immediate_or_cancel_behavior() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -427,7 +427,7 @@ async fn test_fill_or_kill_behavior() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon

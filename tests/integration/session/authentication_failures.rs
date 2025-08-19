@@ -69,7 +69,7 @@ async fn test_authentication_with_wrong_password() -> Result<()> {
     info!("✅ Configuration created with invalid password");
 
     // Step 2: Create client
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 3: Attempt to connect with wrong credentials
@@ -155,7 +155,7 @@ async fn test_authentication_with_invalid_sender_comp_id() -> Result<()> {
         config.sender_comp_id
     );
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Attempt to connect with invalid sender comp ID
     info!("🔌 Attempting to connect with invalid SenderCompID...");
@@ -232,7 +232,7 @@ async fn test_authentication_with_invalid_username() -> Result<()> {
         config.username
     );
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Attempt to connect with invalid username
     info!("🔌 Attempting to connect with invalid username...");
@@ -332,10 +332,10 @@ async fn test_multiple_failed_authentication_attempts() -> Result<()> {
 
         // Handle empty credentials case - DeribitFixClient::new() validates internally
         let client_result = if username.is_empty() || password.is_empty() {
-            DeribitFixClient::new(config).await
+            DeribitFixClient::new(&config).await
         } else {
             config.validate()?;
-            DeribitFixClient::new(config).await
+            DeribitFixClient::new(&config).await
         };
 
         let mut client = match client_result {

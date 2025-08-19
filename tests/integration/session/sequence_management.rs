@@ -67,7 +67,7 @@ async fn test_sequence_number_validation_basic() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -214,7 +214,7 @@ async fn test_session_recovery_after_sequence_gap() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and establish session
     client.connect().await?;
@@ -337,7 +337,7 @@ async fn test_sequence_number_continuity() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and logon
     client.connect().await?;

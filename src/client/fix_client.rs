@@ -22,9 +22,9 @@ pub struct DeribitFixClient {
 
 impl DeribitFixClient {
     /// Create a new Deribit FIX client
-    pub async fn new(config: DeribitFixConfig) -> Result<Self> {
+    pub async fn new(config: &DeribitFixConfig) -> Result<Self> {
         config.validate()?;
-
+        let config = config.clone();
         Ok(Self {
             config,
             connection: None,

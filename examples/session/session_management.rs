@@ -37,7 +37,7 @@ async fn main() -> Result<()> {
     }
 
     info!("Creating Deribit FIX client...");
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Monitor session state during connection
     info!(

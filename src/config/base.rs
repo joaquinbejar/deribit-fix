@@ -12,13 +12,14 @@ use crate::constants::{
     DEFAULT_TEST_PORT,
 };
 use crate::error::{DeribitFixError, Result};
+use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
-use std::{fmt::Debug, time::Duration};
+use std::time::Duration;
 use tracing::debug;
 
 /// Configuration for the Deribit FIX client
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct DeribitFixConfig {
     /// Deribit username
     pub username: String,
@@ -357,3 +358,6 @@ impl Default for DeribitFixConfig {
         Self::new()
     }
 }
+
+impl_json_debug_pretty!(DeribitFixConfig);
+impl_json_display!(DeribitFixConfig);

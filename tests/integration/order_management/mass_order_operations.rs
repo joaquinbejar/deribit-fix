@@ -69,7 +69,7 @@ async fn test_mass_order_operations() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -357,7 +357,7 @@ async fn test_mass_cancel_empty_instrument() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon

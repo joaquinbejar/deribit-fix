@@ -67,7 +67,7 @@ async fn test_market_data_streaming_subscription() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -285,7 +285,7 @@ async fn test_market_data_streaming_updates() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and logon
     client.connect().await?;

@@ -64,6 +64,8 @@ mod tests {
         let config = DeribitFixConfig::new();
 
         let debug_str = format!("{config:?}");
-        assert!(debug_str.contains("DeribitFixConfig"));
+        // The debug output uses JSON format, so check for JSON structure
+        assert!(debug_str.contains("{") && debug_str.contains("}"));
+        assert!(debug_str.contains("username") || debug_str.contains("host"));
     }
 }

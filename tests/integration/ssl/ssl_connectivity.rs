@@ -78,7 +78,7 @@ async fn test_ssl_connection_establishment() -> Result<()> {
     );
 
     // Step 2: Create client with SSL configuration
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ SSL client created successfully");
 
     // Step 3: Attempt SSL connection
@@ -183,7 +183,7 @@ async fn test_ssl_vs_non_ssl_comparison() -> Result<()> {
     non_ssl_config.use_ssl = false;
     non_ssl_config.validate()?;
 
-    let mut non_ssl_client = DeribitFixClient::new(non_ssl_config).await?;
+    let mut non_ssl_client = DeribitFixClient::new(&non_ssl_config).await?;
     info!(
         "Configuration: Host: {}, Port: {}, SSL: {}",
         non_ssl_client.config.host, non_ssl_client.config.port, non_ssl_client.config.use_ssl
@@ -237,7 +237,7 @@ async fn test_ssl_vs_non_ssl_comparison() -> Result<()> {
     }
     ssl_config.validate()?;
 
-    let mut ssl_client = DeribitFixClient::new(ssl_config).await?;
+    let mut ssl_client = DeribitFixClient::new(&ssl_config).await?;
     info!(
         "Configuration: Host: {}, Port: {}, SSL: {}",
         ssl_client.config.host, ssl_client.config.port, ssl_client.config.use_ssl
@@ -372,7 +372,7 @@ async fn test_ssl_configuration_validation() -> Result<()> {
         }
 
         // Quick connection test (without full session establishment)
-        match DeribitFixClient::new(config).await {
+        match DeribitFixClient::new(&config).await {
             Ok(_) => {
                 info!("✅ Client creation succeeded for: {}", description);
             }
@@ -501,7 +501,7 @@ async fn test_ssl_error_handling() -> Result<()> {
     ssl_to_non_ssl_config.port = 9881; // Non-SSL port
     ssl_to_non_ssl_config.validate()?;
 
-    let mut ssl_client = DeribitFixClient::new(ssl_to_non_ssl_config).await?;
+    let mut ssl_client = DeribitFixClient::new(&ssl_to_non_ssl_config).await?;
     let ssl_result = ssl_client.connect().await;
 
     match ssl_result {
@@ -527,7 +527,7 @@ async fn test_ssl_error_handling() -> Result<()> {
     non_ssl_to_ssl_config.port = 9883; // SSL port
     non_ssl_to_ssl_config.validate()?;
 
-    let mut non_ssl_client = DeribitFixClient::new(non_ssl_to_ssl_config).await?;
+    let mut non_ssl_client = DeribitFixClient::new(&non_ssl_to_ssl_config).await?;
     let non_ssl_result = non_ssl_client.connect().await;
 
     match non_ssl_result {
@@ -551,7 +551,7 @@ async fn test_ssl_error_handling() -> Result<()> {
     invalid_host_config.connection_timeout = Duration::from_secs(5); // Shorter timeout
     invalid_host_config.validate()?;
 
-    let mut invalid_client = DeribitFixClient::new(invalid_host_config).await?;
+    let mut invalid_client = DeribitFixClient::new(&invalid_host_config).await?;
     let invalid_result = invalid_client.connect().await;
 
     match invalid_result {

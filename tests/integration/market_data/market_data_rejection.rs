@@ -68,7 +68,7 @@ async fn test_market_data_rejection_invalid_symbol() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 2: Connect and perform logon
@@ -282,7 +282,7 @@ async fn test_market_data_rejection_unsupported_parameters() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and logon
     client.connect().await?;
@@ -409,7 +409,7 @@ async fn test_market_data_rejection_duplicate_request() -> Result<()> {
     let config = DeribitFixConfig::new();
     config.validate()?;
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Connect and logon
     client.connect().await?;

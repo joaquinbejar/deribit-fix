@@ -63,7 +63,7 @@ mod tests {
             )
             .with_endpoint("test.deribit.com".to_string(), 9881);
 
-        let result = DeribitFixClient::new(config).await;
+        let result = DeribitFixClient::new(&config).await;
         assert!(
             result.is_ok(),
             "Client creation should succeed with valid config"
@@ -82,7 +82,7 @@ mod tests {
         let config = DeribitFixConfig::new()
             .with_credentials("".to_string(), "test_access_secret".to_string()); // Empty username
 
-        let result = DeribitFixClient::new(config).await;
+        let result = DeribitFixClient::new(&config).await;
         assert!(
             result.is_err(),
             "Client creation should fail with invalid config"
@@ -102,7 +102,7 @@ mod tests {
             "test_access_secret".to_string(),
         );
 
-        let client = DeribitFixClient::new(config).await.unwrap();
+        let client = DeribitFixClient::new(&config).await.unwrap();
 
         // Client should not be connected initially
         assert!(
@@ -125,7 +125,7 @@ mod tests {
             "test_access_secret".to_string(),
         );
 
-        let client = DeribitFixClient::new(config).await.unwrap();
+        let client = DeribitFixClient::new(&config).await.unwrap();
 
         // Test send_order when not connected
         let order = NewOrderRequest {

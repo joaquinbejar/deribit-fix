@@ -72,7 +72,7 @@ async fn test_logon_logout_flow() -> Result<()> {
     info!("✅ Configuration loaded and validated");
 
     // Step 2: Create client
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
     info!("✅ Client created successfully");
 
     // Step 3: Establish TCP connection and perform logon
@@ -154,7 +154,7 @@ async fn test_logon_with_invalid_credentials() -> Result<()> {
     config.username = "invalid_user".to_string();
     config.password = "invalid_password".to_string();
 
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Attempt to connect - this may succeed in test environment
     let connect_result = client.connect().await;
@@ -197,7 +197,7 @@ async fn test_logout_without_logon() -> Result<()> {
 
     check_env_file()?;
     let config = DeribitFixConfig::new();
-    let mut client = DeribitFixClient::new(config).await?;
+    let mut client = DeribitFixClient::new(&config).await?;
 
     // Try to disconnect without connecting first
     let disconnect_result = client.disconnect().await;

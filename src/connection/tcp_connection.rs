@@ -317,7 +317,9 @@ impl Connection {
                         let trimmed = buffer_str.trim();
                         // Valid FIX fragments should contain field numbers like "10=", "35=", etc.
                         // or be very short (under certain threshold)
-                        if !trimmed.contains('=') || (!trimmed.starts_with(char::is_numeric) && self.buffer.len() > 20) {
+                        if !trimmed.contains('=')
+                            || (!trimmed.starts_with(char::is_numeric) && self.buffer.len() > 20)
+                        {
                             // This looks like invalid data, not a FIX message fragment
                             return Err(DeribitFixError::MessageParsing(format!(
                                 "Failed to parse invalid message data: {}",

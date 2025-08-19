@@ -17,6 +17,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::{debug, error, info, trace};
+use crate::config::gen_id;
 
 /// FIX session state
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -172,10 +173,10 @@ impl Session {
             ); // DisplayIncrementSteps
         }
 
-        // Add AppID if available - temporarily disabled for testing
-        // if let Some(app_id) = &self.config.app_id {
-        //     message_builder = message_builder.field(1128, app_id.clone()); // AppID
-        // }
+        // Add AppID if available
+        if let Some(app_id) = &self.config.app_id {
+            message_builder = message_builder.field(1128, app_id.clone()); // AppID
+        }
 
         let logon_message = message_builder.build()?;
 
@@ -260,7 +261,7 @@ impl Session {
         let order_id = order
             .client_order_id
             .clone()
-            .unwrap_or_else(|| format!("ORDER_{}", chrono::Utc::now().timestamp_millis()));
+            .unwrap_or_else(|| format!("ORDER_{}", gen_id()));
 
         // Determine order type
         let ord_type = match order.order_type {
@@ -331,25 +332,54 @@ impl Session {
     }
 
     /// Cancel an order
-    pub fn cancel_order(&mut self, order_id: String) -> Result<()> {
-        info!("Cancelling order: {}", order_id);
+    /// 
+    /// # Arguments
+    /// * `order_id` - The order identifier (OrigClOrdID) to cancel
+    /// * `symbol` - Optional instrument symbol. Required when canceling by ClOrdID or DeribitLabel,
+    ///   but not required when using OrigClOrdID (fastest approach)
+    /// * `currency` - Optional currency to speed up search when using ClOrdID or DeribitLabel
+    pub async fn cancel_order(&mut self, order_id: String) -> Result<()> {
+        self.cancel_order_with_symbol(order_id, None).await
+    }
 
-        let cancel_id = format!("CANCEL_{}", chrono::Utc::now().timestamp_millis());
+    /// Cancel an order with optional symbol specification
+    /// 
+    /// According to Deribit FIX documentation:
+    /// - Canceling by OrigClOrdId is fastest and recommended when possible
+    /// - Symbol is required only when OrigClOrdId is absent (canceling by ClOrdID or DeribitLabel)
+    /// - Currency can optionally speed up searches by DeribitLabel or ClOrdID
+    /// 
+    /// # Arguments
+    /// * `order_id` - The order identifier (OrigClOrdID) to cancel
+    /// * `symbol` - Optional instrument symbol (e.g., "BTC-PERPETUAL")
+    /// * `currency` - Optional currency to speed up search
+    pub async fn cancel_order_with_symbol(&mut self, order_id: String, symbol: Option<String>) -> Result<()> {
+        info!("Cancelling order: {} with symbol: {:?}", order_id, symbol);
 
-        let _cancel_message = MessageBuilder::new()
+        // Generate a proper unique cancel ID using random number instead of timestamp
+        let cancel_id = format!("CANCEL_{}", gen_id());
+
+        let mut builder = MessageBuilder::new()
             .msg_type(MsgType::OrderCancelRequest)
             .sender_comp_id(self.config.sender_comp_id.clone())
             .target_comp_id(self.config.target_comp_id.clone())
             .msg_seq_num(self.outgoing_seq_num)
-            .field(11, cancel_id) // ClOrdID
-            .field(41, order_id) // OrigClOrdID
-            .field(60, Utc::now().format("%Y%m%d-%H:%M:%S%.3f").to_string()) // TransactTime
-            .build()?;
+            .field(11, cancel_id) // ClOrdID - Original order identifier assigned by the user
+            .field(41, order_id) // OrigClOrdID - Order identifier assigned by Deribit
+            .field(60, Utc::now().format("%Y%m%d-%H:%M:%S%.3f").to_string()); // TransactTime
 
-        // In a real implementation, you would send this message
+        // Add symbol if provided - required when OrigClOrdId is absent
+        if let Some(symbol_value) = symbol {
+            builder = builder.field(55, symbol_value); // Symbol
+        }
+
+        let cancel_message = builder.build()?;
+
+        // Actually send the cancel message
+        self.send_message(cancel_message).await?;
         self.outgoing_seq_num += 1;
 
-        info!("Order cancel message prepared");
+        info!("Order cancel message sent");
         Ok(())
     }
 
@@ -357,7 +387,7 @@ impl Session {
     pub async fn subscribe_market_data(&mut self, symbol: String) -> Result<()> {
         info!("Subscribing to market data for: {}", symbol);
 
-        let request_id = format!("MDR_{}", chrono::Utc::now().timestamp_millis());
+        let request_id = format!("MDR_{}", gen_id());
 
         let market_data_request = MessageBuilder::new()
             .msg_type(MsgType::MarketDataRequest)
@@ -392,7 +422,7 @@ impl Session {
 
         info!("Requesting positions");
 
-        let request_id = format!("POS_{}", chrono::Utc::now().timestamp_millis());
+        let request_id = format!("POS_{}", gen_id());
 
         // Create typed position request
         let position_request = RequestForPositions::all_positions(request_id.clone())
@@ -505,7 +535,7 @@ impl Session {
     /// Returns (raw_data, base64_password_hash)
     pub fn generate_auth_data(&self, access_secret: &str) -> Result<(String, String)> {
         // Generate timestamp (strictly increasing integer in milliseconds)
-        let timestamp = chrono::Utc::now().timestamp_millis();
+        let timestamp = Utc::now().timestamp_millis();
 
         // Generate random nonce (at least 32 bytes as recommended by Deribit)
         let mut nonce_bytes = vec![0u8; 32];

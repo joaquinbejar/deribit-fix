@@ -12,7 +12,6 @@ name = "reject_example"
 path = "reject_example.rs"
 
 [dependencies]
-deribit-base = { workspace = true }
 deribit-fix = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }

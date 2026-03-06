@@ -4,7 +4,6 @@
 //! according to the FIX 4.4 specification. Reject messages are used to reject
 //! messages that cannot be processed due to validation errors.
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};

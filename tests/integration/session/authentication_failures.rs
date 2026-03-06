@@ -12,7 +12,6 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info};
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 
 /// Check if .env file exists and contains required variables

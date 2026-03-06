@@ -9,7 +9,6 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info, warn};
 
-use deribit_base::prelude::*;
 use deribit_fix::message::MessageBuilder;
 use deribit_fix::model::types::MsgType;
 use deribit_fix::prelude::*;

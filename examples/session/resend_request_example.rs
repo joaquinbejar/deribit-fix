@@ -4,7 +4,6 @@
 //! according to the FIX 4.4 specification. Resend Request messages are used to request
 //! retransmission of messages when sequence gaps are detected.
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info, warn};

@@ -6,7 +6,6 @@
 //! 3. Handle configuration validation errors
 //! 4. Implement proper error logging strategies
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 use std::time::Duration;

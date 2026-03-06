@@ -17,7 +17,6 @@ use crate::message::MessageBuilder;
 use crate::model::message::FixMessage;
 use crate::model::types::MsgType;
 use chrono::Utc;
-use deribit_base::impl_json_display;
 use serde::{Deserialize, Serialize};
 
 /// Heartbeat message (MsgType = 0)

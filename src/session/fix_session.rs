@@ -2,6 +2,8 @@
 
 use crate::config::gen_id;
 use crate::model::message::FixMessage;
+use crate::model::position::Position;
+use crate::model::request::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use crate::model::types::MsgType;
 use crate::{
     config::DeribitFixConfig,
@@ -11,7 +13,6 @@ use crate::{
 };
 use base64::prelude::*;
 use chrono::Utc;
-use deribit_base::prelude::*;
 use rand;
 use sha2::{Digest, Sha256};
 use std::str::FromStr;
@@ -282,8 +283,8 @@ impl Session {
             .field(
                 54,
                 match order.side {
-                    deribit_base::model::order::OrderSide::Buy => "1".to_string(),
-                    deribit_base::model::order::OrderSide::Sell => "2".to_string(),
+                    OrderSide::Buy => "1".to_string(),
+                    OrderSide::Sell => "2".to_string(),
                 },
             ) // Side
             .field(60, Utc::now().format("%Y%m%d-%H:%M:%S%.3f").to_string()) // TransactTime

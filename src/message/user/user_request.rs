@@ -11,7 +11,6 @@ use crate::message::builder::MessageBuilder;
 use crate::model::types::MsgType;
 use base64::{Engine as _, engine::general_purpose};
 use chrono::Utc;
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
 /// User request type enumeration

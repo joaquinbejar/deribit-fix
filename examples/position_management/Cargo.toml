@@ -8,7 +8,6 @@ name = "position_management"
 path = "position_management.rs"
 
 [dependencies]
-deribit-base = { workspace = true }
 deribit-fix = { workspace = true }
 tracing = { workspace = true }
 tokio = { workspace = true }

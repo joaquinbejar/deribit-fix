@@ -4,7 +4,6 @@
 //! according to the FIX 4.4 specification. Test Request messages are used to test
 //! connectivity when no messages have been received for a period of time.
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};

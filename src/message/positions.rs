@@ -17,8 +17,7 @@ use crate::message::MessageBuilder;
 use crate::model::message::FixMessage;
 use crate::model::types::MsgType;
 
-use deribit_base::model::position::Direction;
-use deribit_base::prelude::Position;
+use crate::model::position::{Direction, Position};
 use serde::{Deserialize, Serialize};
 
 /// Position request type enumeration

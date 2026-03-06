@@ -5,10 +5,10 @@
 ******************************************************************************/
 
 // Default configuration constants
-pub(crate) const DEFAULT_TEST_HOST: &str = "test.deribit.com";
-pub(crate) const DEFAULT_PROD_HOST: &str = "www.deribit.com";
+pub(crate) const DEFAULT_TEST_HOST: &str = "fix-test.deribit.com";
+pub(crate) const DEFAULT_PROD_HOST: &str = "fix.deribit.com";
 pub(crate) const DEFAULT_TEST_PORT: u16 = 9881;
-pub(crate) const DEFAULT_PROD_PORT: u16 = 9880;
+pub(crate) const DEFAULT_PROD_PORT: u16 = 9881;
 pub(crate) const DEFAULT_SSL_PORT: u16 = 9883;
 pub(crate) const DEFAULT_HEARTBEAT_INTERVAL: u32 = 30;
 pub(crate) const DEFAULT_CONNECTION_TIMEOUT_SECS: u64 = 10;

@@ -58,8 +58,8 @@
 //!
 //! | Environment | Raw TCP | SSL |
 //! |-------------|---------|-----|
-//! | **Production** | `www.deribit.com:9880` | `www.deribit.com:9883` |
-//! | **Test** | `test.deribit.com:9881` | `test.deribit.com:9883` |
+//! | **Production** | `fix.deribit.com:9881` | `fix.deribit.com:9883` |
+//! | **Test** | `fix-test.deribit.com:9881` | `fix-test.deribit.com:9883` |
 //!
 //! ## 🎯 Core Features
 //!

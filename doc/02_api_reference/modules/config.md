@@ -104,7 +104,7 @@ let config = Config::default()
     .with_api_key("your_api_key")
     .with_api_secret("your_api_secret")
     .with_testnet(true)
-    .with_host("test.deribit.com")
+    .with_host("fix-test.deribit.com")
     .with_port(443)
     .with_ssl(true);
 ```
@@ -133,7 +133,7 @@ let config = Config::default()
     .with_api_key("your_api_key")
     .with_api_secret("your_api_secret")
     .with_testnet(false)
-    .with_host("www.deribit.com")
+    .with_host("fix.deribit.com")
     .with_port(443)
     .with_ssl(true)
     .with_timeout(Duration::from_secs(30))
@@ -191,7 +191,7 @@ impl Config {
 ```toml
 # config.toml
 [connection]
-host = "test.deribit.com"
+host = "fix-test.deribit.com"
 port = 443
 ssl = true
 timeout = 30

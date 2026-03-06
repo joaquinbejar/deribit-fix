@@ -78,7 +78,7 @@ let config = Config::new()
     .with_environment(Environment::Production)
     .with_api_key("your_api_key")
     .with_api_secret("your_api_secret")
-    .with_host("www.deribit.com")
+    .with_host("fix.deribit.com")
     .with_port(443)
     .with_heartbeat_interval(30)
     .with_connection_timeout(Duration::from_secs(10))
@@ -157,7 +157,7 @@ use deribit_fix::ConnectionConfig;
 use std::time::Duration;
 
 let connection_config = ConnectionConfig::new()
-    .with_host("www.deribit.com")
+    .with_host("fix.deribit.com")
     .with_port(443)
     .with_timeout(Duration::from_secs(10))
     .with_max_retries(3)

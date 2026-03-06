@@ -4,9 +4,10 @@ use crate::{
     config::DeribitFixConfig,
     connection::Connection,
     error::{DeribitFixError, Result},
+    model::position::Position,
+    model::request::NewOrderRequest,
     session::Session,
 };
-use deribit_base::prelude::{NewOrderRequest, Position};
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use tracing::info;

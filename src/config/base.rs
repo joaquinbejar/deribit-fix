@@ -12,7 +12,7 @@ use crate::constants::{
     DEFAULT_TEST_PORT,
 };
 use crate::error::{DeribitFixError, Result};
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
+use crate::{impl_json_debug_pretty, impl_json_display};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;

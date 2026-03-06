@@ -244,10 +244,15 @@ pub mod connection;
 /// FIX protocol constants
 pub mod constants;
 pub mod error;
+/// Utility macros for Debug and Display implementations
+#[macro_use]
+pub mod macros;
 pub mod message;
 /// FIX message models and data structures
 pub mod model;
 pub mod session;
+/// Utility functions
+pub mod utils;
 
 pub use client::DeribitFixClient;
 pub use config::DeribitFixConfig;
@@ -268,5 +273,6 @@ pub mod prelude {
         message::orders::*,
         message::security_list::*,
         model::*,
+        utils::setup_logger,
     };
 }

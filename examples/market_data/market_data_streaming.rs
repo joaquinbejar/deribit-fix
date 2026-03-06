@@ -6,7 +6,6 @@
 //! 3. Receive and process streaming market data updates
 //! 4. Handle connection and error management
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 use std::time::Duration;

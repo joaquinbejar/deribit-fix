@@ -1,9 +1,9 @@
 // Unit tests for FixClient functionality
 
-use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use deribit_fix::client::DeribitFixClient;
 use deribit_fix::config::DeribitFixConfig;
 use deribit_fix::error::DeribitFixError;
+use deribit_fix::model::request::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use std::time::Duration;
 
 #[cfg(test)]

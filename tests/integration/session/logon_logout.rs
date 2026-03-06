@@ -14,7 +14,6 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, error, info};
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 

@@ -12,7 +12,7 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info};
 
-use deribit_base::prelude::{NewOrderRequest, OrderSide, OrderType, TimeInForce, setup_logger};
+use deribit_fix::model::request::{NewOrderRequest, OrderSide, OrderType, TimeInForce};
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 

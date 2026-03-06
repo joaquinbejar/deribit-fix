@@ -6,8 +6,7 @@
 //! 3. Cancel orders
 //! 4. Handle order-related errors
 
-use deribit_base::prelude::TimeInForce; // Explicit import to resolve ambiguity
-use deribit_base::prelude::*;
+use deribit_fix::model::request::TimeInForce;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 use std::time::Duration;

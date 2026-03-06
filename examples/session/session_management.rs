@@ -6,7 +6,6 @@
 //! 3. Monitor session lifecycle
 //! 4. Handle session disconnection
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 use std::time::Duration;

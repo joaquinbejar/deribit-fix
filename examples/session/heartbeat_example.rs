@@ -4,7 +4,6 @@
 //! according to the FIX 4.4 specification. Heartbeat messages are used to maintain
 //! session connectivity and respond to Test Request messages.
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{error, info};

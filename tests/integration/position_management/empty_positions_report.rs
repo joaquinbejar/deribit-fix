@@ -13,7 +13,6 @@ use std::time::Duration;
 use tokio::time::{sleep, timeout};
 use tracing::{debug, info};
 
-use deribit_base::prelude::setup_logger;
 use deribit_fix::prelude::*;
 use deribit_fix::session::SessionState;
 

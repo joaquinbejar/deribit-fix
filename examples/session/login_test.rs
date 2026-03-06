@@ -4,7 +4,6 @@
 //! according to their documentation. It includes proper authentication with SHA256
 //! hashing and nonce generation.
 
-use deribit_base::prelude::*;
 use deribit_fix::prelude::*;
 use tokio::time::{Duration, sleep};
 use tracing::{debug, error, info, warn};

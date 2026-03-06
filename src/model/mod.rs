@@ -6,6 +6,10 @@
 
 /// FIX message structures
 pub mod message;
+/// Position model types
+pub mod position;
+/// Order request model types
+pub mod request;
 /// Network stream handling
 pub mod stream;
 /// FIX protocol tags

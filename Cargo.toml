@@ -42,7 +42,7 @@ rand = { workspace = true }
 nanoid = { workspace = true }
 
 [dev-dependencies]
-serial_test = "3.2"
+serial_test = "3.4"
 
 [[test]]
 name = "unit_tests"
@@ -70,7 +70,7 @@ members = [
 
 [workspace.dependencies]
 deribit-fix=  { path = "." }
-tokio = { version = "1.47", features = ["rt", "rt-multi-thread", "macros", "time", "signal"] }
+tokio = { version = "1.50", features = ["rt", "rt-multi-thread", "macros", "time", "signal"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
 tracing-subscriber = "0.3"

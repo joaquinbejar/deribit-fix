@@ -16,3 +16,6 @@ pub mod stream;
 pub mod tags;
 /// FIX message types and enums
 pub mod types;
+
+pub use position::*;
+pub use request::NewOrderRequest;

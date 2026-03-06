@@ -11,7 +11,6 @@ use crate::error::{DeribitFixError, Result as DeribitFixResult};
 use crate::message::builder::MessageBuilder;
 use crate::model::types::MsgType;
 use chrono::Utc;
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
 /// Order Mass Cancel Request message (MsgType = 'q')

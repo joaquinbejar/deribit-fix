@@ -238,6 +238,9 @@
 //! Trading financial instruments carries risk - use at your own discretion.
 //!
 
+#[macro_use]
+mod macros;
+
 pub mod client;
 pub mod config;
 pub mod connection;

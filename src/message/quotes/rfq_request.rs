@@ -11,7 +11,6 @@ use crate::message::builder::MessageBuilder;
 use crate::message::orders::{OrderSide, TimeInForce};
 use crate::model::types::MsgType;
 use chrono::{DateTime, Utc};
-use deribit_base::{impl_json_debug_pretty, impl_json_display};
 use serde::{Deserialize, Serialize};
 
 /// RFQ request type enumeration

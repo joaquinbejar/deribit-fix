@@ -61,7 +61,7 @@ mod tests {
                 "test_client_id".to_string(),
                 "test_access_secret".to_string(),
             )
-            .with_endpoint("test.deribit.com".to_string(), 9881);
+            .with_endpoint("fix-test.deribit.com".to_string(), 9881);
 
         let result = DeribitFixClient::new(&config).await;
         assert!(
@@ -72,7 +72,7 @@ mod tests {
         let client = result.unwrap();
         assert!(!client.config.username.is_empty());
         assert!(!client.config.password.is_empty());
-        assert_eq!(client.config.host, "test.deribit.com");
+        assert_eq!(client.config.host, "fix-test.deribit.com");
         assert_eq!(client.config.port, 9881);
     }
 
@@ -252,14 +252,14 @@ mod tests {
         // Test with invalid port (0)
         let config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string())
-            .with_endpoint("test.deribit.com".to_string(), 0);
+            .with_endpoint("fix-test.deribit.com".to_string(), 0);
         let result = config.validate();
         assert!(result.is_err(), "Should fail with port 0");
 
         // Test with invalid port (too high)
         let config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string())
-            .with_endpoint("test.deribit.com".to_string(), 65535);
+            .with_endpoint("fix-test.deribit.com".to_string(), 65535);
         let result = config.validate();
         // This should actually pass since 65535 is a valid port, so let's change the test
         assert!(result.is_ok(), "Port 65535 should be valid");

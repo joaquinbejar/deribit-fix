@@ -59,11 +59,11 @@ mod tests {
         // Valid configuration
         let valid_config = DeribitFixConfig::new()
             .with_credentials("test_user".to_string(), "test_pass".to_string())
-            .with_endpoint("test.deribit.com".to_string(), 9881)
+            .with_endpoint("fix-test.deribit.com".to_string(), 9881)
             .with_connection_timeout(Duration::from_secs(10));
 
         assert!(valid_config.validate().is_ok());
-        assert_eq!(valid_config.host, "test.deribit.com");
+        assert_eq!(valid_config.host, "fix-test.deribit.com");
         assert_eq!(valid_config.port, 9881);
         assert_eq!(valid_config.connection_timeout, Duration::from_secs(10));
 
@@ -105,7 +105,7 @@ mod tests {
         // Test SSL enabled
         let ssl_config = DeribitFixConfig::new()
             .with_ssl(true)
-            .with_endpoint("test.deribit.com".to_string(), 9883);
+            .with_endpoint("fix-test.deribit.com".to_string(), 9883);
 
         assert!(ssl_config.use_ssl);
         assert_eq!(ssl_config.port, 9883);
@@ -113,7 +113,7 @@ mod tests {
         // Test SSL disabled
         let no_ssl_config = DeribitFixConfig::new()
             .with_ssl(false)
-            .with_endpoint("test.deribit.com".to_string(), 9881);
+            .with_endpoint("fix-test.deribit.com".to_string(), 9881);
 
         assert!(!no_ssl_config.use_ssl);
         assert_eq!(no_ssl_config.port, 9881);
@@ -286,7 +286,7 @@ mod tests {
         let config = DeribitFixConfig::new();
 
         // Test default values
-        assert_eq!(config.host, "test.deribit.com");
+        assert_eq!(config.host, "fix-test.deribit.com");
         assert_eq!(config.port, 9881);
         assert!(!config.use_ssl); // Default should be false for test environment
         assert_eq!(config.sender_comp_id, "CLIENT");

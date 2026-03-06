@@ -45,7 +45,7 @@ mod tests {
 
         let full_config = DeribitFixConfig::new()
             .with_credentials("user".to_string(), "pass".to_string())
-            .with_endpoint("test.deribit.com".to_string(), 9881)
+            .with_endpoint("fix-test.deribit.com".to_string(), 9881)
             .with_session_ids("CLIENT_TEST".to_string(), "DERIBIT_TEST".to_string())
             .with_heartbeat_interval(60)
             .with_cancel_on_disconnect(true)
@@ -55,7 +55,7 @@ mod tests {
 
         assert_eq!(full_config.username, "user");
         assert_eq!(full_config.password, "pass");
-        assert_eq!(full_config.host, "test.deribit.com");
+        assert_eq!(full_config.host, "fix-test.deribit.com");
         assert_eq!(full_config.port, 9881);
         assert_eq!(full_config.heartbeat_interval, 60);
         assert!(full_config.cancel_on_disconnect);
@@ -354,7 +354,7 @@ mod tests {
         // Test config with all optional features
         let full_config = DeribitFixConfig::new()
             .with_credentials("user".to_string(), "pass".to_string())
-            .with_endpoint("test.deribit.com".to_string(), 9881)
+            .with_endpoint("fix-test.deribit.com".to_string(), 9881)
             .with_session_ids("SENDER".to_string(), "TARGET".to_string())
             .with_heartbeat_interval(60)
             .with_cancel_on_disconnect(true)
@@ -368,7 +368,7 @@ mod tests {
 
         assert_eq!(full_config.username, "user");
         assert_eq!(full_config.password, "pass");
-        assert_eq!(full_config.host, "test.deribit.com");
+        assert_eq!(full_config.host, "fix-test.deribit.com");
         assert_eq!(full_config.port, 9881);
         assert_eq!(full_config.sender_comp_id, "SENDER");
         assert_eq!(full_config.target_comp_id, "TARGET");

@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_target_comp_id("DERIBIT".to_string())
         .with_api_key("YOUR_API_KEY".to_string())
         .with_secret_key("YOUR_SECRET_KEY".to_string())
-        .with_host("test.deribit.com".to_string())
+        .with_host("fix-test.deribit.com".to_string())
         .with_port(9883)
         .with_use_ssl(true);
 
@@ -473,7 +473,7 @@ fn load_config_from_env() -> FixConfig {
         .expect("DERIBIT_SECRET_KEY environment variable must be set");
     
     let host = env::var("DERIBIT_HOST")
-        .unwrap_or_else(|_| "test.deribit.com".to_string());
+        .unwrap_or_else(|_| "fix-test.deribit.com".to_string());
     
     let port: u16 = env::var("DERIBIT_PORT")
         .unwrap_or_else(|_| "9883".to_string())
@@ -718,7 +718,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_target_comp_id("DERIBIT".to_string())
         .with_api_key("YOUR_API_KEY".to_string())
         .with_secret_key("YOUR_SECRET_KEY".to_string())
-        .with_host("test.deribit.com".to_string())
+        .with_host("fix-test.deribit.com".to_string())
         .with_port(9883)
         .with_use_ssl(true)
         .with_heartbeat_interval(30);

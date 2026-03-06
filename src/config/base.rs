@@ -25,7 +25,7 @@ pub struct DeribitFixConfig {
     pub username: String,
     /// Deribit password
     pub password: String,
-    /// FIX server host (default: www.deribit.com for production, test.deribit.com for test)
+    /// FIX server host (default: fix.deribit.com for production, fix-test.deribit.com for test)
     pub host: String,
     /// FIX server port (default: 9881 for test, 9880 for production)
     pub port: u16,

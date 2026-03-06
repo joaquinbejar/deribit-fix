@@ -13,7 +13,7 @@ Configuration can be set via environment variables for easy deployment and conta
 
 ```bash
 # Connection settings
-export DERIBIT_FIX_HOST="www.deribit.com"
+export DERIBIT_FIX_HOST="fix.deribit.com"
 export DERIBIT_FIX_PORT="8443"
 export DERIBIT_FIX_USE_SSL="true"
 export DERIBIT_FIX_TIMEOUT="30"
@@ -41,7 +41,7 @@ Configuration files in TOML format for persistent settings:
 ```toml
 # config.toml
 [connection]
-host = "www.deribit.com"
+host = "fix.deribit.com"
 port = 8443
 use_ssl = true
 timeout = 30
@@ -94,7 +94,7 @@ impl Default for Config {
 impl Default for ConnectionConfig {
     fn default() -> Self {
         Self {
-            host: "www.deribit.com".to_string(),
+            host: "fix.deribit.com".to_string(),
             port: 8443,
             use_ssl: true,
             timeout: Duration::from_secs(30),
@@ -337,7 +337,7 @@ impl ConfigBuilder {
 impl Config {
     pub fn merge(&mut self, other: Config) {
         // Merge connection config
-        if other.connection.host != "www.deribit.com" {
+        if other.connection.host != "fix.deribit.com" {
             self.connection.host = other.connection.host;
         }
         if other.connection.port != 8443 {
@@ -500,7 +500,7 @@ async fn test_config_loading() {
         .from_file("test_config.toml")?
         .build()?;
     
-    assert_eq!(config.connection.host, "test.deribit.com");
+    assert_eq!(config.connection.host, "fix-test.deribit.com");
     assert_eq!(config.authentication.testnet, true);
 }
 ```

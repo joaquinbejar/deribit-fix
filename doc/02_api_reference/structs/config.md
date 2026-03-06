@@ -131,7 +131,7 @@ let config = Config::default();
 
 // Create configuration with builder
 let config = ConfigBuilder::new()
-    .with_host("test.deribit.com")
+    .with_host("fix-test.deribit.com")
     .with_port(443)
     .with_api_key("your_api_key")
     .with_api_secret("your_api_secret")
@@ -150,7 +150,7 @@ use deribit_fix::Config;
 let config = Config::from_env()?;
 
 // Environment variables used:
-// DERIBIT_HOST=test.deribit.com
+// DERIBIT_HOST=fix-test.deribit.com
 // DERIBIT_PORT=443
 // DERIBIT_API_KEY=your_api_key
 // DERIBIT_API_SECRET=your_api_secret
@@ -182,7 +182,7 @@ use std::time::Duration;
 
 let config = ConfigBuilder::new()
     // Connection settings
-    .with_host("test.deribit.com")
+    .with_host("fix-test.deribit.com")
     .with_port(443)
     .with_ssl(true)
     .with_timeout(Duration::from_secs(30))
@@ -274,7 +274,7 @@ impl Default for Config {
 impl Default for ConnectionConfig {
     fn default() -> Self {
         Self {
-            host: "test.deribit.com".to_string(),
+            host: "fix-test.deribit.com".to_string(),
             port: 443,
             use_ssl: true,
             connection_timeout: Duration::from_secs(30),
@@ -327,7 +327,7 @@ impl Config {
 ```toml
 # config.toml
 [connection]
-host = "test.deribit.com"
+host = "fix-test.deribit.com"
 port = 443
 use_ssl = true
 connection_timeout = 30
@@ -486,7 +486,7 @@ mod tests {
     #[test]
     fn test_default_config() {
         let config = Config::default();
-        assert_eq!(config.connection.host, "test.deribit.com");
+        assert_eq!(config.connection.host, "fix-test.deribit.com");
         assert_eq!(config.connection.port, 443);
         assert!(config.connection.use_ssl);
     }

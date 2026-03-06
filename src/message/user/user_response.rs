@@ -33,6 +33,22 @@ pub struct UserResponse {
     pub raw_data: Option<Vec<u8>>,
     /// Custom label
     pub deribit_label: Option<String>,
+    /// User equity (tag 100001)
+    pub user_equity: Option<f64>,
+    /// User balance (tag 100002)
+    pub user_balance: Option<f64>,
+    /// User initial margin (tag 100003)
+    pub user_initial_margin: Option<f64>,
+    /// User maintenance margin (tag 100004)
+    pub user_maintenance_margin: Option<f64>,
+    /// Unrealized P/L (tag 100005)
+    pub unrealized_pl: Option<f64>,
+    /// Realized P/L (tag 100006)
+    pub realized_pl: Option<f64>,
+    /// Total P/L (tag 100011)
+    pub total_pl: Option<f64>,
+    /// Margin balance for cross collateral (tag 100013)
+    pub margin_balance: Option<f64>,
 }
 
 impl UserResponse {
@@ -46,6 +62,14 @@ impl UserResponse {
             raw_data_length: None,
             raw_data: None,
             deribit_label: None,
+            user_equity: None,
+            user_balance: None,
+            user_initial_margin: None,
+            user_maintenance_margin: None,
+            unrealized_pl: None,
+            realized_pl: None,
+            total_pl: None,
+            margin_balance: None,
         }
     }
 
@@ -110,6 +134,62 @@ impl UserResponse {
         self
     }
 
+    /// Set user equity (tag 100001)
+    #[must_use]
+    pub fn with_user_equity(mut self, equity: f64) -> Self {
+        self.user_equity = Some(equity);
+        self
+    }
+
+    /// Set user balance (tag 100002)
+    #[must_use]
+    pub fn with_user_balance(mut self, balance: f64) -> Self {
+        self.user_balance = Some(balance);
+        self
+    }
+
+    /// Set user initial margin (tag 100003)
+    #[must_use]
+    pub fn with_user_initial_margin(mut self, initial_margin: f64) -> Self {
+        self.user_initial_margin = Some(initial_margin);
+        self
+    }
+
+    /// Set user maintenance margin (tag 100004)
+    #[must_use]
+    pub fn with_user_maintenance_margin(mut self, maintenance_margin: f64) -> Self {
+        self.user_maintenance_margin = Some(maintenance_margin);
+        self
+    }
+
+    /// Set unrealized P/L (tag 100005)
+    #[must_use]
+    pub fn with_unrealized_pl(mut self, unrealized_pl: f64) -> Self {
+        self.unrealized_pl = Some(unrealized_pl);
+        self
+    }
+
+    /// Set realized P/L (tag 100006)
+    #[must_use]
+    pub fn with_realized_pl(mut self, realized_pl: f64) -> Self {
+        self.realized_pl = Some(realized_pl);
+        self
+    }
+
+    /// Set total P/L (tag 100011)
+    #[must_use]
+    pub fn with_total_pl(mut self, total_pl: f64) -> Self {
+        self.total_pl = Some(total_pl);
+        self
+    }
+
+    /// Set margin balance for cross collateral (tag 100013)
+    #[must_use]
+    pub fn with_margin_balance(mut self, margin_balance: f64) -> Self {
+        self.margin_balance = Some(margin_balance);
+        self
+    }
+
     /// Convert to FIX message
     pub fn to_fix_message(
         &self,
@@ -147,6 +227,39 @@ impl UserResponse {
 
         if let Some(deribit_label) = &self.deribit_label {
             builder = builder.field(100010, deribit_label.clone());
+        }
+
+        // Account info fields (Deribit custom tags)
+        if let Some(equity) = self.user_equity {
+            builder = builder.field(100001, equity.to_string());
+        }
+
+        if let Some(balance) = self.user_balance {
+            builder = builder.field(100002, balance.to_string());
+        }
+
+        if let Some(initial_margin) = self.user_initial_margin {
+            builder = builder.field(100003, initial_margin.to_string());
+        }
+
+        if let Some(maintenance_margin) = self.user_maintenance_margin {
+            builder = builder.field(100004, maintenance_margin.to_string());
+        }
+
+        if let Some(unrealized) = self.unrealized_pl {
+            builder = builder.field(100005, unrealized.to_string());
+        }
+
+        if let Some(realized) = self.realized_pl {
+            builder = builder.field(100006, realized.to_string());
+        }
+
+        if let Some(total) = self.total_pl {
+            builder = builder.field(100011, total.to_string());
+        }
+
+        if let Some(margin) = self.margin_balance {
+            builder = builder.field(100013, margin.to_string());
         }
 
         Ok(builder.build()?.to_string())
@@ -330,5 +443,52 @@ mod tests {
         // Check that raw data fields are present
         assert!(fix_message.contains("95=3")); // RawDataLength
         assert!(fix_message.contains("96=")); // RawData field should be present (base64 encoded)
+    }
+
+    #[test]
+    fn test_user_response_with_account_info() {
+        let response = UserResponse::new(
+            "UR_ACCT".to_string(),
+            "trader".to_string(),
+            UserStatus::LoggedIn,
+        )
+        .with_user_equity(10000.50)
+        .with_user_balance(9500.25)
+        .with_user_initial_margin(500.0)
+        .with_user_maintenance_margin(250.0)
+        .with_unrealized_pl(100.25)
+        .with_realized_pl(50.0)
+        .with_total_pl(150.25)
+        .with_margin_balance(8000.0);
+
+        assert_eq!(response.user_equity, Some(10000.50));
+        assert_eq!(response.user_balance, Some(9500.25));
+        assert_eq!(response.user_initial_margin, Some(500.0));
+        assert_eq!(response.user_maintenance_margin, Some(250.0));
+        assert_eq!(response.unrealized_pl, Some(100.25));
+        assert_eq!(response.realized_pl, Some(50.0));
+        assert_eq!(response.total_pl, Some(150.25));
+        assert_eq!(response.margin_balance, Some(8000.0));
+    }
+
+    #[test]
+    fn test_user_response_account_info_fix_message() {
+        let response = UserResponse::new(
+            "UR_FIX".to_string(),
+            "user".to_string(),
+            UserStatus::LoggedIn,
+        )
+        .with_user_equity(5000.0)
+        .with_user_balance(4500.0)
+        .with_user_initial_margin(300.0)
+        .with_user_maintenance_margin(150.0);
+
+        let fix_message = response.to_fix_message("SENDER", "TARGET", 1).unwrap();
+
+        // Check account info tags are present
+        assert!(fix_message.contains("100001=5000")); // DeribitUserEquity
+        assert!(fix_message.contains("100002=4500")); // DeribitUserBalance
+        assert!(fix_message.contains("100003=300")); // DeribitUserInitialMargin
+        assert!(fix_message.contains("100004=150")); // DeribitUserMaintenanceMargin
     }
 }

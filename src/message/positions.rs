@@ -218,6 +218,8 @@ impl PositionReport {
     /// - 708 (TotalPnL) -> Position.total_profit_loss
     /// - 811 (Delta), 812 (Gamma), 813 (Theta), 814 (Vega) -> Position greeks
     /// - 461 (CFICode) -> Position.kind
+    /// - 100088 (DeribitLiquidationPrice) -> Position.estimated_liquidation_price
+    /// - 100089 (DeribitSizeInCurrency) -> Position.size_currency
     ///
     /// Errors:
     /// - Returns DeribitFixError::Generic when tag 55 (Symbol) is missing.
@@ -252,9 +254,9 @@ impl PositionReport {
             direction,
             average_price,
             average_price_usd: None,
-            delta: get_f64(811), // Greeks delta
-            estimated_liquidation_price: None,
-            floating_profit_loss: get_f64(707), // Unrealized PnL
+            delta: get_f64(811),                          // Greeks delta
+            estimated_liquidation_price: get_f64(100088), // DeribitLiquidationPrice
+            floating_profit_loss: get_f64(707),           // Unrealized PnL
             floating_profit_loss_usd: None,
             gamma: get_f64(812),          // Greeks gamma
             index_price: get_f64(731),    // Index price
@@ -266,9 +268,9 @@ impl PositionReport {
             mark_price: get_f64(732),         // Mark price
             open_orders_margin: None,
             realized_funding: None,
-            realized_profit_loss: get_f64(706), // Realized PnL
-            settlement_price: get_f64(730),     // Settlement price (same as avg price for now)
-            size_currency: None,
+            realized_profit_loss: get_f64(706),   // Realized PnL
+            settlement_price: get_f64(730),       // Settlement price (same as avg price for now)
+            size_currency: get_f64(100089),       // DeribitSizeInCurrency
             theta: get_f64(813),                  // Greeks theta
             total_profit_loss: get_f64(708),      // Total PnL
             vega: get_f64(814),                   // Greeks vega
@@ -412,6 +414,19 @@ impl PositionReport {
         };
 
         let msg = msg.field(979, "FMTM".to_string()); // PosAmtType
+
+        // Deribit custom tags
+        let msg = if let Some(liquidation_price) = position.estimated_liquidation_price {
+            msg.field(100088, liquidation_price.to_string()) // DeribitLiquidationPrice
+        } else {
+            msg
+        };
+
+        let msg = if let Some(size_currency) = position.size_currency {
+            msg.field(100089, size_currency.to_string()) // DeribitSizeInCurrency
+        } else {
+            msg
+        };
 
         Ok(msg.build()?.to_string())
     }
@@ -567,5 +582,68 @@ mod tests {
         assert_eq!(position.size, -1.0); // Negative size for sell
         assert!(matches!(position.direction, Direction::Sell));
         assert_eq!(position.average_price, 45000.0);
+    }
+
+    #[test]
+    fn test_position_report_with_deribit_custom_tags() {
+        // Create a FixMessage with Deribit custom tags
+        let mut fix_message = FixMessage::new();
+        fix_message.set_field(55, "ETH-PERPETUAL".to_string()); // Symbol
+        fix_message.set_field(704, "2.5".to_string()); // LongQty
+        fix_message.set_field(730, "3500.0".to_string()); // SettlPx
+        fix_message.set_field(100088, "3000.0".to_string()); // DeribitLiquidationPrice
+        fix_message.set_field(100089, "8750.0".to_string()); // DeribitSizeInCurrency
+
+        let position = PositionReport::try_from_fix_message(&fix_message).unwrap();
+
+        assert_eq!(position.instrument_name, "ETH-PERPETUAL");
+        assert_eq!(position.size, 2.5);
+        assert_eq!(position.estimated_liquidation_price, Some(3000.0));
+        assert_eq!(position.size_currency, Some(8750.0));
+    }
+
+    #[test]
+    fn test_position_report_emits_deribit_custom_tags() {
+        // Create a Position with Deribit custom fields
+        let position = Position {
+            instrument_name: "BTC-PERPETUAL".to_string(),
+            size: 1.0,
+            direction: Direction::Buy,
+            average_price: 50000.0,
+            average_price_usd: None,
+            delta: None,
+            estimated_liquidation_price: Some(45000.0),
+            floating_profit_loss: None,
+            floating_profit_loss_usd: None,
+            gamma: None,
+            index_price: None,
+            initial_margin: None,
+            interest_value: None,
+            kind: None,
+            leverage: None,
+            maintenance_margin: None,
+            mark_price: None,
+            open_orders_margin: None,
+            realized_funding: None,
+            realized_profit_loss: None,
+            settlement_price: None,
+            size_currency: Some(50000.0),
+            theta: None,
+            total_profit_loss: None,
+            vega: None,
+            unrealized_profit_loss: None,
+        };
+
+        let fix_message = PositionReport::from_deribit_position(
+            &position,
+            "SENDER".to_string(),
+            "TARGET".to_string(),
+            1,
+        )
+        .unwrap();
+
+        // Check that Deribit custom tags are present
+        assert!(fix_message.contains("100088=45000")); // DeribitLiquidationPrice
+        assert!(fix_message.contains("100089=50000")); // DeribitSizeInCurrency
     }
 }

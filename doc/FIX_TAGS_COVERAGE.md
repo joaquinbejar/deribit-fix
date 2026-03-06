@@ -187,8 +187,12 @@ Notes:
 
 ### Position Report (35=AP)
 
-- Implemented: 710, 55, 703 (optional), 6 (optional), 1247 (optional), 1248 (optional), 704 (optional); Full builder pattern for emission with to_fix_message method
+- Implemented: 710, 55, 703 (optional), 6 (optional), 1247 (optional), 1248 (optional), 704 (optional), 100088 (optional), 100089 (optional); Full builder pattern for emission with to_fix_message method
 - Missing: —
+
+Position custom tags (Deribit):
+- 100088 DeribitLiquidationPrice
+- 100089 DeribitSizeInCurrency
 
 ---
 
@@ -264,8 +268,18 @@ Notes:
 
 ### User Response (35=BF)
 
-- Implemented: 923, 553, 926, 927 (optional), 95 (optional), 96 (optional, base64), 100010 (optional)
+- Implemented: 923, 553, 926, 927 (optional), 95 (optional), 96 (optional, base64), 100010 (optional), 100001 (optional), 100002 (optional), 100003 (optional), 100004 (optional), 100005 (optional), 100006 (optional), 100011 (optional), 100013 (optional)
 - Missing: —
+
+Account info tags (Deribit custom):
+- 100001 DeribitUserEquity
+- 100002 DeribitUserBalance
+- 100003 DeribitUserInitialMargin
+- 100004 DeribitUserMaintenanceMargin
+- 100005 DeribitUnrealizedPl
+- 100006 DeribitRealizedPl
+- 100011 DeribitTotalPl
+- 100013 DeribitMarginBalance (cross collateral)
 
 ---
 

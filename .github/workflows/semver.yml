@@ -3,9 +3,6 @@ name: SEMVER
 on:
   push:
     branches:
-      - "**"
-  pull_request:
-    branches:
       - main
       - "release/**"
 

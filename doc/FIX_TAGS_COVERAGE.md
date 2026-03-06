@@ -200,7 +200,11 @@ Position custom tags (Deribit):
 
 ### Quote Request (35=R)
 
-- Implemented: 131, 55, 537, 54, 38, 62 (optional), 303 (optional), 59 (optional), 110 (optional), 63 (optional), 100010 (optional), 1300 (optional)
+- Implemented: 131, 55, 537, 54, 38, 62 (optional), 303 (optional), 59 (optional), 110 (optional), 63 (optional), 100010 (optional), 1300 (optional), 387 (optional), 60 (optional)
+
+RFQ subscription fields:
+- 387 TotalVolumeTraded - Traded volume
+- 60 TransactTime - Update time for last trade or when requested
 
 ### Quote Request Reject (35=AG)
 
@@ -254,7 +258,12 @@ Position custom tags (Deribit):
 
 ### Trade Capture Report (35=AE)
 
-- Implemented: 571, 55, 54, 53, 32, 31, 75, 60, 1003 (optional), 1040 (optional), 1041 (optional), 487 (optional), 856 (optional), 568 (optional), 828 (optional), 829 (optional), 38 (optional), 381 (optional), 126 (optional), 64 (optional), 442 (optional), 570 (optional), 423 (optional), 810 (optional), 1 (optional), 440 (optional), 77 (optional), 715 (optional), 336 (optional), 625 (optional), 1300 (optional), 58 (optional), 100010 (optional)
+- Implemented: 571, 55, 54, 53, 32, 31, 75, 60, 1003 (optional), 1040 (optional), 1041 (optional), 487 (optional), 856 (optional), 568 (optional), 828 (optional), 829 (optional), 38 (optional), 381 (optional), 126 (optional), 64 (optional), 442 (optional), 570 (optional), 423 (optional), 810 (optional), 1 (optional), 440 (optional), 77 (optional), 715 (optional), 336 (optional), 625 (optional), 1300 (optional), 58 (optional), 100010 (optional), 880 (optional), 555 (optional), 552 (optional)
+
+Block Trade and Multi-leg fields:
+- 880 TrdMatchID - Block Trade ID or Combo Trade ID
+- 555 NoLegs group (LegSymbol 600, LegQty 687, LegPrice 566, LegSide 624)
+- 552 NoSides group (Side 54, OrderId 37, Commission 12, CommCurrency 479)
 
 ---
 

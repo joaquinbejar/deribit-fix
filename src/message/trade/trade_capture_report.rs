@@ -13,6 +13,70 @@ use crate::model::types::MsgType;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
+/// Trade Capture Report Leg for multi-leg trades (NoLegs group)
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeCaptureReportLeg {
+    /// Leg symbol (tag 600)
+    pub leg_symbol: String,
+    /// Leg quantity (tag 687)
+    pub leg_qty: f64,
+    /// Leg price (tag 566)
+    pub leg_price: f64,
+    /// Leg side (tag 624)
+    pub leg_side: OrderSide,
+}
+
+impl TradeCaptureReportLeg {
+    /// Create a new trade capture report leg
+    pub fn new(leg_symbol: String, leg_qty: f64, leg_price: f64, leg_side: OrderSide) -> Self {
+        Self {
+            leg_symbol,
+            leg_qty,
+            leg_price,
+            leg_side,
+        }
+    }
+}
+
+impl_json_display!(TradeCaptureReportLeg);
+impl_json_debug_pretty!(TradeCaptureReportLeg);
+
+/// Trade Capture Report Side for NoSides group
+#[derive(Clone, PartialEq, Serialize, Deserialize)]
+pub struct TradeCaptureReportSide {
+    /// Side (tag 54)
+    pub side: OrderSide,
+    /// Order ID (tag 37)
+    pub order_id: String,
+    /// Commission (tag 12)
+    pub commission: Option<f64>,
+    /// Commission currency (tag 479)
+    pub comm_currency: Option<String>,
+}
+
+impl TradeCaptureReportSide {
+    /// Create a new trade capture report side
+    pub fn new(side: OrderSide, order_id: String) -> Self {
+        Self {
+            side,
+            order_id,
+            commission: None,
+            comm_currency: None,
+        }
+    }
+
+    /// Set commission
+    #[must_use]
+    pub fn with_commission(mut self, commission: f64, currency: String) -> Self {
+        self.commission = Some(commission);
+        self.comm_currency = Some(currency);
+        self
+    }
+}
+
+impl_json_display!(TradeCaptureReportSide);
+impl_json_debug_pretty!(TradeCaptureReportSide);
+
 /// Trade capture report type enumeration
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TradeCaptureReportType {
@@ -202,6 +266,12 @@ pub struct TradeCaptureReport {
     pub encoded_text: Option<Vec<u8>>,
     /// Custom label
     pub deribit_label: Option<String>,
+    /// Block trade match ID (tag 880) - Block Trade ID or Combo Trade ID
+    pub trd_match_id: Option<String>,
+    /// Legs for multi-leg trades (NoLegs group, tag 555)
+    pub legs: Vec<TradeCaptureReportLeg>,
+    /// Sides for trade reporting (NoSides group, tag 552)
+    pub sides: Vec<TradeCaptureReportSide>,
 }
 
 impl TradeCaptureReport {
@@ -258,6 +328,9 @@ impl TradeCaptureReport {
             text: None,
             encoded_text: None,
             deribit_label: None,
+            trd_match_id: None,
+            legs: Vec::new(),
+            sides: Vec::new(),
         }
     }
 
@@ -387,6 +460,41 @@ impl TradeCaptureReport {
     /// Set custom label
     pub fn with_label(mut self, label: String) -> Self {
         self.deribit_label = Some(label);
+        self
+    }
+
+    /// Set block trade match ID (tag 880)
+    #[must_use]
+    pub fn with_trd_match_id(mut self, trd_match_id: String) -> Self {
+        self.trd_match_id = Some(trd_match_id);
+        self
+    }
+
+    /// Add a leg for multi-leg trade
+    #[must_use]
+    pub fn with_leg(mut self, leg: TradeCaptureReportLeg) -> Self {
+        self.legs.push(leg);
+        self
+    }
+
+    /// Set legs for multi-leg trade
+    #[must_use]
+    pub fn with_legs(mut self, legs: Vec<TradeCaptureReportLeg>) -> Self {
+        self.legs = legs;
+        self
+    }
+
+    /// Add a side for trade reporting
+    #[must_use]
+    pub fn with_side(mut self, side: TradeCaptureReportSide) -> Self {
+        self.sides.push(side);
+        self
+    }
+
+    /// Set sides for trade reporting
+    #[must_use]
+    pub fn with_sides(mut self, sides: Vec<TradeCaptureReportSide>) -> Self {
+        self.sides = sides;
         self
     }
 
@@ -520,6 +628,41 @@ impl TradeCaptureReport {
 
         if let Some(deribit_label) = &self.deribit_label {
             builder = builder.field(100010, deribit_label.clone());
+        }
+
+        // Block trade match ID (tag 880)
+        if let Some(trd_match_id) = &self.trd_match_id {
+            builder = builder.field(880, trd_match_id.clone());
+        }
+
+        // Legs group (NoLegs, tag 555)
+        if !self.legs.is_empty() {
+            builder = builder.field(555, self.legs.len().to_string());
+            for leg in &self.legs {
+                builder = builder
+                    .field(600, leg.leg_symbol.clone()) // LegSymbol
+                    .field(687, leg.leg_qty.to_string()) // LegQty
+                    .field(566, leg.leg_price.to_string()) // LegPrice
+                    .field(624, char::from(leg.leg_side).to_string()); // LegSide
+            }
+        }
+
+        // Sides group (NoSides, tag 552)
+        if !self.sides.is_empty() {
+            builder = builder.field(552, self.sides.len().to_string());
+            for side in &self.sides {
+                builder = builder
+                    .field(54, char::from(side.side).to_string()) // Side
+                    .field(37, side.order_id.clone()); // OrderId
+
+                if let Some(commission) = side.commission {
+                    builder = builder.field(12, commission.to_string());
+                }
+
+                if let Some(comm_currency) = &side.comm_currency {
+                    builder = builder.field(479, comm_currency.clone());
+                }
+            }
         }
 
         Ok(builder.build()?.to_string())
@@ -736,5 +879,100 @@ mod tests {
         );
 
         assert!(TradeReportTransType::try_from(99).is_err());
+    }
+
+    #[test]
+    fn test_trade_capture_report_leg_creation() {
+        let leg =
+            TradeCaptureReportLeg::new("BTC-PERPETUAL".to_string(), 5.0, 50000.0, OrderSide::Buy);
+
+        assert_eq!(leg.leg_symbol, "BTC-PERPETUAL");
+        assert_eq!(leg.leg_qty, 5.0);
+        assert_eq!(leg.leg_price, 50000.0);
+        assert_eq!(leg.leg_side, OrderSide::Buy);
+    }
+
+    #[test]
+    fn test_trade_capture_report_side_creation() {
+        let side = TradeCaptureReportSide::new(OrderSide::Buy, "ORDER123".to_string())
+            .with_commission(0.001, "BTC".to_string());
+
+        assert_eq!(side.side, OrderSide::Buy);
+        assert_eq!(side.order_id, "ORDER123");
+        assert_eq!(side.commission, Some(0.001));
+        assert_eq!(side.comm_currency, Some("BTC".to_string()));
+    }
+
+    #[test]
+    fn test_trade_capture_report_with_block_trade() {
+        let leg1 = TradeCaptureReportLeg::new(
+            "BTC-25DEC25-100000-C".to_string(),
+            1.0,
+            0.05,
+            OrderSide::Buy,
+        );
+        let leg2 = TradeCaptureReportLeg::new(
+            "BTC-25DEC25-110000-C".to_string(),
+            1.0,
+            0.03,
+            OrderSide::Sell,
+        );
+
+        let side = TradeCaptureReportSide::new(OrderSide::Buy, "ORDER456".to_string())
+            .with_commission(0.0005, "BTC".to_string());
+
+        let report = TradeCaptureReport::new(
+            "TR_BLOCK".to_string(),
+            "COMBO-SPREAD".to_string(),
+            OrderSide::Buy,
+            1.0,
+            1.0,
+            0.02,
+            "20250812".to_string(),
+        )
+        .with_trd_match_id("BLOCK_TRADE_123".to_string())
+        .with_legs(vec![leg1, leg2])
+        .with_side(side);
+
+        assert_eq!(report.trd_match_id, Some("BLOCK_TRADE_123".to_string()));
+        assert_eq!(report.legs.len(), 2);
+        assert_eq!(report.sides.len(), 1);
+    }
+
+    #[test]
+    fn test_trade_capture_report_block_trade_fix_message() {
+        let leg =
+            TradeCaptureReportLeg::new("ETH-PERPETUAL".to_string(), 2.0, 3500.0, OrderSide::Buy);
+
+        let side = TradeCaptureReportSide::new(OrderSide::Buy, "ORD789".to_string())
+            .with_commission(0.01, "ETH".to_string());
+
+        let report = TradeCaptureReport::new_trade(
+            "TR_FIX".to_string(),
+            "TRADE_FIX".to_string(),
+            "ETH-PERPETUAL".to_string(),
+            OrderSide::Buy,
+            2.0,
+            2.0,
+            3500.0,
+            "20250812".to_string(),
+        )
+        .with_trd_match_id("BLOCK_456".to_string())
+        .with_leg(leg)
+        .with_side(side);
+
+        let fix_message = report.to_fix_message("SENDER", "TARGET", 1).unwrap();
+
+        // Check block trade fields
+        assert!(fix_message.contains("880=BLOCK_456")); // TrdMatchID
+        assert!(fix_message.contains("555=1")); // NoLegs
+        assert!(fix_message.contains("600=ETH-PERPETUAL")); // LegSymbol
+        assert!(fix_message.contains("687=2")); // LegQty
+        assert!(fix_message.contains("566=3500")); // LegPrice
+        assert!(fix_message.contains("624=1")); // LegSide=Buy
+        assert!(fix_message.contains("552=1")); // NoSides
+        assert!(fix_message.contains("37=ORD789")); // OrderId
+        assert!(fix_message.contains("12=0.01")); // Commission
+        assert!(fix_message.contains("479=ETH")); // CommCurrency
     }
 }

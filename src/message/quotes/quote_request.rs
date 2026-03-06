@@ -78,6 +78,10 @@ pub struct QuoteRequest {
     pub deribit_label: Option<String>,
     /// Market segment ID
     pub market_segment_id: Option<String>,
+    /// Total volume traded (tag 387) - For RFQ subscription responses
+    pub total_volume_traded: Option<f64>,
+    /// Transaction time (tag 60) - Update time for last trade or when requested
+    pub transact_time: Option<DateTime<Utc>>,
 }
 
 impl QuoteRequest {
@@ -102,6 +106,8 @@ impl QuoteRequest {
             settlement_type: None,
             deribit_label: None,
             market_segment_id: None,
+            total_volume_traded: None,
+            transact_time: None,
         }
     }
 
@@ -167,6 +173,20 @@ impl QuoteRequest {
         self
     }
 
+    /// Set total volume traded (tag 387)
+    #[must_use]
+    pub fn with_total_volume_traded(mut self, volume: f64) -> Self {
+        self.total_volume_traded = Some(volume);
+        self
+    }
+
+    /// Set transaction time (tag 60)
+    #[must_use]
+    pub fn with_transact_time(mut self, time: DateTime<Utc>) -> Self {
+        self.transact_time = Some(time);
+        self
+    }
+
     /// Convert to FIX message
     pub fn to_fix_message(
         &self,
@@ -219,6 +239,14 @@ impl QuoteRequest {
 
         if let Some(market_segment_id) = &self.market_segment_id {
             builder = builder.field(1300, market_segment_id.clone());
+        }
+
+        if let Some(total_volume_traded) = self.total_volume_traded {
+            builder = builder.field(387, total_volume_traded.to_string());
+        }
+
+        if let Some(transact_time) = &self.transact_time {
+            builder = builder.field(60, transact_time.format("%Y%m%d-%H:%M:%S%.3f").to_string());
         }
 
         Ok(builder.build()?.to_string())
@@ -341,5 +369,40 @@ mod tests {
         assert_eq!(QuoteType::try_from(3).unwrap(), QuoteType::Counter);
 
         assert!(QuoteType::try_from(99).is_err());
+    }
+
+    #[test]
+    fn test_quote_request_with_rfq_fields() {
+        let transact_time = Utc::now();
+        let request = QuoteRequest::tradeable(
+            "QR_RFQ".to_string(),
+            "BTC-PERPETUAL".to_string(),
+            OrderSide::Buy,
+            10.0,
+        )
+        .with_total_volume_traded(1000.5)
+        .with_transact_time(transact_time);
+
+        assert_eq!(request.total_volume_traded, Some(1000.5));
+        assert_eq!(request.transact_time, Some(transact_time));
+    }
+
+    #[test]
+    fn test_quote_request_rfq_fields_in_fix_message() {
+        let transact_time = Utc::now();
+        let request = QuoteRequest::tradeable(
+            "QR_FIX".to_string(),
+            "ETH-PERPETUAL".to_string(),
+            OrderSide::Sell,
+            5.0,
+        )
+        .with_total_volume_traded(500.25)
+        .with_transact_time(transact_time);
+
+        let fix_message = request.to_fix_message("SENDER", "TARGET", 1).unwrap();
+
+        // Check that new fields are present
+        assert!(fix_message.contains("387=500.25")); // TotalVolumeTraded
+        assert!(fix_message.contains("60=")); // TransactTime
     }
 }

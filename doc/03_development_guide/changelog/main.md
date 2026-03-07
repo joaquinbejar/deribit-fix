@@ -175,7 +175,7 @@ This is the initial development release of the `deribit-fix` crate, providing fo
 
 ## Future Roadmap
 
-### Version 0.3.0 (Planned - Q1 2026)
+### Version 0.3.1 (Planned - Q1 2026)
 - **Enhanced Performance**: Further latency optimizations
 - **Advanced Risk Management**: Additional risk control features
 - **Extended Market Data**: Enhanced market data features

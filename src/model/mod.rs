@@ -17,5 +17,7 @@ pub mod tags;
 /// FIX message types and enums
 pub mod types;
 
+pub use message::FixMessage;
 pub use position::*;
 pub use request::NewOrderRequest;
+pub use types::*;

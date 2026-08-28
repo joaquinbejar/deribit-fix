@@ -521,9 +521,7 @@ async fn test_stream_isolation_and_correlation() -> Result<()> {
                             }
                         } else if let Some(symbol) = message.get_field(55) {
                             // Fallback correlation by symbol
-                            for (_req_id, (stream_symbol, name, count)) in
-                                stream_correlations.iter_mut()
-                            {
+                            for (stream_symbol, name, count) in stream_correlations.values_mut() {
                                 if stream_symbol == symbol {
                                     *count += 1;
                                     debug!("📊 {} stream correlated by symbol: {}", name, count);

@@ -1,6 +1,6 @@
 [package]
 name = "deribit-fix"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2024"
 authors = ["Joaquin Bejar <jb@taunais.com>"]
 description = "This crate provides a client for the Deribit Markets API using the FIX protocol."
@@ -42,7 +42,7 @@ rand = { workspace = true }
 nanoid = { workspace = true }
 
 [dev-dependencies]
-serial_test = "3.4"
+serial_test = "4.0"
 
 [[test]]
 name = "unit_tests"

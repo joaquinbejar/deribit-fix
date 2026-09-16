@@ -96,6 +96,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Proper handling of sensitive authentication data in debug logs
 - Validated authentication flow against official Deribit FIX API security requirements
 
+## [0.3.2] - 2026-09-16
+
+### Changed
+- `sha2` updated from 0.10 to 0.11 (#20)
+- `nanoid` updated from 0.4 to 0.5 (#21)
+- `base64` updated from 0.22 to 0.23 (#25)
+- `serial_test` dev-dependency updated from 3.4 to 4.0; the test suite now requires Rust 1.93.1 or newer
+
+### Fixed
+- Clippy lint: correlations are iterated with `values_mut()` instead of `iter_mut()`
+
 ## [0.1.0] - 2025-07-22
 
 ### Added

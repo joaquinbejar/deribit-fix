@@ -41,3 +41,16 @@ Licensed under MIT license
 ## Disclaimer
 
 This software is not officially associated with Deribit. Trading financial instruments carries risk, and this library is provided as-is without any guarantees. Always test thoroughly with a demo account before using in a live trading environment.
+
+<!-- related-projects:start -->
+## Related projects
+
+Repositories by the same author that this project depends on, and repositories that depend on it.
+
+### Used by
+
+| Repository | Description |
+|------------|-------------|
+| [deribit-mcp](https://github.com/joaquinbejar/deribit-mcp) | Model Context Protocol server exposing the Deribit client stack as MCP tools, resources and prompts. |
+
+<!-- related-projects:end -->

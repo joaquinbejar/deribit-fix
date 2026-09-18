@@ -61,7 +61,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Authentication tests validate compliance with official Deribit FIX API specification
 
 ### Changed
-- Dependencies updated to latest stable versions (tokio 1.50 -> 1.53)
 - **MsgType enum**: Added Order Management message types (D, F, 9, q, r, AF), Market Data message types (V, W, X, Y) and Security List message types (x, y)
 - **Module exports**: Added orders module to message module and lib.rs prelude
 - **Module exports**: Added market_data module to message module and lib.rs prelude
@@ -96,6 +95,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Implemented minimum 32-byte nonce length as recommended by Deribit security guidelines
 - Proper handling of sensitive authentication data in debug logs
 - Validated authentication flow against official Deribit FIX API security requirements
+
+## [0.3.3] - 2026-09-18
+
+### Changed
+- Dependencies updated to latest stable versions (`tokio` 1.50 -> 1.53) (#29)
 
 ## [0.3.2] - 2026-09-16
 

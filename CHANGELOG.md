@@ -61,6 +61,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) 
 - Authentication tests validate compliance with official Deribit FIX API specification
 
 ### Changed
+- Dependencies updated to latest stable versions (tokio 1.50 -> 1.53)
 - **MsgType enum**: Added Order Management message types (D, F, 9, q, r, AF), Market Data message types (V, W, X, Y) and Security List message types (x, y)
 - **Module exports**: Added orders module to message module and lib.rs prelude
 - **Module exports**: Added market_data module to message module and lib.rs prelude
